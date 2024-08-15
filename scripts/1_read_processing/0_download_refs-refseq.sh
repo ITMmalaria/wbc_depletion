@@ -14,7 +14,7 @@ else
 fi
 
 # set and create output directory
-output_dir=$(realpath "${SCRIPT_DIR}/../../data/ref/")
+output_dir=$(realpath "${SCRIPT_DIR}/../../data/ref-refseq-refseq/")
 mkdir -p "${output_dir}"
 
 # download human reference genome and annotation
@@ -46,11 +46,11 @@ fi
 # concatenate human and pknowlesi genomes and annotation files
 cat "${output_dir}/GCF_000006355.2_GCA_000006355.2_genomic.fna.gz" \
     "${output_dir}/GCF_000001405.40_GRCh38.p14_genomic.fna.gz" \
-    >"${output_dir}/concat_GRCh38.14_PkH.fa.gz"
+    >"${output_dir}/concat-GCF_000001405.40_GRCh38.p14_genomic-GCF_000006355.2_GCA_000006355.2_genomic.fa.gz"
 
 cat "${output_dir}/GCF_000006355.2_GCA_000006355.2_genomic.gff.gz" \
     "${output_dir}/GCF_000001405.40_GRCh38.p14_genomic.gff.gz" \
-    >"${output_dir}/concat_GRCh38.14_PkH.gff.gz"
+    >"${output_dir}/concat-GCF_000001405.40_GRCh38.p14_genomic-GCF_000006355.2_GCA_000006355.2_genomic.gff.gz"
 
 ############
 
