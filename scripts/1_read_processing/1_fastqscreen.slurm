@@ -11,16 +11,15 @@
 #SBATCH -e slurm-stderr.%j.%x.out
 
 # load conda env
-source /data/antwerpen/203/vsc20380/miniforge3/etc/profile.d/conda.sh
-conda activate rnaseq
+conda activate wbc_depletion
 
 printf "Script execution started at $(date).\n"
 
 # get file path of script
 # Otherwise, you would need to make sure to call the script from within the
 # directory where it is stored.
-if [ -n "${SLURM_JOB_ID:-}" ] ; then
-    SCRIPT_DIR=$(dirname $(scontrol show job "$SLURM_JOB_ID" | awk -F= '/Command=/{print $2}'))
+if [ -n "${SLURM_JOB_ID:-}" ]; then
+    SCRIPT_DIR=$(dirname "$(scontrol show job "$SLURM_JOB_ID" | awk -F= '/Command=/{print $2}')")
 else
     SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 fi
