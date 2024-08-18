@@ -17,15 +17,14 @@ library("RColorBrewer")
 library("ggfortify")
 library("viridis")
 library("GGally")
-
-setwd("C:/Users/ekattenberg/Documents/Werk_LOCAL/WBC filtration")
+library("here")
 ```
 
 ## SAMPLE INFORMATION
 
 loading the sample information table
 ```{r}
-info<-read.csv("WBCfiltration_RNAseq_samplemap_stats.csv", header = TRUE)
+info<-read.csv(here("./data/intermediate/WBCfiltration_RNAseq_samplemap_stats.csv"), header = TRUE)
 ```
 
 ## LOADING READS AND COUNTS FROM TPM TABLE
@@ -35,10 +34,12 @@ combine countdata for each sample from separate files
 
 ```{r}
 
-ff <- list.files( path = "C:/Users/ekattenberg/Documents/Werk_LOCAL/WBC filtration/TPM_coordsorted/TPM_rawoutput", pattern = "*_TPMCalculator_genes.out", full.names = TRUE )
+# ff <- list.files( path = "C:/Users/ekattenberg/Documents/Werk_LOCAL/WBC filtration/TPM_coordsorted/TPM_rawoutput", pattern = "*_TPMCalculator_genes.out", full.names = TRUE )
+
+ff <- list.files( path = here("./data/intermediate/TPM_rawoutput"), pattern = "*_TPMCalculator_genes.out", full.names = TRUE )
 ```
 
-extra the data and collect as separate dataframes as lists in the object counts.files 
+extract the data and collect as separate dataframes as lists in the object counts.files 
 
 ```{r}
 counts.files <- lapply(ff, read.table, fill = TRUE, header = TRUE )
@@ -60,8 +61,11 @@ TPMcounts <- as.data.frame( sapply( counts.files, function(x) x[ ,7])) #7 for TP
 
 extract the sample names
 ```{r}
-ff <- gsub( "_TPMCalculator_genes[.]out", "", ff )
-ff <- gsub( "C[:]/Users/ekattenberg/Documents/Werk_LOCAL/WBC filtration/TPM_coordsorted/TPM_rawoutput/104974-001-", "", ff )
+gsub(".*-\\d*-\\d*_","",basename(ff))
+
+
+ff1 <- gsub( "_TPMCalculator_genes[.]out", "", ff )
+ff1 <- gsub( "C[:]/Users/ekattenberg/Documents/Werk_LOCAL/WBC filtration/TPM_coordsorted/TPM_rawoutput/104974-001-", "", ff1 )
 ```
 
 load the gene info table
