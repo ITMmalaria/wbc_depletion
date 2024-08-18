@@ -59,6 +59,7 @@ for ref in ${ref_human} ${ref_pk}; do
 done
 
 # run FastQ Screen (threads option is inherited by bwa/bowtie)
+cd "${PROJECT_DIR}" # cd into root dir to allow relative paths in fastq-screen config file to work
 for read in "${fastq_dir}/"*.fastq.gz; do
     fastq_screen \
         --threads "${n_threads}" \
