@@ -1,0 +1,10 @@
+name: wbc_depletion
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - samtools
+  - fastq-screen
+  - bwa
+  - multiqc
+prefix: /data/antwerpen/203/vsc20380/miniforge3/envs/wbc_depletion
