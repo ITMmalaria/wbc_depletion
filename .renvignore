@@ -1,0 +1,3 @@
+# ignore data and results folders
+results/
+data/
