@@ -1,0 +1,241 @@
+---
+title: "WBC depletion methods - expression analysis"
+output: html_notebook
+---
+
+```{r setup}
+knitr::opts_knit$set(root.dir = here::here())
+```
+
+```{r include=FALSE}
+# Since some of the required packages are only available in Bioconductor, 
+# renv needs to be initialised as follows:
+# renv::init(bioconductor = "3.19")
+
+library(BiocManager)
+library(here)
+library(ggplot2)
+library(viridis)
+library(DESeq2)
+library(tximport)
+library(txdbmaker)
+library(vsn)
+library(hexbin)
+library(pheatmap)
+# library(GenomicFeatures)
+library(dplyr) 
+library(readr)
+library(purrr)
+library(stringr)
+```
+
+# TPM and mapping statistics
+
+Read in `salmon` transcript abundance files and samtools/fastq-screen mapping statistics.
+
+<!-- Note: use transcript counts, not gene counts, because `tximport` will perform gene-level aggregation across all samples, instead of per-sample as in `salmon`'s `quant.gene.sf` files. See: https://github.com/COMBINE-lab/salmon/issues/437 
+TODO: also compare with gene counts if using TPM values instead of VST ones -->
+
+```{r include=FALSE}
+df <- list.files(path = here("results/star_salmon/"), pattern = "quant.sf",
+                 recursive=TRUE, full.names = TRUE ) %>%
+  purrr::set_names() %>%
+  purrr::map_dfr(read_delim,
+                 .id = "sample",
+                 col_names = T,
+                 delim = "\t") %>%
+  mutate(sample = basename(dirname(sample)))
+
+mapping_stats <- read_delim(("results/mapping_stats.csv"))
+
+df <- df %>%
+  inner_join(mapping_stats) %>%
+  rename(transcript = Name ) %>%
+  mutate(species = case_when(
+    str_detect(transcript, "PKNH") ~ "pk",
+    .default = "human"
+    )
+  )
+```
+
+# DESeq2 - VST
+
+Read in `salmon` transcript abundance files for human and *P. knowlesi* separately.
+
+Note: use transcript counts, not gene counts, because `tximport` will perform gene-level aggregation across all samples, instead of per-sample as in `salmon`'s `quant.gene.sf` files. See: https://github.com/COMBINE-lab/salmon/issues/437
+
+```{r}
+samples <- read_csv("./data/samplesheet.csv",col_select = c("sample","condition",	"RNA_type",	"library_kit", "removal",	"WBC_depletion", "kit"), col_types = "c")
+
+salmon_quant_files <- paste0("./results/star_salmon/", list.files(path="./results/star_salmon/", pattern = "quant.sf", recursive = TRUE))
+```
+
+<!-- ```{r} -->
+<!-- txdb <- makeTxDbFromGFF(here("./data/ref/concat_GRCh38.14.gencode.46_PkH.PlasmoDB.68.gff.gz"), format="gff3") -->
+<!-- k <- keys(txdb, keytype = "TXNAME") -->
+<!-- # if this step fails, make sure dplyr is not overriding the select() function, -->
+<!-- # see https://github.com/lzcyzm/exomePeak/issues/1 -->
+<!-- tx2gene <- AnnotationDbi::select(txdb, k, "GENEID", "TXNAME") -->
+<!-- txi_concat <- tximport(salmon_quant_files, type="salmon", tx2gene=tx2gene) -->
+<!-- dds_concat <- DESeqDataSetFromTximport(txi_concat, colData = samples, design = ~ 1) -->
+<!-- ``` -->
+
+```{r}
+txdb <- makeTxDbFromGFF(here("./data/ref/gencode.v46.primary_assembly.basic.annotation.gff3.gz"), format="gff3", organism="Homo sapiens")
+k <- keys(txdb, keytype = "TXNAME")
+# if this step fails, make sure dplyr is not overriding the select() function,
+# see https://github.com/lzcyzm/exomePeak/issues/1
+tx2gene <- AnnotationDbi::select(txdb, k, "GENEID", "TXNAME")
+txi_human <- tximport(salmon_quant_files, type="salmon", tx2gene=tx2gene)
+dds_human <- DESeqDataSetFromTximport(txi_human, colData = samples, design = ~ 1)
+```
+
+```{r}
+txdb <- makeTxDbFromGFF("./data/ref/PlasmoDB-68_PknowlesiH.gff", format="gff3", organism="Plasmodium knowlesi")
+k <- keys(txdb, keytype = "TXNAME")
+# if this step fails, make sure dplyr is not overriding the select() function,
+# see https://github.com/lzcyzm/exomePeak/issues/1
+tx2gene <- AnnotationDbi::select(txdb, k, "GENEID", "TXNAME")
+txi_pk <- tximport(salmon_quant_files, type="salmon", tx2gene=tx2gene)
+dds_pk <- DESeqDataSetFromTximport(txi_pk, colData = samples, design = ~ 1)
+                                # , design = ~ condition)
+```
+
+Pre-filtering options:
+
+```{r}
+# see pre-filtering https://www.bioconductor.org/packages/release/bioc/vignettes/DESeq2/inst/doc/DESeq2.html 
+
+smallestGroupSize <- 1
+keep <- rowSums(counts(dds_human) >= 10) >= smallestGroupSize
+before <- length(dds_human)
+dds_human <- dds_human[keep,]
+after <- length(dds_human)
+```
+
+Filtered out `r sum(keep)` human transcripts due to low counts (`r after` out of `r before` remaining).
+
+```{r}
+# see pre-filtering https://www.bioconductor.org/packages/release/bioc/vignettes/DESeq2/inst/doc/DESeq2.html 
+
+keep <- rowSums(counts(dds_pk) >= 10) >= smallestGroupSize
+before <- length(dds_pk)
+dds_pk <- dds_pk[keep,]
+after <- length(dds_pk)
+```
+
+Filtered out `r sum(keep)` *P. knowlesi*  transcripts due to low counts (`r after` out of `r before` remaining).
+
+## Transformations
+
+For more info on blind dispersion estimate (i.e., intercept-only model), see https://www.bioconductor.org/packages/release/bioc/vignettes/DESeq2/inst/doc/DESeq2.html#blind-dispersion-estimation.
+
+>  This setting should be used in order to compare samples in a manner wholly unbiased by the information about experimental groups, for example to perform sample QA (quality assurance) as demonstrated below.
+
+> However, blind dispersion estimation is not the appropriate choice if one expects that many or the majority of genes (rows) will have large differences in counts which are explainable by the experimental design, and one wishes to transform the data for downstream analysis. In this case, using blind dispersion estimation will lead to large estimates of dispersion, as it attributes differences due to experimental design as unwanted noise, and will result in overly shrinking the transformed values towards each other.
+
+In our case, there might be large differences due to "missing" genes, i.e. mRNA vs total RNA. 
+
+### *P. knowlesi*
+
+
+```{r}
+# varianceStabilizingTransformation(dds)
+# logical, whether to blind the transformation to the experimental design. blind=TRUE should be used for comparing samples in a manner unbiased by prior information on samples, for example to perform sample QA (quality assurance). blind=FALSE should be used for transforming data for downstream analysis, where the full use of the design information should be made. blind=FALSE will skip re-estimation of the dispersion trend, if this has already been calculated. If many of genes have large differences in counts due to the experimental design, it is important to set blind=FALSE for downstream analysis.
+
+vsd_blind <- vst(dds_pk, blind=TRUE)
+plotPCA(vsd_blind, intgroup=c("WBC_depletion","removal"))
+plotPCA(vsd_blind, intgroup=c("WBC_depletion","kit"))
+plotPCA(vsd_blind, intgroup=c("condition"))
+plotPCA(vsd_blind, intgroup=c("removal"))
+plotPCA(vsd_blind, intgroup=c("WBC_depletion"))
+plotPCA(vsd_blind, intgroup=c("RNA_type"))
+plotPCA(vsd_blind, intgroup=c("library_kit"))
+plotPCA(vsd_blind, intgroup=c("kit"))
+```
+
+```{r}
+vsd <- vst(dds_pk, blind=FALSE)
+plotPCA(vsd, intgroup=c("WBC_depletion","removal"))
+plotPCA(vsd, intgroup=c("WBC_depletion","kit"))
+plotPCA(vsd, intgroup=c("condition"))
+plotPCA(vsd, intgroup=c("removal"))
+plotPCA(vsd, intgroup=c("WBC_depletion"))
+plotPCA(vsd, intgroup=c("RNA_type"))
+plotPCA(vsd, intgroup=c("library_kit"))
+plotPCA(vsd, intgroup=c("kit"))
+```
+
+ggplot variant:
+
+```{r}
+pcaData <- plotPCA(vsd, intgroup=c("kit","removal"), returnData=TRUE)
+percentVar <- round(100 * attr(pcaData, "percentVar"))
+ggplot(pcaData, aes(PC1, PC2, color=kit, shape=removal)) +
+  geom_point(size=4) +
+  xlab(paste0("PC1: ",percentVar[1],"% variance")) +
+  ylab(paste0("PC2: ",percentVar[2],"% variance")) +
+  coord_fixed() +
+  scale_color_viridis(discrete = TRUE) + theme_bw()
+```
+
+Setting design matrix to main axis of variation, mRNA vs total RNA, does not make a big difference.
+
+```{r}
+dds_pk_rna <- DESeqDataSetFromTximport(txi_pk, colData = samples, design = ~ kit)
+
+keep <- rowSums(counts(dds_pk_rna) >= 10) >= smallestGroupSize
+before <- length(dds_pk_rna)
+dds_pk_rna <- dds_pk_rna[keep,]
+after <- length(dds_pk_rna)
+
+vsd <- vst(dds_pk_rna, blind=FALSE)
+
+pcaData <- plotPCA(vsd, intgroup=c("kit","removal"), returnData=TRUE)
+percentVar <- round(100 * attr(pcaData, "percentVar"))
+ggplot(pcaData, aes(PC1, PC2, color=kit, shape=removal)) +
+  geom_point(size=4) +
+  xlab(paste0("PC1: ",percentVar[1],"% variance")) +
+  ylab(paste0("PC2: ",percentVar[2],"% variance")) +
+  coord_fixed() +
+  scale_color_viridis(discrete = TRUE) + theme_bw()
+```
+
+Using rlog instead of vst looks fairly similar overall.
+
+```{r}
+rld <- rlog(dds_pk_rna, blind=FALSE)
+
+pcaData <- plotPCA(rld, intgroup=c("kit","removal"), returnData=TRUE)
+percentVar <- round(100 * attr(pcaData, "percentVar"))
+ggplot(pcaData, aes(PC1, PC2, color=kit, shape=removal)) +
+  geom_point(size=4) +
+  xlab(paste0("PC1: ",percentVar[1],"% variance")) +
+  ylab(paste0("PC2: ",percentVar[2],"% variance")) +
+  coord_fixed() +
+  scale_color_viridis(discrete = TRUE) + theme_bw()
+```
+
+Comparing transformation strategies more in-depth:
+
+```{r}
+vsn::meanSdPlot(assay(vsd))
+vsn::meanSdPlot(assay(rld))
+```
+
+
+Heatmaps
+
+```{r}
+select <- order(rowMeans(counts(dds_pk,normalized=FALSE)),
+                decreasing=TRUE)[1:20]
+df <- as.data.frame(colData(dds_pk)[,c("kit")])
+
+pheatmap(assay(vsd)[select,], cluster_rows=FALSE, show_rownames=TRUE,
+         cluster_cols=FALSE, annotation_col=df)
+```
+
+
+### Human
+
+Repeat above analyses...
