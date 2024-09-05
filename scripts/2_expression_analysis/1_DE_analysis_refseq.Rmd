@@ -27,13 +27,13 @@ library(txdbmaker)
 library(vsn)
 library(hexbin)
 library(pheatmap)
-# library(GenomicFeatures)
 library(dplyr)
 library(tidyr)
 library(readr)
 library(purrr)
 library(stringr)
 library(GGally)
+# library(GenomicFeatures)
 
 ggplot2::theme_set(theme_bw())
 ```
@@ -45,7 +45,7 @@ ggplot2::theme_set(theme_bw())
 ```{r}
 # read in fastq screen files
 fastq_screen <- list.files(
-  path = here("results/fastq-screen"), pattern = "_screen.txt",
+  path = here("results-refseq/fastq-screen"), pattern = "_screen.txt",
   recursive = TRUE, full.names = TRUE
 ) %>%
   read_delim(skip = 1, delim = "\t", n_max = 2, id = "read", show_col_types = FALSE) %>%
@@ -63,7 +63,7 @@ fastq_screen <- fastq_screen %>%
   rename_with(~ str_replace(.x, "#", ""), .cols = starts_with("%"))
 
 # read in flagstat and metadata file and join with fastq screen df
-mapping_stats_df <- read_delim((here("results/mapping_stats.csv")), col_types = list(sample = "factor")) %>%
+mapping_stats_df <- read_delim((here("results-refseq/mapping_stats.csv")), col_types = list(sample = "factor")) %>%
   mutate(primary_mapped_human = primary_mapped_all - primary_mapped_pk) %>%
   mutate(primary_mapped_human = primary_mapped_all - primary_mapped_pk)
 
@@ -83,7 +83,7 @@ For `tximport`, there are still several different ways of creating count matrice
 samples <- read_csv(here("./data/samplesheet.csv"), col_select = c("sample", "condition", "RNA_type", "library_kit", "removal", "WBC_depletion", "kit"), col_types = "c")
 
 # read in transcript info - transcript id, gene id and genes names
-transcript_info <- read.csv(here("results/star_salmon/tx2gene.tsv"),
+transcript_info <- read.csv(here("results-refseq/star_salmon/tx2gene.tsv"),
   sep = "\t", header = FALSE,
   col.names = c("tx", "gene_id", "gene_name")
 )
@@ -95,7 +95,7 @@ transcript_info <- list(
 
 # salmon quant.genes.sf gene counts
 salmon_gene_counts <- list.files(
-  path = here("results/star_salmon"), pattern = "quant.genes.sf",
+  path = here("results-refseq/star_salmon"), pattern = "quant.genes.sf",
   recursive = TRUE, full.names = TRUE
 ) %>%
   read_delim(id = "sample") %>%
@@ -105,7 +105,7 @@ salmon_gene_counts <- list.files(
 
 # salmon quant.sf transcript counts
 salmon_transcript_counts <- list.files(
-  path = here("results/star_salmon"), pattern = "quant.sf",
+  path = here("results-refseq/star_salmon"), pattern = "quant.sf",
   recursive = TRUE, full.names = TRUE
 ) %>%
   read_delim(id = "sample") %>%
@@ -114,35 +114,22 @@ salmon_transcript_counts <- list.files(
   left_join(transcript_info$gene, by = "gene_id")
 
 # txi gene-level TPM abundances
-gene_tpm <- read_delim(here("results/star_salmon/salmon.merged.gene_tpm.tsv"))
+gene_tpm <- read_delim(here("results-refseq/star_salmon/salmon.merged.gene_tpm.tsv"))
 
 # txi gene-level library-scaled counts
-gene_counts_scaled <- read_delim(here("results/star_salmon/salmon.merged.gene_counts_scaled.tsv"))
+gene_counts_scaled <- read_delim(here("results-refseq/star_salmon/salmon.merged.gene_counts_scaled.tsv"))
 
 # txi gene-level length + library scaled counts
-gene_counts_length_scaled <- read_delim(here("results/star_salmon/salmon.merged.gene_counts_length_scaled.tsv"))
+gene_counts_length_scaled <- read_delim(here("results-refseq/star_salmon/salmon.merged.gene_counts_length_scaled.tsv"))
 ```
 
 The final variant is the DESeq2 approach using `vst` (variance stabilizing transformation) on the raw counts (see [DESeq2 vignette](https://bioconductor.org/packages/devel/bioc/vignettes/DESeq2/inst/doc/DESeq2.html#data-transformations-and-visualization). The main goal of this transformation is to remove the dependence of the variance on the mean. However, since we have many zero counts (e.g., rRNA being depleted in some samples), the transformation might not work as well as intended.
 
 ```{r message=FALSE}
 # txi original counts + offset - to be used with deseq2's vst/rlog transform
-salmon_quant_files <- paste0("./results/star_salmon/", list.files(path = "./results/star_salmon/", pattern = "quant.sf", recursive = TRUE))
+salmon_quant_files <- paste0("./results-refseq/star_salmon/", list.files(path = "./results-refseq/star_salmon/", pattern = "quant.sf", recursive = TRUE))
 
-# txi <- tximport(salmon_quant_files, type="salmon", txOut = TRUE)
-# se <- SummarizedExperiment(assays = list(counts = txi[["counts"]], abundance =  txi[["abundance"]], length = txi[["length"]]),
-#         colData = samples,
-#         rowData = transcript_info$transcript)
-# tx2gene <- transcript_info$tx2gene
-# gi <- summarizeToGene(txi, tx2gene = tx2gene)
-# gene_info <- transcript_info$gene[match(rownames(gi[[1]]), transcript_info$gene[["gene_id"]]),]
-# rownames(gene_info) <- gene_info[["tx"]]
-# gse <- SummarizedExperiment(assays = list(counts = gi[["counts"]], abundance = gi[["abundance"]], length = gi[["length"]]),
-#         colData = samples,
-#         rowData = transcript_info$gene)
-# gene_counts_vst <- data.frame(cbind(rowData(gse)[,1:2], assays(gse)[["counts"]]))
-# colnames(gene_counts_vst) <- colData(gse)$sample
-
+# all genes
 txi <- tximport(salmon_quant_files, type = "salmon", tx2gene = transcript_info$tx2gene, txOut = FALSE)
 # samples_coldata <- as.data.frame(samples)
 # row.names(samples_coldata) <- samples_coldata$sample
@@ -151,8 +138,8 @@ vsd <- vst(gse, blind = TRUE)
 meanSdPlot(assay(vsd))
 gene_counts_vst <- data.frame(assays(vsd)[[1]])
 colnames(gene_counts_vst) <- colData(gse)$sample
-gene_counts_vst <- gene_counts_vst %>% 
-  mutate(gene_id = rownames(gene_counts_vst)) %>% 
+gene_counts_vst <- gene_counts_vst %>%
+  mutate(gene_id = rownames(gene_counts_vst)) %>%
   left_join(transcript_info$gene, by = "gene_id")
 
 # Pk only
@@ -161,14 +148,13 @@ txi_pk <- tximport(salmon_quant_files,
   tx2gene = transcript_info$tx2gene %>% filter(str_detect(gene_id, "PKNH")),
   txOut = FALSE
 )
-# gse_pk <- DESeqDataSetFromTximport(txi_pk, colData = samples, design = ~1, rowData = transcript_info$gene %>% filter(str_detect(gene_id, "PKNH")))
 gse_pk <- DESeqDataSetFromTximport(txi_pk, colData = samples, design = ~1)
 vsd_pk <- vst(gse_pk, blind = TRUE)
 meanSdPlot(assay(vsd_pk))
 gene_counts_vst_pk <- data.frame(assays(vsd_pk)[[1]])
 colnames(gene_counts_vst_pk) <- colData(vsd_pk)$sample
-gene_counts_vst_pk <- gene_counts_vst_pk %>% 
-  mutate(gene_id = rownames(gene_counts_vst_pk)) %>% 
+gene_counts_vst_pk <- gene_counts_vst_pk %>%
+  mutate(gene_id = rownames(gene_counts_vst_pk)) %>%
   left_join(transcript_info$gene, by = "gene_id")
 
 # clean up
@@ -187,8 +173,8 @@ vsd_filtered <- vst(gse_filtered, blind = TRUE)
 meanSdPlot(assay(vsd_filtered))
 gene_counts_vst_filtered <- data.frame(assays(vsd_filtered)[[1]])
 colnames(gene_counts_vst_filtered) <- colData(vsd_filtered)$sample
-gene_counts_vst_filtered <- gene_counts_vst_filtered %>% 
-  mutate(gene_id = rownames(gene_counts_vst_filtered)) %>% 
+gene_counts_vst_filtered <- gene_counts_vst_filtered %>%
+  mutate(gene_id = rownames(gene_counts_vst_filtered)) %>%
   left_join(transcript_info$gene, by = "gene_id")
 
 # filter pk vst counts
@@ -198,8 +184,8 @@ vsd_pk_filtered <- vst(gse_pk_filtered, blind = TRUE)
 meanSdPlot(assay(vsd_pk_filtered))
 gene_counts_vst_pk_filtered <- data.frame(assays(vsd_pk_filtered)[[1]])
 colnames(gene_counts_vst_pk_filtered) <- colData(vsd_pk_filtered)$sample
-gene_counts_vst_pk_filtered <- gene_counts_vst_pk_filtered %>% 
-  mutate(gene_id = rownames(gene_counts_vst_pk_filtered)) %>% 
+gene_counts_vst_pk_filtered <- gene_counts_vst_pk_filtered %>%
+  mutate(gene_id = rownames(gene_counts_vst_pk_filtered)) %>%
   left_join(transcript_info$gene, by = "gene_id")
 ```
 
@@ -209,7 +195,7 @@ The number of genes were filtered down from `r dim(gse)[1]`  to `r dim(gse_filte
 
 ```{r}
 dim(gene_tpm)
-mean.tpm <- apply(gene_tpm[,3:18], 1, mean)
+mean.tpm <- apply(gene_tpm[, 3:18], 1, mean)
 hist(log10(mean.tpm))
 # hist(log10(mean.tpm+1e-5))
 ```
@@ -235,26 +221,9 @@ gene_counts_vst_pk <- add_species(gene_counts_vst_pk)
 gene_counts_vst_filtered <- add_species(gene_counts_vst_filtered)
 gene_counts_vst_pk_filtered <- add_species(gene_counts_vst_pk_filtered)
 
-# gene_counts_rld <- add_species(gene_counts_rld)
-# gene_counts_ntd <- add_species(gene_counts_ntd)
-
 # df_list <- list(salmon_gene_counts, salmon_transcript_counts, gene_tpm, gene_counts_scaled, gene_counts_length_scaled)
 # lapply(seq_along(df_list), function(n) add_species(df_list[[n]]))
 # l <- df_list %>% lapply( add_species )
-
-# salmon_gene_counts <- salmon_gene_counts %>%
-#   mutate(species = case_when(
-#     str_detect(gene_id, "PKNH") ~ "pk",
-#     .default = "human"
-#     )
-#   )
-#
-# gene_counts_length_scaled <- gene_counts_length_scaled %>%
-#   mutate(species = case_when(
-#     str_detect(gene_id, "PKNH") ~ "pk",
-#     .default = "human"
-#     )
-#   )
 ```
 
 ## Annotating rRNA and globin genes
@@ -304,43 +273,43 @@ For RefSeq:
 - Mitochondrial `RNR1/2` are high across all samples
 - ...
 
-(Checked using `awk -F';' '$1 ~ /human_rRNA/ {print $2}' data/ref-refseq-refseq/gene_types.csv | while read -r line; do echo "$line"; grep "${line}" results/star_salmon/tx2gene.tsv; grep "$line" results-refseq/star_salmon/**/quant.gene*; done`)
+(Checked using `awk -F';' '$1 ~ /human_rRNA/ {print $2}' data/ref-refseq-refseq/gene_types.csv | while read -r line; do echo "$line"; grep "${line}" results-refseq/star_salmon/tx2gene.tsv; grep "$line" results-refseq/star_salmon/**/quant.gene*; done`)
 
 See tables below for a full breakdown:
 
 ```{r message=FALSE}
-gene_types_df <- read_csv2(here("data/ref/gene_types.csv")) %>% left_join(transcript_info$gene, by = "gene_id")
+gene_types_df <- read_csv2(here("data/ref-refseq-refseq/gene_types.csv")) %>% left_join(transcript_info$gene, by = "gene_id")
 
 knitr::kable(
   gene_types_df %>%
     filter((gene_type == "human_rRNA") | (gene_type == "Mt_rRNA")) %>%
     left_join(gene_tpm, by = c("gene_id", "gene_name")) %>%
     filter(rowSums(across(starts_with("X"))) != 0),
-  caption = "Non-zero counts of human rRNA genes annotated in GENCODE"
+  caption = "Non-zero counts of human rRNA genes annotated in RefSeq"
 )
 
-# check if RefSeq results are also present in directory
-if (file.exists(here("data/ref-refseq-refseq/gene_types.csv"))) {
-  transcript_info_refseq <- read.csv(here("results-refseq/star_salmon/tx2gene.tsv"),
+# check if GENCODE results are also present in directory
+if (file.exists(here("data/ref/gene_types.csv"))) {
+  transcript_info_gencode <- read.csv(here("results/star_salmon/tx2gene.tsv"),
     sep = "\t", header = FALSE,
     col.names = c("tx", "gene_id", "gene_name")
   )
-  transcript_info_refseq <- list(
-    transcript = transcript_info_refseq,
-    gene = unique(transcript_info_refseq[, 2:3]),
-    tx2gene = transcript_info_refseq[, 1:2]
+  transcript_info_gencode <- list(
+    transcript = transcript_info_gencode,
+    gene = unique(transcript_info_gencode[, 2:3]),
+    tx2gene = transcript_info_gencode[, 1:2]
   )
-  gene_types_refseq_df <- read_csv2(here("data/ref-refseq-refseq/gene_types.csv")) %>%
-    left_join(transcript_info_refseq$gene, by = "gene_id")
-  gene_tpm_refseq <- read_delim(here("results-refseq/star_salmon/salmon.merged.gene_tpm.tsv"))
+  gene_types_gencode_df <- read_csv2(here("data/ref/gene_types.csv")) %>%
+    left_join(transcript_info_gencode$gene, by = "gene_id")
 
+  gene_tpm_gencode <- read_delim(here("results/star_salmon/salmon.merged.gene_tpm.tsv"))
 
   knitr::kable(
-    gene_types_refseq_df %>%
+    gene_types_gencode_df %>%
       filter((gene_type == "human_rRNA") | (gene_type == "Mt_rRNA")) %>%
-      left_join(gene_tpm_refseq, by = c("gene_id", "gene_name")) %>%
+      left_join(gene_tpm_gencode, by = c("gene_id", "gene_name")) %>%
       filter(rowSums(across(starts_with("X"))) != 0),
-    caption = "Non-zero counts of human rRNA genes annotated in RefSeq"
+    caption = "Non-zero counts of human rRNA genes annotated in GENCODE"
   )
 }
 ```
@@ -501,7 +470,7 @@ globin_df <- tibble(gene_name = globin_names, gene_type = "human_globin") %>% le
 
 gene_types_df <- gene_types_df %>% bind_rows(globin_df)
 
-write_csv2(gene_types_df, here("data/ref/gene_types_R.csv"))
+write_csv2(gene_types_df, here("data/ref-refseq-refseq/gene_types_R.csv"))
 
 # gene_types_df %>%
 #     group_by(gene_name) %>%
@@ -989,29 +958,212 @@ Try to use https://nf-co.re/rnaseq/1.1/docs/output#featurecounts?
 
 ## Gene recovery
 
+**TODO: optionally repeat using low-count filtered gene lists.**
+
+### All genes
+
+
 ```{r}
+# create binary matrices with presence/absence of genes
+# rename sample names to format in sample info df
+gene_tpm_binary <- gene_tpm %>%
+  mutate(across(.cols = starts_with("X"), .fns = ~ .x > 0)) %>%
+  select(!c(gene_name, gene_type, species)) %>%
+  rename_with(~ str_replace_all(string = ., pattern = "\\.", replacement = "-"), starts_with("X")) %>%
+  rename_with(~ str_sub(., 2, -1), starts_with("X"))
+
+gene_tpm_pk_binary <- gene_tpm %>%
+  mutate(across(.cols = starts_with("X"), .fns = ~ .x > 0)) %>%
+  filter(species == "pk") %>%
+  select(!c(gene_name, gene_type, species)) %>%
+  rename_with(~ str_replace_all(string = ., pattern = "\\.", replacement = "-"), starts_with("X")) %>%
+  rename_with(~ str_sub(., 2, -1), starts_with("X"))
+
+gene_tpm_binary_list <- purrr::set_names(colnames(gene_tpm_binary %>% select(starts_with("104974")))) %>%
+  purrr::imap(~ gene_tpm_binary$gene_id[gene_tpm_binary[, .x, drop = T]])
+
+gene_tpm_pk_binary_list <- purrr::set_names(colnames(gene_tpm_pk_binary %>% select(starts_with("104974")))) %>%
+  purrr::imap(~ gene_tpm_pk_binary$gene_id[gene_tpm_pk_binary[, .x, drop = T]])
+
+# gene_tpm_binary_list <- lapply(colnames(gene_tpm_binary %>%
+#   select(starts_with("x"))), function(x) {
+#   gene_tpm_binary$gene_id[gene_tpm_binary[, x, drop = T]]
+# })
+#
+# gene_tpm_pk_binary_list <- lapply(colnames(gene_tpm_pk_binary %>%
+#   select(starts_with("x"))), function(x) {
+#   gene_tpm_pk_binary$gene_id[gene_tpm_pk_binary[, x, drop = T]]
+# })
+
+comparison_centpip <- samples %>%
+  filter(WBC_depletion == "centpip") %>%
+  select(sample)
+
+comparison_plasmo <- samples %>%
+  filter(WBC_depletion == "plasmo") %>%
+  select(sample)
+
+comparison_pmacs <- samples %>%
+  filter(WBC_depletion == "pmacs") %>%
+  select(sample)
+
+comparison_cellulose <- samples %>%
+  filter(WBC_depletion == "cellulose") %>%
+  select(sample)
+
+draw_venn <- function(set_list, names, title, output) {
+  VennDiagram::venn.diagram(
+  x = set_list,
+  category.names = names,
+  # Circles
+  lwd = 2,
+  # lty = "blank",
+  # col = palette.colors(3),
+  # fill = palette.colors(3),
+  # col = hcl.colors(3, palette = "viridis", alpha = 0.9),
+  # fill = hcl.colors(3, palette = "viridis", alpha = 0.4),
+  col = hcl.colors(3, palette = "Set 2", alpha = 0.9),
+  fill = hcl.colors(3, palette = "Set 2", alpha = 0.4),
+  
+  # Numbers
+  cex = .9,
+  fontface = "bold",
+  fontfamily = "sans",
+
+  # Set names
+  cat.cex = 0.9,
+  cat.fontface = "bold",
+  cat.default.pos = "outer",
+  cat.pos = c(-20, 20, 135),
+  cat.dist = c(0.055, 0.055, 0.11),
+  cat.fontfamily = "sans",
+  rotation = 1,
+
+  # title
+  main = title,
+  main.cex = 1.1,
+  main.fontface = "bold",
+  main.fontfamily	= "sans",
+  
+  # output features
+  height = 1200,
+  width = 1200,
+  resolution = 300,
+  compression = "lzw",
+  filename = output,
+  output = TRUE
+)
+}
+
+v <- draw_venn(gene_tpm_binary[comparison_centpip$sample],
+               c("mRNA Qiagen - FSglob", "tRNA Qiagen - FSglobH", "mRNA Illumina"),
+               "Centpip",
+               "venn-centpip.png")
+v
+
+v <- draw_venn(gene_tpm_binary[comparison_plasmo$sample],
+               c("mRNA Qiagen - Fsglob", "tRNA Qiagen - FSglobH", "mRNA Illumina"),
+               "Plasmo",
+               "venn-plasmo.png")
+v
+
+v <- draw_venn(gene_tpm_binary[comparison_pmacs$sample],
+               c("mRNA Qiagen - FSglob", "tRNA Qiagen - FSglobH", "mRNA Illumina"),
+               "Pmacs",
+               "venn-pmacs.png")
+v
+
+v <- draw_venn(gene_tpm_binary[comparison_cellulose$sample],
+               c("mRNA Qiagen - FSglob", "tRNA Qiagen - FSglobH", "mRNA Illumina"),
+               "Cellulose",
+               "venn-cellulose.png")
+v
+
+
 # 
-# gene_tpm_overlap <- gene_tpm %>% mutate(across(.cols = starts_with("X"), .fns = ~.x > 0)) %>% select(!c(gene_name, gene_type, species))
+# p <- VennDiagram::venn.diagram(
+#   x = gene_tpm_pk_binary_list[comparison_centpip$sample],
+#   category.names = c("mRNA Qiagen - FSglob", "tRNA Qiagen - FSglobH", "mRNA Illumina"),
+#   # Circles
+#   lwd = 2,
+#   # lty = "blank",
+#   # col = palette.colors(3),
+#   # fill = palette.colors(3),
+#   # col = hcl.colors(3, palette = "viridis", alpha = 0.9),
+#   # fill = hcl.colors(3, palette = "viridis", alpha = 0.4),
+#   col = hcl.colors(3, palette = "Set 2", alpha = 0.9),
+#   fill = hcl.colors(3, palette = "Set 2", alpha = 0.4),
+#   
+#   # Numbers
+#   cex = .9,
+#   fontface = "bold",
+#   fontfamily = "sans",
 # 
-# # recovered_genes_list <- lapply(colnames(gene_tpm_overlap %>% select(starts_with("x"))), function(x) gene_tpm_overlap$gene_id[gene_tpm_overlap[,x,drop=T]])
+#   # Set names
+#   cat.cex = 0.9,
+#   cat.fontface = "bold",
+#   cat.default.pos = "outer",
+#   cat.pos = c(-20, 20, 135),
+#   cat.dist = c(0.055, 0.055, 0.11),
+#   cat.fontfamily = "sans",
+#   rotation = 1,
 # 
-# # too many groups
-# # VennDiagram::venn.diagram(
-# #   x = recovered_genes_list,
-# #   filename = "venn.png",
-# #   output = TRUE
-# # )
+#   # output features
+#   height = 1200,
+#   width = 1200,
+#   resolution = 300,
+#   compression = "lzw",
+#   filename = "venn.png",
+#   output = TRUE
+# )
+# grid::grid.newpage()
+# grid::grid.draw(p)
+```
+
+### *P. knowlesi* genes only
+
+```{r}
+v <- draw_venn(gene_tpm_pk_binary_list[comparison_centpip$sample],
+               c("mRNA Qiagen - FSglob", "tRNA Qiagen - FSglobH", "mRNA Illumina"),
+               "Centpip",
+               "venn-centpip_pf.png")
+v
+
+v <- draw_venn(gene_tpm_pk_binary_list[comparison_plasmo$sample],
+               c("mRNA Qiagen - Fsglob", "tRNA Qiagen - FSglobH", "mRNA Illumina"),
+               "Plasmo",
+               "venn-plasmo_pf.png")
+v
+
+v <- draw_venn(gene_tpm_pk_binary_list[comparison_pmacs$sample],
+               c("mRNA Qiagen - FSglob", "tRNA Qiagen - FSglobH", "mRNA Illumina"),
+               "Pmacs",
+               "venn-pmacs_pf.png")
+v
+
+v <- draw_venn(gene_tpm_pk_binary_list[comparison_cellulose$sample],
+               c("mRNA Qiagen - FSglob", "tRNA Qiagen - FSglobH", "mRNA Illumina"),
+               "Cellulose",
+               "venn-cellulose_pf.png")
+v
+```
+
+```{r}
+
+
 # 
-# gene_tpm_overlap <- gene_tpm_overlap %>% mutate(across(.cols = starts_with("X"), ~+as.logical(.x)))
+# gene_tpm_overlap <- gene_tpm_overlap %>% mutate(across(.cols = starts_with("X"), ~ +as.logical(.x)))
 # 
-# UpSetR::upset(gene_tpm_overlap[,2:4])
-# 
-# 
+# # UpSetR::upset(gene_tpm_overlap[,2:4])
 # 
 # 
 # 
-# purrr::map(gene_tpm_overlap %>% select(starts_with("x")), 
-#           ~ gene_tpm_overlap$gene_id[.x,] )
+# 
+# 
+# purrr::map(
+#   gene_tpm_overlap %>% select(starts_with("x")),
+#   ~ gene_tpm_overlap$gene_id[.x, ]
+# )
 # 
 # l <- lapply(gene_tpm_overlap %>% select(starts_with("x")), set)
 # 
@@ -1032,6 +1184,8 @@ Try to use https://nf-co.re/rnaseq/1.1/docs/output#featurecounts?
 # gene_tpm_long %>% filter(counts > 0)
 ```
 
+
+
 ## Coverage statistics
 
 ```{r}
@@ -1046,16 +1200,16 @@ mapping_stats_df
 
 ```{r message=FALSE}
 # subset of samples for quick visualisation tests
-# co_genes <- ggpairs(gene_tpm %>% filter(species == "pk"), columns = 3:5, lower = list(
-#   continuous = "smooth"
-# ), upper = list(continuous = wrap("cor", size = 2)))
-# co_genes + theme_bw() + scale_x_continuous(trans = "log1p") + scale_y_continuous(trans = "log1p")
-
-# all samples
-co_genes <- ggpairs(gene_tpm %>% filter(species == "pk"), columns = 3:18, lower = list(
+co_genes <- ggpairs(gene_tpm %>% filter(species == "pk"), columns = 3:5, lower = list(
   continuous = "smooth"
 ), upper = list(continuous = wrap("cor", size = 2)))
 co_genes + theme_bw() + scale_x_continuous(trans = "log1p") + scale_y_continuous(trans = "log1p")
+
+# all samples
+# co_genes <- ggpairs(gene_tpm %>% filter(species == "pk"), columns = 3:18, lower = list(
+#   continuous = "smooth"
+# ), upper = list(continuous = wrap("cor", size = 2)))
+# co_genes + theme_bw() + scale_x_continuous(trans = "log1p") + scale_y_continuous(trans = "log1p")
 ```
 
 #### Protein-coding genes
@@ -1064,14 +1218,13 @@ Extract general gene types from GFF file:
 
 ```{r message=FALSE}
 # https://stackoverflow.com/questions/63969719/tidyr-separate-a-column-into-a-variable-number-of-columns
-gff <- read_delim(here("data/ref/PlasmoDB-68_PknowlesiH.gff"), comment = "#", col_names = c("seqname", "source", "feature", "start", "end", "score", "strand", "frame", "attribute")) %>%
+gff <- read_delim(here("data/ref-refseq-refseq/GCF_000006355.2_GCA_000006355.2_genomic.gff"), comment = "#", col_names = c("seqname", "source", "feature", "start", "end", "score", "strand", "frame", "attribute")) %>%
   mutate(id = row_number()) %>%
   separate_rows(attribute, sep = ";") %>%
-  # filter(attribute ~ "ebi_biotype")
   separate(attribute, c("attribute", "attribute_value"), sep = "=") %>%
   pivot_wider(names_from = attribute, values_from = attribute_value) %>%
-  filter(!is.na(ebi_biotype)) %>%
-  select(c(feature, ID)) %>%
+  filter(!is.na(gene_biotype)) %>%
+  select(c(gene_biotype, ID)) %>%
   rename(gene_id = ID) %>%
   left_join(transcript_info$gene, by = "gene_id")
 ```
@@ -1222,7 +1375,7 @@ Note: use transcript counts, not gene counts, because `tximport` will perform ge
 ```{r}
 samples <- read_csv("./data/samplesheet.csv", col_select = c("sample", "condition", "RNA_type", "library_kit", "removal", "WBC_depletion", "kit"), col_types = "c")
 
-salmon_quant_files <- paste0("./results/star_salmon/", list.files(path = "./results/star_salmon/", pattern = "quant.sf", recursive = TRUE))
+salmon_quant_files <- paste0("./results-refseq/star_salmon/", list.files(path = "./results-refseq/star_salmon/", pattern = "quant.sf", recursive = TRUE))
 ```
 
 <!-- ```{r} -->
@@ -1236,7 +1389,7 @@ salmon_quant_files <- paste0("./results/star_salmon/", list.files(path = "./resu
 <!-- ``` -->
 
 ```{r}
-txdb <- makeTxDbFromGFF(here("./data/ref/gencode.v46.primary_assembly.basic.annotation.gff3.gz"), format = "gff3", organism = "Homo sapiens")
+txdb <- makeTxDbFromGFF(here("./data/ref-refseq-refseq/GCF_000001405.40_GRCh38.p14_genomic.gff.gz"), format = "gff3", organism = "Homo sapiens")
 k <- keys(txdb, keytype = "TXNAME")
 # if this step fails, make sure dplyr is not overriding the select() function,
 # see https://github.com/lzcyzm/exomePeak/issues/1
@@ -1246,7 +1399,7 @@ dds_human <- DESeqDataSetFromTximport(txi_human, colData = samples, design = ~1)
 ```
 
 ```{r}
-txdb <- makeTxDbFromGFF("./data/ref/PlasmoDB-68_PknowlesiH.gff", format = "gff3", organism = "Plasmodium knowlesi")
+txdb <- makeTxDbFromGFF("./data/ref-refseq-refseq/GCF_000006355.2_GCA_000006355.2_genomic.gff.gz", format = "gff3", organism = "Plasmodium knowlesi")
 k <- keys(txdb, keytype = "TXNAME")
 # if this step fails, make sure dplyr is not overriding the select() function,
 # see https://github.com/lzcyzm/exomePeak/issues/1
