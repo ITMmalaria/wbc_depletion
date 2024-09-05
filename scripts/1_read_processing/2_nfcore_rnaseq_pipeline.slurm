@@ -37,7 +37,7 @@ PROJECT_ROOT=$(realpath "${SCRIPT_DIR}/../../")
 #     --trimmer trimgalore \
 #     --extra_salmon_quant_args '--seqBias --gcBias' \
 #     --skip_biotype_qc \
-#     -c "${PROJECT_ROOT}/scripts/1_read_processing/STAR_ALIGN-onepass.config" \
+#     -c "${PROJECT_ROOT}/config/STAR_ALIGN-onepass.config" \
 #     -profile vsc_calcua \
 #     -ansi-log false \
 #     --save_reference
