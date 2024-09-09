@@ -33,12 +33,28 @@ library(readr)
 library(purrr)
 library(stringr)
 library(GGally)
+library(VennDiagram)
+library(UpSetR)
 # library(GenomicFeatures)
 
 ggplot2::theme_set(theme_bw())
 ```
 
 # Data import
+
+**If the RDS objects have already been created in a previous run, the following cell can be uncommented and run, and the remaining cells in the data import section can be skipped. See [RDS object section](#rds-objects)).**
+
+```{r message = FALSE}
+# data_list <- list.files(path = here("results-refseq/r_objects"),
+#                         pattern = ".RDS",
+#                         recursive = TRUE, full.names = TRUE) %>% 
+#   set_names(., str_remove(basename(.), ".RDS")) %>% 
+#   purrr::imap(~ readRDS(file = .x ))
+# 
+# list2env(data_list, .GlobalEnv)
+# rm(data_list)
+```
+
 
 ## Read in fastq-screen and mapping statistics
 
@@ -167,7 +183,7 @@ The raw counts can optionally be pre-filtered, e.g. to a minimum of 10 reads per
 ```{r message=FALSE}
 # filter all vst counts
 smallestGroupSize <- 1
-keep <- rowSums(counts(gse) >= 1) >= smallestGroupSize
+keep <- rowSums(counts(gse) >= 10) >= smallestGroupSize
 gse_filtered <- gse[keep, ]
 vsd_filtered <- vst(gse_filtered, blind = TRUE)
 meanSdPlot(assay(vsd_filtered))
@@ -178,7 +194,7 @@ gene_counts_vst_filtered <- gene_counts_vst_filtered %>%
   left_join(transcript_info$gene, by = "gene_id")
 
 # filter pk vst counts
-keep <- rowSums(counts(gse_pk) >= 1) >= smallestGroupSize
+keep <- rowSums(counts(gse_pk) >= 10) >= smallestGroupSize
 gse_pk_filtered <- gse_pk[keep, ]
 vsd_pk_filtered <- vst(gse_pk_filtered, blind = TRUE)
 meanSdPlot(assay(vsd_pk_filtered))
@@ -191,13 +207,20 @@ gene_counts_vst_pk_filtered <- gene_counts_vst_pk_filtered %>%
 
 The number of genes were filtered down from `r dim(gse)[1]`  to `r dim(gse_filtered)[1]` and from `r dim(gse_pk)[1]` to `r dim(gse_pk_filtered)[1]`, for all genes and *P. knowlesi* genes respectively (only for VST transformed counts, not for the TPM or other count matrices). So in conclusion, the effect is relatively minor for *P. knowlesi*, but for all reads a substantial number of low counts are removed.
 
-**TODO: perhaps it would be useful to also filter the TPM counts, but what threshold should be used? We could also filter on the raw count level, and only retain those genes in the TPM matrix.**
+**TODO: It is difficult to determine an appropriate threshold for filtering on the TPM level, so instead we filter on the raw count level (>10 per sample), and only retain those genes in the TPM matrix. The same is done for the raw counts.**
 
 ```{r}
 dim(gene_tpm)
 mean.tpm <- apply(gene_tpm[, 3:18], 1, mean)
 hist(log10(mean.tpm))
 # hist(log10(mean.tpm+1e-5))
+
+gene_tpm_filtered <- gene_tpm %>% inner_join(gene_counts_vst_filtered %>% select("gene_id"), by = "gene_id")
+dim(gene_tpm_filtered)
+mean.tpm <- apply(gene_tpm_filtered[, 3:18], 1, mean)
+hist(log10(mean.tpm))
+
+salmon_gene_counts_filtered <- salmon_gene_counts %>% inner_join(gene_counts_vst_filtered %>% select("gene_id"), by = "gene_id")
 ```
 
 Split datasets into *P. knowlesi* and human subsets:
@@ -212,8 +235,10 @@ add_species <- function(data) {
 }
 
 salmon_gene_counts <- add_species(salmon_gene_counts)
+salmon_gene_counts_filtered <- add_species(salmon_gene_counts_filtered)
 salmon_transcript_counts <- add_species(salmon_transcript_counts)
 gene_tpm <- add_species(gene_tpm)
+gene_tpm_filtered <- add_species(gene_tpm_filtered)
 gene_counts_scaled <- add_species(gene_counts_scaled)
 gene_counts_length_scaled <- add_species(gene_counts_length_scaled)
 gene_counts_vst <- add_species(gene_counts_vst)
@@ -488,8 +513,10 @@ annotate_gene_type <- function(data, gene_types) {
 }
 
 salmon_gene_counts <- annotate_gene_type(salmon_gene_counts, gene_types_df)
+salmon_gene_counts_filtered <- annotate_gene_type(salmon_gene_counts_filtered, gene_types_df)
 salmon_transcript_counts <- annotate_gene_type(salmon_transcript_counts, gene_types_df)
 gene_tpm <- annotate_gene_type(gene_tpm, gene_types_df)
+gene_tpm_filtered <- annotate_gene_type(gene_tpm_filtered, gene_types_df)
 gene_counts_scaled <- annotate_gene_type(gene_counts_scaled, gene_types_df)
 gene_counts_length_scaled <- annotate_gene_type(gene_counts_length_scaled, gene_types_df)
 gene_counts_vst <- annotate_gene_type(gene_counts_vst, gene_types_df)
@@ -518,6 +545,7 @@ to_long <- function(data) {
 }
 
 gene_tpm_long <- to_long(gene_tpm)
+gene_tpm_filtered_long <- to_long(gene_tpm_filtered)
 gene_counts_scaled_long <- to_long(gene_counts_scaled)
 gene_counts_length_scaled_long <- to_long(gene_counts_length_scaled)
 gene_counts_vst_long <- gene_counts_vst %>%
@@ -543,7 +571,64 @@ gene_counts_vst_pk_filtered_long <- gene_counts_vst_pk_filtered %>%
 # 104974-001-001_S1_L001
 ```
 
+### RDS objects {#rds-objects}
+
+Save all output to rds object for easier loading.
+
+```{r message = FALSE}
+# dir.create(here("results-refseq/r_objects/"), showWarnings = FALSE)
+# 
+# purrr::iwalk(
+#   tibble:::lst(
+#     fastq_screen,
+#     fastq_screen_mapping_stats_df,
+#     gene_counts_length_scaled,
+#     gene_counts_length_scaled_long,
+#     gene_counts_scaled,
+#     gene_counts_scaled_long,
+#     gene_counts_vst,
+#     gene_counts_vst_filtered,
+#     gene_counts_vst_filtered_long,
+#     gene_counts_vst_long,
+#     gene_counts_vst_pk,
+#     gene_counts_vst_pk_filtered,
+#     gene_counts_vst_pk_filtered_long,
+#     gene_counts_vst_pk_long,
+#     gene_tpm,
+#     gene_tpm_filtered,
+#     gene_tpm_filtered_long,
+#     gene_tpm_long,
+#     gene_types_df,
+#     gene_types_gencode_df,
+#     globin_df,
+#     gse,
+#     gse_filtered,
+#     gse_pk,
+#     gse_pk_filtered,
+#     mapping_stats_df,
+#     salmon_gene_counts,
+#     salmon_gene_counts_filtered,
+#     salmon_transcript_counts,
+#     samples,
+#     transcript_info,
+#     transcript_info_gencode,
+#     txi,
+#     txi_pk,
+#     vsd,
+#     vsd_filtered,
+#     vsd_pk,
+#     vsd_pk_filtered
+#   ),
+#   ~ saveRDS(.x, file = here(paste0("results-refseq/r_objects/", .y, ".RDS")))
+# )
+```
+
 # Analyses and figures
+
+```{r show=FALSE, message = FALSE}
+dir.create(here("results-refseq/figures/"), showWarnings = FALSE)
+```
+
 
 ## Flagstat mapping statistics
 
@@ -702,6 +787,29 @@ p <- ggplot(salmon_counts_by_sample_gene_type, aes(y = sum_reads, x = condition,
 p + geom_bar(stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
 ```
 
+### Salmon original gene-level counts - filtered
+
+Filtered to only genes with a minimum count of 10 reads for at least 1 sample.
+
+**TODO: filtering seems to work ok on dataframe level, but the plots do not appear to change because the differences in total count are so minor.**
+
+```{r}
+salmon_counts_filtered_by_sample_gene_type <- salmon_gene_counts_filtered %>%
+  left_join(mapping_stats_df, by = "sample") %>%
+  group_by(condition, gene_type) %>%
+  summarise(sum_reads = sum(NumReads, na.rm = TRUE)) %>%
+  mutate(per = 100 * sum_reads / sum(sum_reads))
+
+p <- ggplot(salmon_counts_filtered_by_sample_gene_type, aes(y = sum_reads, x = condition, fill = gene_type))
+p + geom_bar(position = "fill", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
+
+p <- ggplot(salmon_counts_filtered_by_sample_gene_type, aes(y = sum_reads, x = condition, fill = gene_type))
+p + geom_bar(position = "dodge", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
+
+p <- ggplot(salmon_counts_filtered_by_sample_gene_type, aes(y = sum_reads, x = condition, fill = gene_type))
+p + geom_bar(stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
+```
+
 ### Gene-level TPM
 
 ```{r}
@@ -718,6 +826,25 @@ p <- ggplot(gene_tpm_by_sample_gene_type, aes(y = sum_reads, x = condition, fill
 p + geom_bar(position = "dodge", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
 
 p <- ggplot(gene_tpm_by_sample_gene_type, aes(y = sum_reads, x = condition, fill = gene_type))
+p + geom_bar(stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
+```
+
+### Gene-level TPM - filtered
+
+```{r}
+gene_tpm_filtered_by_sample_gene_type <- gene_tpm_filtered_long %>%
+  left_join(mapping_stats_df, by = "sample") %>%
+  group_by(condition, gene_type) %>%
+  summarise(sum_reads = sum(counts, na.rm = TRUE)) %>%
+  mutate(per = 100 * sum_reads / sum(sum_reads))
+
+p <- ggplot(gene_tpm_filtered_by_sample_gene_type, aes(y = sum_reads, x = condition, fill = gene_type))
+p + geom_bar(position = "fill", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
+
+p <- ggplot(gene_tpm_filtered_by_sample_gene_type, aes(y = sum_reads, x = condition, fill = gene_type))
+p + geom_bar(position = "dodge", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
+
+p <- ggplot(gene_tpm_filtered_by_sample_gene_type, aes(y = sum_reads, x = condition, fill = gene_type))
 p + geom_bar(stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
 ```
 
@@ -762,6 +889,8 @@ p + geom_bar(stat = "identity") + scale_fill_viridis(option = "viridis", discret
 ```
 
 ### VST
+
+**VST transformed counts are acting weird => the transformation appears to act more strongly on Pk genes than human ones, removing the former?**
 
 ```{r}
 counts_vst_by_sample_gene_type <- gene_counts_vst_long %>%
@@ -956,12 +1085,17 @@ Try to use https://nf-co.re/rnaseq/1.1/docs/output#featurecounts?
 └─▶ featureCounts -t "transcript" -g "gene_biotype" -B -C -p -s 1 -T 6 -a data/ref-refseq-refseq/GCF_000006355.2_GCA_000006355.2_genomic.gtf -o results-refseq/featureCounts-pk.txt results-refseq/star_salmon/104974-001-001_S1_L001.markdup.sorted.pk.bam
 ```
 
-## Gene recovery
+## Gene recovery {.tabset}
 
 **TODO: optionally repeat using low-count filtered gene lists.**
 
 ### All genes
 
+<!-- ```{r} -->
+<!-- gene_counts_vst_pk_filtered %>%  -->
+<!--   mutate(across(.cols = starts_with("104974"), .fns = ~ as.integer(.x > 0))) -->
+
+<!-- ``` -->
 
 ```{r}
 # create binary matrices with presence/absence of genes
@@ -979,11 +1113,19 @@ gene_tpm_pk_binary <- gene_tpm %>%
   rename_with(~ str_replace_all(string = ., pattern = "\\.", replacement = "-"), starts_with("X")) %>%
   rename_with(~ str_sub(., 2, -1), starts_with("X"))
 
+gene_tpm_pk_filtered_binary <- gene_tpm_pk_binary %>% inner_join(gene_tpm_filtered %>% select(gene_id), by = "gene_id")
+
 gene_tpm_binary_list <- purrr::set_names(colnames(gene_tpm_binary %>% select(starts_with("104974")))) %>%
   purrr::imap(~ gene_tpm_binary$gene_id[gene_tpm_binary[, .x, drop = T]])
 
 gene_tpm_pk_binary_list <- purrr::set_names(colnames(gene_tpm_pk_binary %>% select(starts_with("104974")))) %>%
   purrr::imap(~ gene_tpm_pk_binary$gene_id[gene_tpm_pk_binary[, .x, drop = T]])
+
+gene_tpm_pk_filtered_binary_list <- purrr::set_names(colnames(gene_tpm_pk_filtered_binary %>% select(starts_with("104974")))) %>%
+  purrr::imap(~ gene_tpm_pk_filtered_binary$gene_id[gene_tpm_pk_filtered_binary[, .x, drop = T]])
+
+gene_counts_vst_pk_filtered_binary_list <- gene_counts_vst_pk_filtered %>% 
+  mutate(across(.cols = starts_with("104974"), .fns = ~.x > 0))
 
 # gene_tpm_binary_list <- lapply(colnames(gene_tpm_binary %>%
 #   select(starts_with("x"))), function(x) {
@@ -1011,322 +1153,226 @@ comparison_cellulose <- samples %>%
   filter(WBC_depletion == "cellulose") %>%
   select(sample)
 
+comparison_nofilter <- samples %>%
+  filter(WBC_depletion == "nofilter") %>%
+  filter(!sample == "104974-001-006_S1_L001")
+
 draw_venn <- function(set_list, names, title, output) {
   VennDiagram::venn.diagram(
-  x = set_list,
-  category.names = names,
-  # Circles
-  lwd = 2,
-  # lty = "blank",
-  # col = palette.colors(3),
-  # fill = palette.colors(3),
-  # col = hcl.colors(3, palette = "viridis", alpha = 0.9),
-  # fill = hcl.colors(3, palette = "viridis", alpha = 0.4),
-  col = hcl.colors(3, palette = "Set 2", alpha = 0.9),
-  fill = hcl.colors(3, palette = "Set 2", alpha = 0.4),
-  
-  # Numbers
-  cex = .9,
-  fontface = "bold",
-  fontfamily = "sans",
+    x = set_list,
+    category.names = names,
+    # Circles
+    lwd = 2,
+    # lty = "blank",
+    # col = palette.colors(3),
+    # fill = palette.colors(3),
+    # col = hcl.colors(3, palette = "viridis", alpha = 0.9),
+    # fill = hcl.colors(3, palette = "viridis", alpha = 0.4),
+    col = hcl.colors(3, palette = "Set 2", alpha = 0.9),
+    fill = hcl.colors(3, palette = "Set 2", alpha = 0.4),
 
-  # Set names
-  cat.cex = 0.9,
-  cat.fontface = "bold",
-  cat.default.pos = "outer",
-  cat.pos = c(-20, 20, 135),
-  cat.dist = c(0.055, 0.055, 0.11),
-  cat.fontfamily = "sans",
-  rotation = 1,
+    # Numbers
+    cex = .9,
+    fontface = "bold",
+    fontfamily = "sans",
 
-  # title
-  main = title,
-  main.cex = 1.1,
-  main.fontface = "bold",
-  main.fontfamily	= "sans",
-  
-  # output features
-  height = 1200,
-  width = 1200,
-  resolution = 300,
-  compression = "lzw",
-  filename = output,
-  output = TRUE
-)
+    # Set names
+    cat.cex = 0.9,
+    cat.fontface = "bold",
+    cat.default.pos = "outer",
+    cat.pos = c(-20, 20, 135),
+    cat.dist = c(0.055, 0.055, 0.11),
+    cat.fontfamily = "sans",
+    rotation = 1,
+
+    # title
+    main = title,
+    main.cex = 1.1,
+    main.fontface = "bold",
+    main.fontfamily = "sans",
+
+    # output features
+    height = 1200,
+    width = 1200,
+    resolution = 300,
+    compression = "lzw",
+    filename = output,
+    output = TRUE
+  )
 }
 
-v <- draw_venn(gene_tpm_binary[comparison_centpip$sample],
-               c("mRNA Qiagen - FSglob", "tRNA Qiagen - FSglobH", "mRNA Illumina"),
-               "Centpip",
-               "venn-centpip.png")
+v <- draw_venn(
+  gene_tpm_binary_list[comparison_centpip$sample],
+  c("mRNA Qiagen - FSglob", "tRNA Qiagen - FSglobH", "mRNA Illumina"),
+  "Centpip",
+  here("results-refseq/figures/venn-centpip.png")
+)
 v
 
-v <- draw_venn(gene_tpm_binary[comparison_plasmo$sample],
-               c("mRNA Qiagen - Fsglob", "tRNA Qiagen - FSglobH", "mRNA Illumina"),
-               "Plasmo",
-               "venn-plasmo.png")
+v <- draw_venn(
+  gene_tpm_binary_list[comparison_plasmo$sample],
+  c("mRNA Qiagen - Fsglob", "tRNA Qiagen - FSglobH", "mRNA Illumina"),
+  "Plasmo",
+  here("results-refseq/figures/venn-plasmo.png")
+)
 v
 
-v <- draw_venn(gene_tpm_binary[comparison_pmacs$sample],
-               c("mRNA Qiagen - FSglob", "tRNA Qiagen - FSglobH", "mRNA Illumina"),
-               "Pmacs",
-               "venn-pmacs.png")
+v <- draw_venn(
+  gene_tpm_binary_list[comparison_pmacs$sample],
+  c("mRNA Qiagen - FSglob", "tRNA Qiagen - FSglobH", "mRNA Illumina"),
+  "Pmacs",
+  here("results-refseq/figures/venn-pmacs.png")
+)
 v
 
-v <- draw_venn(gene_tpm_binary[comparison_cellulose$sample],
-               c("mRNA Qiagen - FSglob", "tRNA Qiagen - FSglobH", "mRNA Illumina"),
-               "Cellulose",
-               "venn-cellulose.png")
+v <- draw_venn(
+  gene_tpm_binary_list[comparison_cellulose$sample],
+  c("mRNA Qiagen - FSglob", "tRNA Qiagen - FSglobH", "mRNA Illumina"),
+  "Cellulose",
+  here("results-refseq/figures/venn-cellulose.png")
+)
 v
 
-
-# 
-# p <- VennDiagram::venn.diagram(
-#   x = gene_tpm_pk_binary_list[comparison_centpip$sample],
-#   category.names = c("mRNA Qiagen - FSglob", "tRNA Qiagen - FSglobH", "mRNA Illumina"),
-#   # Circles
-#   lwd = 2,
-#   # lty = "blank",
-#   # col = palette.colors(3),
-#   # fill = palette.colors(3),
-#   # col = hcl.colors(3, palette = "viridis", alpha = 0.9),
-#   # fill = hcl.colors(3, palette = "viridis", alpha = 0.4),
-#   col = hcl.colors(3, palette = "Set 2", alpha = 0.9),
-#   fill = hcl.colors(3, palette = "Set 2", alpha = 0.4),
-#   
-#   # Numbers
-#   cex = .9,
-#   fontface = "bold",
-#   fontfamily = "sans",
-# 
-#   # Set names
-#   cat.cex = 0.9,
-#   cat.fontface = "bold",
-#   cat.default.pos = "outer",
-#   cat.pos = c(-20, 20, 135),
-#   cat.dist = c(0.055, 0.055, 0.11),
-#   cat.fontfamily = "sans",
-#   rotation = 1,
-# 
-#   # output features
-#   height = 1200,
-#   width = 1200,
-#   resolution = 300,
-#   compression = "lzw",
-#   filename = "venn.png",
-#   output = TRUE
-# )
-# grid::grid.newpage()
-# grid::grid.draw(p)
+v <- draw_venn(
+  gene_tpm_binary_list[comparison_nofilter$sample],
+  c("mRNA Qiagen - FSglob", "tRNA Qiagen - FSglobH", "mRNA Illumina"),
+  "Cellulose",
+  here("results-refseq/figures/venn-nofilter.png")
+)
+v
 ```
 
 ### *P. knowlesi* genes only
 
 ```{r}
-v <- draw_venn(gene_tpm_pk_binary_list[comparison_centpip$sample],
-               c("mRNA Qiagen - FSglob", "tRNA Qiagen - FSglobH", "mRNA Illumina"),
-               "Centpip",
-               "venn-centpip_pf.png")
+v <- draw_venn(
+  gene_tpm_pk_filtered_binary_list[comparison_centpip$sample],
+  c("mRNA Qiagen - FSglob", "tRNA Qiagen - FSglobH", "mRNA Illumina"),
+  "Centpip",
+  here("results-refseq/figures/venn-centpip_pf.png")
+)
 v
 
-v <- draw_venn(gene_tpm_pk_binary_list[comparison_plasmo$sample],
-               c("mRNA Qiagen - Fsglob", "tRNA Qiagen - FSglobH", "mRNA Illumina"),
-               "Plasmo",
-               "venn-plasmo_pf.png")
+v <- draw_venn(
+  gene_tpm_pk_filtered_binary_list[comparison_plasmo$sample],
+  c("mRNA Qiagen - Fsglob", "tRNA Qiagen - FSglobH", "mRNA Illumina"),
+  "Plasmo",
+  here("results-refseq/figures/venn-plasmo_pf.png")
+)
 v
 
-v <- draw_venn(gene_tpm_pk_binary_list[comparison_pmacs$sample],
-               c("mRNA Qiagen - FSglob", "tRNA Qiagen - FSglobH", "mRNA Illumina"),
-               "Pmacs",
-               "venn-pmacs_pf.png")
+v <- draw_venn(
+  gene_tpm_pk_filtered_binary_list[comparison_pmacs$sample],
+  c("mRNA Qiagen - FSglob", "tRNA Qiagen - FSglobH", "mRNA Illumina"),
+  "Pmacs",
+  here("results-refseq/figures/venn-pmacs_pf.png")
+)
 v
 
-v <- draw_venn(gene_tpm_pk_binary_list[comparison_cellulose$sample],
-               c("mRNA Qiagen - FSglob", "tRNA Qiagen - FSglobH", "mRNA Illumina"),
-               "Cellulose",
-               "venn-cellulose_pf.png")
+v <- draw_venn(
+  gene_tpm_pk_filtered_binary_list[comparison_cellulose$sample],
+  c("mRNA Qiagen - FSglob", "tRNA Qiagen - FSglobH", "mRNA Illumina"),
+  "Cellulose",
+  here("results-refseq/figures/venn-cellulose_pf.png")
+)
+v
+
+v <- draw_venn(
+  gene_tpm_pk_filtered_binary_list[comparison_nofilter$sample],
+  c("mRNA Qiagen - FSglob", "tRNA Qiagen - FSglobH", "mRNA Illumina"),
+  "Cellulose",
+  here("results-refseq/figures/venn-nofilter_pf.png")
+)
 v
 ```
 
+### *P. knowlesi* genes only - filtered
+
+Gene counts were filtered on a minimum (raw) count of 10 before checking for presence/absence. 
+
 ```{r}
+v <- draw_venn(
+  gene_counts_vst_pk_filtered_binary_list[comparison_centpip$sample],
+  c("mRNA Qiagen - FSglob", "tRNA Qiagen - FSglobH", "mRNA Illumina"),
+  "Centpip",
+  here("results-refseq/figures/venn-centpip_pf_filtered.png")
+)
+v
 
+v <- draw_venn(
+  gene_tpm_pk_binary_list[comparison_plasmo$sample],
+  c("mRNA Qiagen - Fsglob", "tRNA Qiagen - FSglobH", "mRNA Illumina"),
+  "Plasmo",
+  here("results-refseq/figures/venn-plasmo_pf_filtered.png")
+)
+v
 
-# 
+v <- draw_venn(
+  gene_tpm_pk_binary_list[comparison_pmacs$sample],
+  c("mRNA Qiagen - FSglob", "tRNA Qiagen - FSglobH", "mRNA Illumina"),
+  "Pmacs",
+  here("results-refseq/figures/venn-pmacs_pf_filtered.png")
+)
+v
+
+v <- draw_venn(
+  gene_tpm_pk_binary_list[comparison_cellulose$sample],
+  c("mRNA Qiagen - FSglob", "tRNA Qiagen - FSglobH", "mRNA Illumina"),
+  "Cellulose",
+  here("results-refseq/figures/venn-cellulose_pf_filtered.png")
+)
+v
+
+v <- draw_venn(
+  gene_tpm_pk_binary_list[comparison_nofilter$sample],
+  c("mRNA Qiagen - FSglob", "tRNA Qiagen - FSglobH", "mRNA Illumina"),
+  "Cellulose",
+  here("results-refseq/figures/venn-nofilter_pf_filtered.png")
+)
+v
+```
+
+### Upset plot - Pk genes filtered on low counts
+
+**TODO: change labels, order them logically and add additional metadata using bars or rectangles in inkscape. Also choose how many sets/intersets to plot.**
+
+```{r}
+UpSetR::upset(as.data.frame(gene_tpm_pk_filtered_binary %>% select(!gene_id) %>% mutate_all(as.integer)))
+UpSetR::upset(as.data.frame(gene_tpm_pk_filtered_binary %>% select(!gene_id) %>% mutate_all(as.integer)), nsets = 16, nintersects = NA)
+```
+
+```{r}
+#
 # gene_tpm_overlap <- gene_tpm_overlap %>% mutate(across(.cols = starts_with("X"), ~ +as.logical(.x)))
-# 
+#
 # # UpSetR::upset(gene_tpm_overlap[,2:4])
-# 
-# 
-# 
-# 
-# 
+#
+#
+#
+#
+#
 # purrr::map(
 #   gene_tpm_overlap %>% select(starts_with("x")),
 #   ~ gene_tpm_overlap$gene_id[.x, ]
 # )
-# 
+#
 # l <- lapply(gene_tpm_overlap %>% select(starts_with("x")), set)
-# 
-# 
+#
+#
 # length(gene_tpm_overlap$gene_id[gene_tpm_overlap$X104974.001.001_S1_L001])
-# 
-# 
-# 
-# 
+#
+#
+#
+#
 # ggplot(gene_tpm_long %>% filter(sample == "104974-001-001_S1_L001"), aes(x = sample, y = counts)) +
 #   geom_boxplot()
-# 
+#
 # ggplot(gene_tpm_long %>% filter(sample == "104974-001-001_S1_L001"), aes(x = log(counts))) +
 #   geom_histogram()
-# 
-# 
+#
+#
 # # gene_tpm_long %>% filter(sample == "104974-001-001_S1_L001") %>% filter(counts > 0)
 # gene_tpm_long %>% filter(counts > 0)
-```
-
-
-
-## Coverage statistics
-
-```{r}
-mapping_stats_df
-```
-
-## Correlation plots
-
-### TPM {.tabset}
-
-#### All genes
-
-```{r message=FALSE}
-# subset of samples for quick visualisation tests
-co_genes <- ggpairs(gene_tpm %>% filter(species == "pk"), columns = 3:5, lower = list(
-  continuous = "smooth"
-), upper = list(continuous = wrap("cor", size = 2)))
-co_genes + theme_bw() + scale_x_continuous(trans = "log1p") + scale_y_continuous(trans = "log1p")
-
-# all samples
-# co_genes <- ggpairs(gene_tpm %>% filter(species == "pk"), columns = 3:18, lower = list(
-#   continuous = "smooth"
-# ), upper = list(continuous = wrap("cor", size = 2)))
-# co_genes + theme_bw() + scale_x_continuous(trans = "log1p") + scale_y_continuous(trans = "log1p")
-```
-
-#### Protein-coding genes
-
-Extract general gene types from GFF file:
-
-```{r message=FALSE}
-# https://stackoverflow.com/questions/63969719/tidyr-separate-a-column-into-a-variable-number-of-columns
-gff <- read_delim(here("data/ref-refseq-refseq/GCF_000006355.2_GCA_000006355.2_genomic.gff"), comment = "#", col_names = c("seqname", "source", "feature", "start", "end", "score", "strand", "frame", "attribute")) %>%
-  mutate(id = row_number()) %>%
-  separate_rows(attribute, sep = ";") %>%
-  separate(attribute, c("attribute", "attribute_value"), sep = "=") %>%
-  pivot_wider(names_from = attribute, values_from = attribute_value) %>%
-  filter(!is.na(gene_biotype)) %>%
-  select(c(gene_biotype, ID)) %>%
-  rename(gene_id = ID) %>%
-  left_join(transcript_info$gene, by = "gene_id")
-```
-
-
-```{r message=FALSE}
-co_genes <- ggpairs(
-  gene_tpm %>%
-    filter(species == "pk") %>%
-    left_join(gff, by = "gene_id") %>%
-    filter(feature == "protein_coding_gene"),
-  columns = 3:18, lower = list(continuous = "smooth"),
-  upper = list(continuous = wrap("cor", size = 2))
-)
-co_genes + theme_bw() + scale_x_continuous(trans = "log1p") + scale_y_continuous(trans = "log1p")
-```
-
-#### Pk VST genes
-
-
-```{r message=FALSE}
-co_genes <- ggpairs(
-  gene_counts_vst_pk %>%
-    filter(species == "pk") %>%
-    left_join(gff, by = "gene_id") %>%
-    filter(feature == "protein_coding_gene"),
-  columns = 1:16, lower = list(continuous = "smooth"),
-  upper = list(continuous = wrap("cor", size = 2))
-)
-co_genes + theme_bw() + scale_x_continuous(trans = "log1p") + scale_y_continuous(trans = "log1p")
-```
-## Heatmap of count matrix {.tabset}
-
-**TODO: try quantile breaks for better separation between values instead, see https://slowkow.com/notes/pheatmap-tutorial/** 
-
-### All genes
-
-```{r}
-select <- order(rowMeans(counts(gse, normalized = FALSE)),
-  decreasing = TRUE
-)[1:20]
-df <- as.data.frame(colData(gse)[, c("RNA_type", "removal", "WBC_depletion")])
-pheatmap(assay(vsd)[select, ],
-  cluster_rows = FALSE, show_rownames = FALSE,
-  cluster_cols = FALSE, annotation_col = df
-)
-```
-
-```{r}
-df <- as.data.frame(colData(gse)[, c("kit", "WBC_depletion")])
-pheatmap(assay(vsd)[select, ],
-  cluster_rows = FALSE, show_rownames = FALSE,
-  cluster_cols = FALSE, annotation_col = df
-)
-```
-
-
-### *P. knowlesi* only
-
-Without clustering:
-
-```{r}
-select <- order(rowMeans(counts(gse_pk, normalized = FALSE)),
-  decreasing = TRUE
-)[1:20]
-df <- as.data.frame(colData(gse_pk)[, c("RNA_type", "removal", "WBC_depletion")])
-pheatmap(assay(vsd_pk)[select, ],
-  cluster_rows = FALSE, show_rownames = FALSE,
-  cluster_cols = FALSE, annotation_col = df,
-  color = viridis(10)
-)
-```
-
-
-With clustering:
-
-```{r}
-select <- order(rowMeans(counts(gse_pk, normalized = FALSE)),
-  decreasing = TRUE
-)[1:20]
-df <- as.data.frame(colData(gse_pk)[, c("RNA_type", "removal", "WBC_depletion")])
-pheatmap(assay(vsd_pk)[select, ],
-  cluster_rows = FALSE, show_rownames = FALSE,
-  cluster_cols = TRUE, annotation_col = df,
-  color = viridis(10)
-)
-#
-#  ,
-# annotation_colors = list(
-#   RNA_type = palette.colors(n = length(unique(df$RNA_type)), palette = "Okabe-Ito"),
-#   removal = palette.colors(n = length(unique(df$removal)), palette = "Okabe-Ito"),
-#   WBC_depletion = palette.colors(n = length(unique(df$WBC_depletion)), palette = "Okabe-Ito")
-# )
-# )
-```
-
-```{r}
-df <- as.data.frame(colData(gse_pk)[, c("kit", "WBC_depletion")])
-pheatmap(assay(vsd_pk)[select, ],
-  cluster_rows = FALSE, show_rownames = FALSE,
-  cluster_cols = FALSE, annotation_col = df
-)
 ```
 
 ## Sample-to-sample distances {.tabset}
@@ -1365,6 +1411,194 @@ pheatmap(sampleDistMatrix,
 )
 ```
 
+## Coverage statistics
+
+```{r}
+mapping_stats_df
+```
+
+## Correlation plots
+
+### TPM {.tabset}
+
+#### All genes
+
+```{r message=FALSE}
+# subset of samples for quick visualisation tests
+co_genes <- ggpairs(gene_tpm %>% filter(species == "pk"), columns = 3:5, lower = list(
+  continuous = "smooth"
+), upper = list(continuous = wrap("cor", size = 2)))
+co_genes + theme_bw() + scale_x_continuous(trans = "log1p") + scale_y_continuous(trans = "log1p")
+
+ggsave(here("results-refseq/figures/correlation_all_genes.png"))
+
+# all samples
+# co_genes <- ggpairs(gene_tpm %>% filter(species == "pk"), columns = 3:18, lower = list(
+#   continuous = "smooth"
+# ), upper = list(continuous = wrap("cor", size = 2)))
+# co_genes + theme_bw() + scale_x_continuous(trans = "log1p") + scale_y_continuous(trans = "log1p")
+```
+
+#### Protein-coding genes
+
+Extract general gene types from GFF file:
+
+```{r message=FALSE}
+# https://stackoverflow.com/questions/63969719/tidyr-separate-a-column-into-a-variable-number-of-columns
+gff <- read_delim(here("data/ref-refseq-refseq/GCF_000006355.2_GCA_000006355.2_genomic.gff"), comment = "#", col_names = c("seqname", "source", "feature", "start", "end", "score", "strand", "frame", "attribute")) %>%
+  mutate(id = row_number()) %>%
+  separate_rows(attribute, sep = ";") %>%
+  separate(attribute, c("attribute", "attribute_value"), sep = "=") %>%
+  pivot_wider(names_from = attribute, values_from = attribute_value) %>%
+  filter(!is.na(gene_biotype)) %>%
+  select(c(gene_biotype, ID)) %>%
+  rename(gene_id = ID) %>%
+  left_join(transcript_info$gene, by = "gene_id")
+```
+
+
+```{r message=FALSE}
+co_genes <- ggpairs(
+  gene_tpm %>%
+    filter(species == "pk") %>%
+    left_join(gff, by = "gene_id") %>%
+    filter(gene_biotype == "protein_coding"),
+  columns = 3:18, lower = list(continuous = "smooth"),
+  upper = list(continuous = wrap("cor", size = 2))
+)
+co_genes + theme_bw() + scale_x_continuous(trans = "log1p") + scale_y_continuous(trans = "log1p")
+
+ggsave(here("results-refseq/figures/correlation_protein_coding_genes.png"))
+```
+
+#### Pk VST genes
+
+
+```{r message=FALSE}
+co_genes <- ggpairs(
+  gene_counts_vst_pk %>%
+    filter(species == "pk") %>%
+    left_join(gff, by = "gene_id") %>%
+    filter(gene_biotype == "protein_coding_gene"),
+  columns = 1:16, lower = list(continuous = "smooth"),
+  upper = list(continuous = wrap("cor", size = 2))
+)
+co_genes + theme_bw() + scale_x_continuous(trans = "log1p") + scale_y_continuous(trans = "log1p")
+
+ggsave(here("results-refseq/figures/correlation_protein_coding_genes_pk.png"))
+```
+## Heatmap of count matrix {.tabset}
+
+**TODO: try quantile breaks for better separation between values instead, see https://slowkow.com/notes/pheatmap-tutorial/** 
+
+### All genes
+
+```{r}
+select <- order(rowMeans(counts(gse, normalized = FALSE)),
+  decreasing = TRUE
+)[1:20]
+df <- as.data.frame(colData(gse)[, c("RNA_type", "removal", "WBC_depletion")])
+pheatmap(assay(vsd)[select, ],
+  cluster_rows = FALSE, show_rownames = FALSE,
+  cluster_cols = FALSE, annotation_col = df
+)
+```
+
+```{r}
+df <- as.data.frame(colData(gse)[, c("kit", "WBC_depletion")])
+pheatmap(assay(vsd)[select, ],
+  cluster_rows = FALSE, show_rownames = FALSE,
+  cluster_cols = FALSE, annotation_col = df
+)
+```
+
+### *P. knowlesi* only
+
+Without clustering:
+
+```{r}
+select <- order(rowMeans(counts(gse_pk, normalized = FALSE)),
+  decreasing = TRUE
+)[1:20]
+df <- as.data.frame(colData(gse_pk)[, c("RNA_type", "removal", "WBC_depletion")])
+pheatmap(assay(vsd_pk)[select, ],
+  cluster_rows = FALSE, show_rownames = FALSE,
+  cluster_cols = FALSE, annotation_col = df,
+  color = viridis(10)
+)
+```
+
+With clustering:
+
+```{r}
+select <- order(rowMeans(counts(gse_pk, normalized = FALSE)),
+  decreasing = TRUE
+)[1:20]
+df <- as.data.frame(colData(gse_pk)[, c("RNA_type", "removal", "WBC_depletion")])
+pheatmap(assay(vsd_pk)[select, ],
+  cluster_rows = FALSE, show_rownames = FALSE,
+  cluster_cols = TRUE, annotation_col = df,
+  color = viridis(10)
+)
+#
+#  ,
+# annotation_colors = list(
+#   RNA_type = palette.colors(n = length(unique(df$RNA_type)), palette = "Okabe-Ito"),
+#   removal = palette.colors(n = length(unique(df$removal)), palette = "Okabe-Ito"),
+#   WBC_depletion = palette.colors(n = length(unique(df$WBC_depletion)), palette = "Okabe-Ito")
+# )
+# )
+```
+
+```{r}
+df <- as.data.frame(colData(gse_pk)[, c("kit", "WBC_depletion")])
+pheatmap(assay(vsd_pk)[select, ],
+  cluster_rows = FALSE, show_rownames = FALSE,
+  cluster_cols = FALSE, annotation_col = df
+)
+```
+
+Protein-coding only (not normalized):
+
+**TODO: check why there still are tRNAs?**
+
+```{r}
+gene_list <- intersect(rownames(counts(gse_pk)), gff %>%
+                         filter(gene_biotype == "protein_coding") %>% 
+                         pull(gene_id))
+
+select <- order(rowMeans(counts(gse_pk, normalized = FALSE)[gene_list,]),
+                decreasing = TRUE)[1:20]
+df <- as.data.frame(colData(gse_pk)[, c("RNA_type", "removal", "WBC_depletion")])
+
+pheatmap(assay(vsd_pk)[select, ],
+  cluster_rows = FALSE, show_rownames = FALSE,
+  cluster_cols = FALSE, annotation_col = df,
+  color = viridis(10)
+)
+```
+
+Protein-coding only + filtered on low counts:
+
+```{r}
+# select <- order(rowMeans(counts(gse_pk, normalized = FALSE)[gene_counts_vst_pk_filtered$gene_id,]),
+#   decreasing = TRUE
+# )[1:20]
+
+gene_list <- intersect(rownames(counts(gse_pk_filtered)), gff %>%
+                         filter(gene_biotype == "protein_coding") %>% 
+                         pull(gene_id))
+
+select <- order(rowMeans(counts(gse_pk_filtered, normalized = FALSE)[gene_list,]),
+                decreasing = TRUE)[1:20]
+df <- as.data.frame(colData(gse_pk)[, c("RNA_type", "removal", "WBC_depletion")])
+
+pheatmap(assay(vsd_pk_filtered)[select, ],
+  cluster_rows = FALSE, show_rownames = FALSE,
+  cluster_cols = FALSE, annotation_col = df,
+  color = viridis(10)
+)
+```
 
 # DESeq2 - VST
 

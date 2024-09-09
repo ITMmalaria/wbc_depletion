@@ -181,7 +181,7 @@ The raw counts can optionally be pre-filtered, e.g. to a minimum of 10 reads per
 ```{r message=FALSE}
 # filter all vst counts
 smallestGroupSize <- 1
-keep <- rowSums(counts(gse) >= 1) >= smallestGroupSize
+keep <- rowSums(counts(gse) >= 10) >= smallestGroupSize
 gse_filtered <- gse[keep, ]
 vsd_filtered <- vst(gse_filtered, blind = TRUE)
 meanSdPlot(assay(vsd_filtered))
@@ -192,7 +192,7 @@ gene_counts_vst_filtered <- gene_counts_vst_filtered %>%
   left_join(transcript_info$gene, by = "gene_id")
 
 # filter pk vst counts
-keep <- rowSums(counts(gse_pk) >= 1) >= smallestGroupSize
+keep <- rowSums(counts(gse_pk) >= 10) >= smallestGroupSize
 gse_pk_filtered <- gse_pk[keep, ]
 vsd_pk_filtered <- vst(gse_pk_filtered, blind = TRUE)
 meanSdPlot(assay(vsd_pk_filtered))
