@@ -47,8 +47,8 @@ ggplot2::theme_set(theme_bw())
 ```{r message = FALSE}
 # data_list <- list.files(path = here("results-refseq/r_objects"),
 #                         pattern = ".RDS",
-#                         recursive = TRUE, full.names = TRUE) %>% 
-#   set_names(., str_remove(basename(.), ".RDS")) %>% 
+#                         recursive = TRUE, full.names = TRUE) %>%
+#   set_names(., str_remove(basename(.), ".RDS")) %>%
 #   purrr::imap(~ readRDS(file = .x ))
 # 
 # list2env(data_list, .GlobalEnv)
@@ -577,7 +577,7 @@ Save all output to rds object for easier loading.
 
 ```{r message = FALSE}
 # dir.create(here("results-refseq/r_objects/"), showWarnings = FALSE)
-# 
+#
 # purrr::iwalk(
 #   tibble:::lst(
 #     fastq_screen,
@@ -1087,8 +1087,6 @@ Try to use https://nf-co.re/rnaseq/1.1/docs/output#featurecounts?
 
 ## Gene recovery {.tabset}
 
-**TODO: optionally repeat using low-count filtered gene lists.**
-
 ### All genes
 
 <!-- ```{r} -->
@@ -1124,8 +1122,8 @@ gene_tpm_pk_binary_list <- purrr::set_names(colnames(gene_tpm_pk_binary %>% sele
 gene_tpm_pk_filtered_binary_list <- purrr::set_names(colnames(gene_tpm_pk_filtered_binary %>% select(starts_with("104974")))) %>%
   purrr::imap(~ gene_tpm_pk_filtered_binary$gene_id[gene_tpm_pk_filtered_binary[, .x, drop = T]])
 
-gene_counts_vst_pk_filtered_binary_list <- gene_counts_vst_pk_filtered %>% 
-  mutate(across(.cols = starts_with("104974"), .fns = ~.x > 0))
+# gene_counts_vst_pk_filtered_binary_list <- gene_counts_vst_pk_filtered %>%
+  # mutate(across(.cols = starts_with("104974"), .fns = ~ .x > 0))
 
 # gene_tpm_binary_list <- lapply(colnames(gene_tpm_binary %>%
 #   select(starts_with("x"))), function(x) {
@@ -1246,42 +1244,42 @@ v
 
 ```{r}
 v <- draw_venn(
-  gene_tpm_pk_filtered_binary_list[comparison_centpip$sample],
+  gene_tpm_pk_binary_list[comparison_centpip$sample],
   c("mRNA Qiagen - FSglob", "tRNA Qiagen - FSglobH", "mRNA Illumina"),
   "Centpip",
-  here("results-refseq/figures/venn-centpip_pf.png")
+  here("results-refseq/figures/venn-centpip_pk.png")
 )
 v
 
 v <- draw_venn(
-  gene_tpm_pk_filtered_binary_list[comparison_plasmo$sample],
+  gene_tpm_pk_binary_list[comparison_plasmo$sample],
   c("mRNA Qiagen - Fsglob", "tRNA Qiagen - FSglobH", "mRNA Illumina"),
   "Plasmo",
-  here("results-refseq/figures/venn-plasmo_pf.png")
+  here("results-refseq/figures/venn-plasmo_pk.png")
 )
 v
 
 v <- draw_venn(
-  gene_tpm_pk_filtered_binary_list[comparison_pmacs$sample],
+  gene_tpm_pk_binary_list[comparison_pmacs$sample],
   c("mRNA Qiagen - FSglob", "tRNA Qiagen - FSglobH", "mRNA Illumina"),
   "Pmacs",
-  here("results-refseq/figures/venn-pmacs_pf.png")
+  here("results-refseq/figures/venn-pmacs_pk.png")
 )
 v
 
 v <- draw_venn(
-  gene_tpm_pk_filtered_binary_list[comparison_cellulose$sample],
+  gene_tpm_pk_binary_list[comparison_cellulose$sample],
   c("mRNA Qiagen - FSglob", "tRNA Qiagen - FSglobH", "mRNA Illumina"),
   "Cellulose",
-  here("results-refseq/figures/venn-cellulose_pf.png")
+  here("results-refseq/figures/venn-cellulose_pk.png")
 )
 v
 
 v <- draw_venn(
-  gene_tpm_pk_filtered_binary_list[comparison_nofilter$sample],
+  gene_tpm_pk_binary_list[comparison_nofilter$sample],
   c("mRNA Qiagen - FSglob", "tRNA Qiagen - FSglobH", "mRNA Illumina"),
-  "Cellulose",
-  here("results-refseq/figures/venn-nofilter_pf.png")
+  "No filter",
+  here("results-refseq/figures/venn-nofilter_pk.png")
 )
 v
 ```
@@ -1292,42 +1290,42 @@ Gene counts were filtered on a minimum (raw) count of 10 before checking for pre
 
 ```{r}
 v <- draw_venn(
-  gene_counts_vst_pk_filtered_binary_list[comparison_centpip$sample],
+  gene_tpm_pk_filtered_binary_list[comparison_centpip$sample],
   c("mRNA Qiagen - FSglob", "tRNA Qiagen - FSglobH", "mRNA Illumina"),
   "Centpip",
-  here("results-refseq/figures/venn-centpip_pf_filtered.png")
+  here("results-refseq/figures/venn-centpip_pk_filtered.png")
 )
 v
 
 v <- draw_venn(
-  gene_tpm_pk_binary_list[comparison_plasmo$sample],
+  gene_tpm_pk_filtered_binary_list[comparison_plasmo$sample],
   c("mRNA Qiagen - Fsglob", "tRNA Qiagen - FSglobH", "mRNA Illumina"),
   "Plasmo",
-  here("results-refseq/figures/venn-plasmo_pf_filtered.png")
+  here("results-refseq/figures/venn-plasmo_pk_filtered.png")
 )
 v
 
 v <- draw_venn(
-  gene_tpm_pk_binary_list[comparison_pmacs$sample],
+  gene_tpm_pk_filtered_binary_list[comparison_pmacs$sample],
   c("mRNA Qiagen - FSglob", "tRNA Qiagen - FSglobH", "mRNA Illumina"),
   "Pmacs",
-  here("results-refseq/figures/venn-pmacs_pf_filtered.png")
+  here("results-refseq/figures/venn-pmacs_pk_filtered.png")
 )
 v
 
 v <- draw_venn(
-  gene_tpm_pk_binary_list[comparison_cellulose$sample],
+  gene_tpm_pk_filtered_binary_list[comparison_cellulose$sample],
   c("mRNA Qiagen - FSglob", "tRNA Qiagen - FSglobH", "mRNA Illumina"),
   "Cellulose",
-  here("results-refseq/figures/venn-cellulose_pf_filtered.png")
+  here("results-refseq/figures/venn-cellulose_pk_filtered.png")
 )
 v
 
 v <- draw_venn(
-  gene_tpm_pk_binary_list[comparison_nofilter$sample],
+  gene_tpm_pk_filtered_binary_list[comparison_nofilter$sample],
   c("mRNA Qiagen - FSglob", "tRNA Qiagen - FSglobH", "mRNA Illumina"),
-  "Cellulose",
-  here("results-refseq/figures/venn-nofilter_pf_filtered.png")
+  "No filter",
+  here("results-refseq/figures/venn-nofilter_pk_filtered.png")
 )
 v
 ```
@@ -1423,27 +1421,28 @@ mapping_stats_df
 
 #### All genes
 
-```{r message=FALSE}
+```{r message=FALSE, cache=TRUE}
 # subset of samples for quick visualisation tests
-co_genes <- ggpairs(gene_tpm %>% filter(species == "pk"), columns = 3:5, lower = list(
+# co_genes <- ggpairs(gene_tpm %>% filter(species == "pk"), columns = 3:5, lower = list(
+#   continuous = "smooth"
+# ), upper = list(continuous = wrap("cor", size = 2)))
+# co_genes + theme_bw() + scale_x_continuous(trans = "log1p") + scale_y_continuous(trans = "log1p")
+
+
+# all samples
+co_genes <- ggpairs(gene_tpm %>% filter(species == "pk"), columns = 3:18, lower = list(
   continuous = "smooth"
 ), upper = list(continuous = wrap("cor", size = 2)))
 co_genes + theme_bw() + scale_x_continuous(trans = "log1p") + scale_y_continuous(trans = "log1p")
 
-ggsave(here("results-refseq/figures/correlation_all_genes.png"))
-
-# all samples
-# co_genes <- ggpairs(gene_tpm %>% filter(species == "pk"), columns = 3:18, lower = list(
-#   continuous = "smooth"
-# ), upper = list(continuous = wrap("cor", size = 2)))
-# co_genes + theme_bw() + scale_x_continuous(trans = "log1p") + scale_y_continuous(trans = "log1p")
+# ggsave(here("results-refseq/figures/correlation_all_genes.png"))
 ```
 
 #### Protein-coding genes
 
 Extract general gene types from GFF file:
 
-```{r message=FALSE}
+```{r message=FALSE, cache=TRUE}
 # https://stackoverflow.com/questions/63969719/tidyr-separate-a-column-into-a-variable-number-of-columns
 gff <- read_delim(here("data/ref-refseq-refseq/GCF_000006355.2_GCA_000006355.2_genomic.gff"), comment = "#", col_names = c("seqname", "source", "feature", "start", "end", "score", "strand", "frame", "attribute")) %>%
   mutate(id = row_number()) %>%
@@ -1468,25 +1467,25 @@ co_genes <- ggpairs(
 )
 co_genes + theme_bw() + scale_x_continuous(trans = "log1p") + scale_y_continuous(trans = "log1p")
 
-ggsave(here("results-refseq/figures/correlation_protein_coding_genes.png"))
+# ggsave(here("results-refseq/figures/correlation_protein_coding_genes.png"))
 ```
 
-#### Pk VST genes
+<!-- #### Pk VST genes -->
 
+<!-- ```{r message=FALSE} -->
+<!-- co_genes <- ggpairs( -->
+<!--   gene_counts_vst_pk %>% -->
+<!--     filter(species == "pk") %>% -->
+<!--     left_join(gff, by = "gene_id") %>% -->
+<!--     filter(gene_biotype == "protein_coding_gene"), -->
+<!--   columns = 1:16, lower = list(continuous = "smooth"), -->
+<!--   upper = list(continuous = wrap("cor", size = 2)) -->
+<!-- ) -->
+<!-- co_genes + theme_bw() + scale_x_continuous(trans = "log1p") + scale_y_continuous(trans = "log1p") -->
 
-```{r message=FALSE}
-co_genes <- ggpairs(
-  gene_counts_vst_pk %>%
-    filter(species == "pk") %>%
-    left_join(gff, by = "gene_id") %>%
-    filter(gene_biotype == "protein_coding_gene"),
-  columns = 1:16, lower = list(continuous = "smooth"),
-  upper = list(continuous = wrap("cor", size = 2))
-)
-co_genes + theme_bw() + scale_x_continuous(trans = "log1p") + scale_y_continuous(trans = "log1p")
+<!-- ggsave(here("results-refseq/figures/correlation_protein_coding_genes_pk.png")) -->
+<!-- ``` -->
 
-ggsave(here("results-refseq/figures/correlation_protein_coding_genes_pk.png"))
-```
 ## Heatmap of count matrix {.tabset}
 
 **TODO: try quantile breaks for better separation between values instead, see https://slowkow.com/notes/pheatmap-tutorial/** 
@@ -1564,11 +1563,12 @@ Protein-coding only (not normalized):
 
 ```{r}
 gene_list <- intersect(rownames(counts(gse_pk)), gff %>%
-                         filter(gene_biotype == "protein_coding") %>% 
-                         pull(gene_id))
+  filter(gene_biotype == "protein_coding") %>%
+  pull(gene_id))
 
-select <- order(rowMeans(counts(gse_pk, normalized = FALSE)[gene_list,]),
-                decreasing = TRUE)[1:20]
+select <- order(rowMeans(counts(gse_pk, normalized = FALSE)[gene_list, ]),
+  decreasing = TRUE
+)[1:20]
 df <- as.data.frame(colData(gse_pk)[, c("RNA_type", "removal", "WBC_depletion")])
 
 pheatmap(assay(vsd_pk)[select, ],
@@ -1586,11 +1586,12 @@ Protein-coding only + filtered on low counts:
 # )[1:20]
 
 gene_list <- intersect(rownames(counts(gse_pk_filtered)), gff %>%
-                         filter(gene_biotype == "protein_coding") %>% 
-                         pull(gene_id))
+  filter(gene_biotype == "protein_coding") %>%
+  pull(gene_id))
 
-select <- order(rowMeans(counts(gse_pk_filtered, normalized = FALSE)[gene_list,]),
-                decreasing = TRUE)[1:20]
+select <- order(rowMeans(counts(gse_pk_filtered, normalized = FALSE)[gene_list, ]),
+  decreasing = TRUE
+)[1:20]
 df <- as.data.frame(colData(gse_pk)[, c("RNA_type", "removal", "WBC_depletion")])
 
 pheatmap(assay(vsd_pk_filtered)[select, ],
@@ -1599,190 +1600,3 @@ pheatmap(assay(vsd_pk_filtered)[select, ],
   color = viridis(10)
 )
 ```
-
-# DESeq2 - VST
-
-Read in `salmon` transcript abundance files for human and *P. knowlesi* separately.
-
-Note: use transcript counts, not gene counts, because `tximport` will perform gene-level aggregation across all samples, instead of per-sample as in `salmon`'s `quant.gene.sf` files. See: https://github.com/COMBINE-lab/salmon/issues/437
-
-```{r}
-samples <- read_csv("./data/samplesheet.csv", col_select = c("sample", "condition", "RNA_type", "library_kit", "removal", "WBC_depletion", "kit"), col_types = "c")
-
-salmon_quant_files <- paste0("./results-refseq/star_salmon/", list.files(path = "./results-refseq/star_salmon/", pattern = "quant.sf", recursive = TRUE))
-```
-
-<!-- ```{r} -->
-<!-- txdb <- makeTxDbFromGFF(here("./data/ref/concat_GRCh38.14.gencode.46_PkH.PlasmoDB.68.gff.gz"), format="gff3") -->
-<!-- k <- keys(txdb, keytype = "TXNAME") -->
-<!-- # if this step fails, make sure dplyr is not overriding the select() function, -->
-<!-- # see https://github.com/lzcyzm/exomePeak/issues/1 -->
-<!-- tx2gene <- AnnotationDbi::select(txdb, k, "GENEID", "TXNAME") -->
-<!-- txi_concat <- tximport(salmon_quant_files, type="salmon", tx2gene=tx2gene) -->
-<!-- dds_concat <- DESeqDataSetFromTximport(txi_concat, colData = samples, design = ~ 1) -->
-<!-- ``` -->
-
-```{r}
-txdb <- makeTxDbFromGFF(here("./data/ref-refseq-refseq/GCF_000001405.40_GRCh38.p14_genomic.gff.gz"), format = "gff3", organism = "Homo sapiens")
-k <- keys(txdb, keytype = "TXNAME")
-# if this step fails, make sure dplyr is not overriding the select() function,
-# see https://github.com/lzcyzm/exomePeak/issues/1
-tx2gene <- AnnotationDbi::select(txdb, k, "GENEID", "TXNAME")
-txi_human <- tximport(salmon_quant_files, type = "salmon", tx2gene = tx2gene)
-dds_human <- DESeqDataSetFromTximport(txi_human, colData = samples, design = ~1)
-```
-
-```{r}
-txdb <- makeTxDbFromGFF("./data/ref-refseq-refseq/GCF_000006355.2_GCA_000006355.2_genomic.gff.gz", format = "gff3", organism = "Plasmodium knowlesi")
-k <- keys(txdb, keytype = "TXNAME")
-# if this step fails, make sure dplyr is not overriding the select() function,
-# see https://github.com/lzcyzm/exomePeak/issues/1
-tx2gene <- AnnotationDbi::select(txdb, k, "GENEID", "TXNAME")
-txi_pk <- tximport(salmon_quant_files, type = "salmon", tx2gene = tx2gene)
-dds_pk <- DESeqDataSetFromTximport(txi_pk, colData = samples, design = ~1)
-# , design = ~ condition)
-```
-
-Pre-filtering options:
-
-```{r}
-# see pre-filtering https://www.bioconductor.org/packages/release/bioc/vignettes/DESeq2/inst/doc/DESeq2.html
-
-smallestGroupSize <- 1
-keep <- rowSums(counts(dds_human) >= 10) >= smallestGroupSize
-before <- length(dds_human)
-dds_human <- dds_human[keep, ]
-after <- length(dds_human)
-```
-
-Filtered out `r sum(keep)` human transcripts due to low counts (`r after` out of `r before` remaining).
-
-```{r}
-# see pre-filtering https://www.bioconductor.org/packages/release/bioc/vignettes/DESeq2/inst/doc/DESeq2.html
-
-keep <- rowSums(counts(dds_pk) >= 10) >= smallestGroupSize
-before <- length(dds_pk)
-dds_pk <- dds_pk[keep, ]
-after <- length(dds_pk)
-```
-
-Filtered out `r sum(keep)` *P. knowlesi*  transcripts due to low counts (`r after` out of `r before` remaining).
-
-## Transformations
-
-For more info on blind dispersion estimate (i.e., intercept-only model), see https://www.bioconductor.org/packages/release/bioc/vignettes/DESeq2/inst/doc/DESeq2.html#blind-dispersion-estimation.
-
->  This setting should be used in order to compare samples in a manner wholly unbiased by the information about experimental groups, for example to perform sample QA (quality assurance) as demonstrated below.
-
-> However, blind dispersion estimation is not the appropriate choice if one expects that many or the majority of genes (rows) will have large differences in counts which are explainable by the experimental design, and one wishes to transform the data for downstream analysis. In this case, using blind dispersion estimation will lead to large estimates of dispersion, as it attributes differences due to experimental design as unwanted noise, and will result in overly shrinking the transformed values towards each other.
-
-In our case, there might be large differences due to "missing" genes, i.e. mRNA vs total RNA. 
-
-### *P. knowlesi*
-
-
-```{r}
-# varianceStabilizingTransformation(dds)
-# logical, whether to blind the transformation to the experimental design. blind=TRUE should be used for comparing samples in a manner unbiased by prior information on samples, for example to perform sample QA (quality assurance). blind=FALSE should be used for transforming data for downstream analysis, where the full use of the design information should be made. blind=FALSE will skip re-estimation of the dispersion trend, if this has already been calculated. If many of genes have large differences in counts due to the experimental design, it is important to set blind=FALSE for downstream analysis.
-
-vsd_blind <- vst(dds_pk, blind = TRUE)
-plotPCA(vsd_blind, intgroup = c("WBC_depletion", "removal"))
-plotPCA(vsd_blind, intgroup = c("WBC_depletion", "kit"))
-plotPCA(vsd_blind, intgroup = c("condition"))
-plotPCA(vsd_blind, intgroup = c("removal"))
-plotPCA(vsd_blind, intgroup = c("WBC_depletion"))
-plotPCA(vsd_blind, intgroup = c("RNA_type"))
-plotPCA(vsd_blind, intgroup = c("library_kit"))
-plotPCA(vsd_blind, intgroup = c("kit"))
-```
-
-```{r}
-vsd <- vst(dds_pk, blind = FALSE)
-plotPCA(vsd, intgroup = c("WBC_depletion", "removal"))
-plotPCA(vsd, intgroup = c("WBC_depletion", "kit"))
-plotPCA(vsd, intgroup = c("condition"))
-plotPCA(vsd, intgroup = c("removal"))
-plotPCA(vsd, intgroup = c("WBC_depletion"))
-plotPCA(vsd, intgroup = c("RNA_type"))
-plotPCA(vsd, intgroup = c("library_kit"))
-plotPCA(vsd, intgroup = c("kit"))
-```
-
-ggplot variant:
-
-```{r}
-pcaData <- plotPCA(vsd, intgroup = c("kit", "removal"), returnData = TRUE)
-percentVar <- round(100 * attr(pcaData, "percentVar"))
-ggplot(pcaData, aes(PC1, PC2, color = kit, shape = removal)) +
-  geom_point(size = 4) +
-  xlab(paste0("PC1: ", percentVar[1], "% variance")) +
-  ylab(paste0("PC2: ", percentVar[2], "% variance")) +
-  coord_fixed() +
-  scale_color_viridis(discrete = TRUE) +
-  theme_bw()
-```
-
-Setting design matrix to main axis of variation, mRNA vs total RNA, does not make a big difference.
-
-```{r}
-dds_pk_rna <- DESeqDataSetFromTximport(txi_pk, colData = samples, design = ~kit)
-
-keep <- rowSums(counts(dds_pk_rna) >= 10) >= smallestGroupSize
-before <- length(dds_pk_rna)
-dds_pk_rna <- dds_pk_rna[keep, ]
-after <- length(dds_pk_rna)
-
-vsd <- vst(dds_pk_rna, blind = FALSE)
-
-pcaData <- plotPCA(vsd, intgroup = c("kit", "removal"), returnData = TRUE)
-percentVar <- round(100 * attr(pcaData, "percentVar"))
-ggplot(pcaData, aes(PC1, PC2, color = kit, shape = removal)) +
-  geom_point(size = 4) +
-  xlab(paste0("PC1: ", percentVar[1], "% variance")) +
-  ylab(paste0("PC2: ", percentVar[2], "% variance")) +
-  coord_fixed() +
-  scale_color_viridis(discrete = TRUE) +
-  theme_bw()
-```
-
-Using rlog instead of vst looks fairly similar overall.
-
-```{r}
-rld <- rlog(dds_pk_rna, blind = FALSE)
-
-pcaData <- plotPCA(rld, intgroup = c("kit", "removal"), returnData = TRUE)
-percentVar <- round(100 * attr(pcaData, "percentVar"))
-ggplot(pcaData, aes(PC1, PC2, color = kit, shape = removal)) +
-  geom_point(size = 4) +
-  xlab(paste0("PC1: ", percentVar[1], "% variance")) +
-  ylab(paste0("PC2: ", percentVar[2], "% variance")) +
-  coord_fixed() +
-  scale_color_viridis(discrete = TRUE) +
-  theme_bw()
-```
-
-Comparing transformation strategies more in-depth:
-
-```{r}
-vsn::meanSdPlot(assay(vsd))
-vsn::meanSdPlot(assay(rld))
-```
-
-### Heatmaps
-
-```{r}
-select <- order(rowMeans(counts(dds_pk, normalized = FALSE)),
-  decreasing = TRUE
-)[1:20]
-df <- as.data.frame(colData(dds_pk)[, c("kit")])
-
-pheatmap(assay(vsd)[select, ],
-  cluster_rows = FALSE, show_rownames = TRUE,
-  cluster_cols = FALSE, annotation_col = df
-)
-```
-
-
-### Human
-
-Repeat above analyses...
