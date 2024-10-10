@@ -660,7 +660,7 @@ for (i in unique(gene_tpm_long$sample)) {
 
 ## FastQ Screen {.tabset}
 
-Also see figure in [results/fastq-screen/](results/fastq-screen/) and [results/multiqc-fastq-screen-samtools-pk/multiqc_report.html](results/multiqc-fastq-screen-samtools-pk/multiqc_report.html).
+Also see figure in [results-refseq/fastq-screen/](results-refseq/fastq-screen/) and [results-refseq/multiqc-fastq-screen-samtools-pk/multiqc_report.html](results-refseq/multiqc-fastq-screen-samtools-pk/multiqc_report.html).
 
 ### Combined - sample names
 
