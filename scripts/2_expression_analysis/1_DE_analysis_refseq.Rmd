@@ -135,6 +135,8 @@ gene_tpm <- read_delim(here("results-refseq/star_salmon/salmon.merged.gene_tpm.t
 # gene_counts_length_scaled <- read_delim(here("results-refseq/star_salmon/salmon.merged.gene_counts_length_scaled.tsv"))
 ```
 
+## DESeq tximport objects
+
 The final variant is the DESeq2 approach using `vst` (variance stabilizing transformation) on the raw counts (see [DESeq2 vignette](https://bioconductor.org/packages/devel/bioc/vignettes/DESeq2/inst/doc/DESeq2.html#data-transformations-and-visualization). This is the preferred approach for visualisations. The main goal of this transformation is to remove the dependence of the variance on the mean. However, since we have many zero counts (e.g., rRNA being depleted in some samples), the transformation might not work as well as intended.
 
 ```{r message=FALSE}
@@ -290,8 +292,8 @@ The bash script in [`scripts/2_expression_analysis/0_gene_annotations-refseq.sh`
 
 ```{bash}
 #| echo: fenced
-zcat "${ref_human}" | awk '$3 ~ /gene/' | cut -f9 | grep -E "gene_biotype=rRNA" | grep -v "rRNA_pseudo" | grep -o "ID=[^;]*" | sed 's/ID=/human_rRNA;/' >> "${output_file}"
-zcat "${ref_pk}" | cut -f9 | grep -E "gene_biotype=rRNA" | grep -o "ID=[^;]*" | sed 's/ID=/pk_rRNA;/' >> "${output_file}"
+# zcat "${ref_human}" | awk '$3 ~ /gene/' | cut -f9 | grep -E "gene_biotype=rRNA" | grep -v "rRNA_pseudo" | grep -o "ID=[^;]*" | sed 's/ID=/human_rRNA;/' >> "${output_file}"
+# zcat "${ref_pk}" | cut -f9 | grep -E "gene_biotype=rRNA" | grep -o "ID=[^;]*" | sed 's/ID=/pk_rRNA;/' >> "${output_file}"
 ```
 
 ```{r message=FALSE}
@@ -1455,4 +1457,152 @@ pheatmap(assay(vsd_pk_filtered)[select, ],
   cluster_cols = FALSE, annotation_col = df,
   color = viridis(10)
 )
+```
+
+## PCA plots {.tabset}
+
+### VSD - all genes
+
+```{r}
+pcaData <- plotPCA(vsd, intgroup = c("kit", "WBC_depletion"), returnData = TRUE)
+percentVar <- round(100 * attr(pcaData, "percentVar"))
+ggplot(pcaData, aes(PC1, PC2, color = kit, shape = WBC_depletion)) +
+  geom_point(size = 4) +
+  xlab(paste0("PC1: ", percentVar[1], "% variance")) +
+  ylab(paste0("PC2: ", percentVar[2], "% variance")) +
+  labs(title = expression(paste("PCA of VST counts of human and ", italic("P. knowlesi"), " genes")),
+       color = "Library preparation kit", shape = "Depletion method") +
+  coord_fixed() +
+  scale_color_viridis(discrete = TRUE) +
+  theme_bw()
+```
+
+### VSD - all genes - filtered
+
+Filtered on minimum count of 10 reads for at least 1 sample.
+
+```{r}
+pcaData <- plotPCA(vsd_filtered, intgroup = c("kit", "WBC_depletion"), returnData = TRUE)
+percentVar <- round(100 * attr(pcaData, "percentVar"))
+ggplot(pcaData, aes(PC1, PC2, color = kit, shape = WBC_depletion)) +
+  geom_point(size = 4) +
+  xlab(paste0("PC1: ", percentVar[1], "% variance")) +
+  ylab(paste0("PC2: ", percentVar[2], "% variance")) +
+  labs(title = expression(paste("PCA of VST counts of human and ", italic("P. knowlesi"), " genes")),
+       color = "Library preparation kit", shape = "Depletion method") +
+  coord_fixed() +
+  scale_color_viridis(discrete = TRUE) +
+  theme_bw()
+```
+
+### VSD - Pk genes
+
+```{r}
+pcaData <- plotPCA(vsd_pk, intgroup = c("kit", "WBC_depletion"), returnData = TRUE)
+percentVar <- round(100 * attr(pcaData, "percentVar"))
+ggplot(pcaData, aes(PC1, PC2, color = kit, shape = WBC_depletion)) +
+  geom_point(size = 4) +
+  xlab(paste0("PC1: ", percentVar[1], "% variance")) +
+  ylab(paste0("PC2: ", percentVar[2], "% variance")) +
+  labs(title = expression(paste("PCA of VST counts of ", italic("P. knowlesi"), " genes")),
+       color = "Library preparation kit", shape = "Depletion method") +
+  coord_fixed() +
+  scale_color_viridis(discrete = TRUE) +
+  theme_bw()
+```
+
+### VSD - Pk genes - filtered
+
+Filtered on minimum count of 10 reads for at least 1 sample.
+
+```{r}
+pcaData <- plotPCA(vsd_pk_filtered, intgroup = c("kit", "WBC_depletion"), returnData = TRUE)
+percentVar <- round(100 * attr(pcaData, "percentVar"))
+ggplot(pcaData, aes(PC1, PC2, color = kit, shape = WBC_depletion)) +
+  geom_point(size = 4) +
+  xlab(paste0("PC1: ", percentVar[1], "% variance")) +
+  ylab(paste0("PC2: ", percentVar[2], "% variance")) +
+  labs(title = expression(paste("PCA of VST counts of ", italic("P. knowlesi"), " genes")),
+       color = "Library preparation kit", shape = "Depletion method") +
+  coord_fixed() +
+  scale_color_viridis(discrete = TRUE) +
+  theme_bw()
+```
+
+### VSD - Pk genes - filtered - protein coding only
+
+```{r}
+protein_gene_filter <- intersect(rownames(rowData(vsd_pk_filtered)), gff %>% filter(gene_biotype == "protein_coding") %>% select(gene_id) %>% pull())
+
+pcaData <- plotPCA(vsd_pk_filtered[protein_gene_filter,], intgroup = c("kit", "WBC_depletion"), returnData = TRUE)
+percentVar <- round(100 * attr(pcaData, "percentVar"))
+ggplot(pcaData, aes(PC1, PC2, color = kit, shape = WBC_depletion)) +
+  geom_point(size = 4) +
+  xlab(paste0("PC1: ", percentVar[1], "% variance")) +
+  ylab(paste0("PC2: ", percentVar[2], "% variance")) +
+  labs(title = expression(paste("PCA of VST counts of ", italic("P. knowlesi"), " protein coding genes")),
+       color = "Library preparation kit", shape = "Depletion method") +
+  coord_fixed() +
+  scale_color_viridis(discrete = TRUE) +
+  theme_bw()
+```
+
+----
+
+Number of Pk genes in transcript_info file:
+
+```{r}
+dim(transcript_info$gene %>% filter(grepl("PKNH", gene_id)))
+```
+
+Number of Pk genes in count matrices:
+
+```{r}
+gene_tpm %>% filter(species == "pk")
+```
+
+Number of Pk genes in gff:
+
+```{r}
+read_delim(here("data/ref-refseq-refseq/GCF_000006355.2_GCA_000006355.2_genomic.gff"), comment = "#", col_names = c("seqname", "source", "feature", "start", "end", "score", "strand", "frame", "attribute")) %>%
+  mutate(id = row_number()) %>%
+  separate_rows(attribute, sep = ";") %>%
+  separate(attribute, c("attribute", "attribute_value"), sep = "=") %>%
+  pivot_wider(names_from = attribute, values_from = attribute_value) %>%
+  filter(!is.na(gene_biotype))
+```
+
+```{r}
+read_delim(here("data/ref-refseq-refseq/GCF_000006355.2_GCA_000006355.2_genomic.gff"), comment = "#", col_names = c("seqname", "source", "feature", "start", "end", "score", "strand", "frame", "attribute")) %>%
+    mutate(id = row_number()) %>%
+    separate_rows(attribute, sep = ";") %>%
+    separate(attribute, c("attribute", "attribute_value"), sep = "=") %>%
+    pivot_wider(names_from = attribute, values_from = attribute_value) %>% filter(feature == "gene")
+```
+
+
+```{r}
+read_delim(here("data/ref-refseq-refseq/GCF_000006355.2_GCA_000006355.2_genomic.gff"), comment = "#", col_names = c("seqname", "source", "feature", "start", "end", "score", "strand", "frame", "attribute")) %>%
+    mutate(id = row_number()) %>%
+    separate_rows(attribute, sep = ";") %>%
+    separate(attribute, c("attribute", "attribute_value"), sep = "=") %>%
+    pivot_wider(names_from = attribute, values_from = attribute_value) %>% filter(gene_biotype == "protein_coding")
+```
+
+Non-protein coding genes:
+
+```{r}
+read_delim(here("data/ref-refseq-refseq/GCF_000006355.2_GCA_000006355.2_genomic.gff"), comment = "#", col_names = c("seqname", "source", "feature", "start", "end", "score", "strand", "frame", "attribute")) %>%
+    mutate(id = row_number()) %>%
+    separate_rows(attribute, sep = ";") %>%
+    separate(attribute, c("attribute", "attribute_value"), sep = "=") %>%
+    pivot_wider(names_from = attribute, values_from = attribute_value) %>% filter(!gene_biotype == "protein_coding")
+```
+
+```{r}
+read_delim(here("data/ref-refseq-refseq/GCF_000006355.2_GCA_000006355.2_genomic.gff"), comment = "#", col_names = c("seqname", "source", "feature", "start", "end", "score", "strand", "frame", "attribute")) %>%
+    mutate(id = row_number()) %>%
+    separate_rows(attribute, sep = ";") %>%
+    separate(attribute, c("attribute", "attribute_value"), sep = "=") %>%
+    pivot_wider(names_from = attribute, values_from = attribute_value) %>% filter(gene_biotype == "rRNA")
 ```
