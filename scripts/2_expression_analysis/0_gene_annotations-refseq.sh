@@ -19,6 +19,7 @@ ref_pk=$(realpath "${SCRIPT_DIR}/../../data/ref-refseq-refseq/GCF_000006355.2_GC
 output_file=$(realpath "${SCRIPT_DIR}/../../data/ref-refseq-refseq/gene_types.csv")
 
 # create annotation file for rRNAs
+# unlike for gencode gff files, there is no need to ignore rRNA_pseudogene lncRNA
 echo "gene_type;gene_id" > "${output_file}"
 zcat "${ref_human}" | awk '$3 ~ /gene/' | cut -f9 | grep -E "gene_biotype=rRNA" | grep -v "rRNA_pseudo" | grep -o "ID=[^;]*" | sed 's/ID=/human_rRNA;/' >> "${output_file}"
 zcat "${ref_pk}" | cut -f9 | grep -E "gene_biotype=rRNA" | grep -o "ID=[^;]*" | sed 's/ID=/pk_rRNA;/' >> "${output_file}"

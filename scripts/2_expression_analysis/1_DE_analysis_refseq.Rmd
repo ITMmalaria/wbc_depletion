@@ -109,8 +109,9 @@ transcript_info <- list(
   tx2gene = transcript_info[, 1:2]
 )
 
-# salmon quant.genes.sf gene counts
-salmon_gene_counts <- list.files(
+# salmon quant.genes.sf gene-level counts
+# per-sample aggregation
+gene_counts_salmon <- list.files(
   path = here("results-refseq/star_salmon"), pattern = "quant.genes.sf",
   recursive = TRUE, full.names = TRUE
 ) %>%
@@ -119,95 +120,123 @@ salmon_gene_counts <- list.files(
   rename(gene_id = Name) %>%
   left_join(transcript_info$gene, by = "gene_id")
 
-# salmon quant.sf transcript counts
-salmon_transcript_counts <- list.files(
-  path = here("results-refseq/star_salmon"), pattern = "quant.sf",
-  recursive = TRUE, full.names = TRUE
-) %>%
-  read_delim(id = "sample") %>%
-  mutate(sample = basename(dirname(sample))) %>%
-  rename(gene_id = Name) %>%
-  left_join(transcript_info$gene, by = "gene_id")
+# txi gene-level counts - same as using tximport and DESeqDataSetFromTximport except rounding needs to be done manually
+# gene-level aggregation across all samples
+gene_counts_txi <- read_delim(here("results-refseq/star_salmon/salmon.merged.gene_counts.tsv")) %>%
+  mutate(across(starts_with("X"), \(x) as.integer(round(x))))
 
 # txi gene-level TPM abundances
 gene_tpm <- read_delim(here("results-refseq/star_salmon/salmon.merged.gene_tpm.tsv"))
 
-# txi gene-level library-scaled counts
-gene_counts_scaled <- read_delim(here("results-refseq/star_salmon/salmon.merged.gene_counts_scaled.tsv"))
+# # txi gene-level library-scaled counts
+# gene_counts_scaled <- read_delim(here("results-refseq/star_salmon/salmon.merged.gene_counts_scaled.tsv"))
 
-# txi gene-level length + library scaled counts
-gene_counts_length_scaled <- read_delim(here("results-refseq/star_salmon/salmon.merged.gene_counts_length_scaled.tsv"))
+# # txi gene-level length + library scaled counts
+# gene_counts_length_scaled <- read_delim(here("results-refseq/star_salmon/salmon.merged.gene_counts_length_scaled.tsv"))
 ```
 
-The final variant is the DESeq2 approach using `vst` (variance stabilizing transformation) on the raw counts (see [DESeq2 vignette](https://bioconductor.org/packages/devel/bioc/vignettes/DESeq2/inst/doc/DESeq2.html#data-transformations-and-visualization). The main goal of this transformation is to remove the dependence of the variance on the mean. However, since we have many zero counts (e.g., rRNA being depleted in some samples), the transformation might not work as well as intended.
+The final variant is the DESeq2 approach using `vst` (variance stabilizing transformation) on the raw counts (see [DESeq2 vignette](https://bioconductor.org/packages/devel/bioc/vignettes/DESeq2/inst/doc/DESeq2.html#data-transformations-and-visualization). This is the preferred approach for visualisations. The main goal of this transformation is to remove the dependence of the variance on the mean. However, since we have many zero counts (e.g., rRNA being depleted in some samples), the transformation might not work as well as intended.
 
 ```{r message=FALSE}
-# txi original counts + offset - to be used with deseq2's vst/rlog transform
+# txi original counts + offset - to be used with DESeq2's vst/rlog transform for visualisations
 salmon_quant_files <- paste0("./results-refseq/star_salmon/", list.files(path = "./results-refseq/star_salmon/", pattern = "quant.sf", recursive = TRUE))
 
 # all genes
 txi <- tximport(salmon_quant_files, type = "salmon", tx2gene = transcript_info$tx2gene, txOut = FALSE)
-# samples_coldata <- as.data.frame(samples)
-# row.names(samples_coldata) <- samples_coldata$sample
 gse <- DESeqDataSetFromTximport(txi, colData = samples, design = ~1)
+
+# variance stabilizing transformation
 vsd <- vst(gse, blind = TRUE)
 meanSdPlot(assay(vsd))
-gene_counts_vst <- data.frame(assays(vsd)[[1]])
-colnames(gene_counts_vst) <- colData(gse)$sample
-gene_counts_vst <- gene_counts_vst %>%
-  mutate(gene_id = rownames(gene_counts_vst)) %>%
-  left_join(transcript_info$gene, by = "gene_id")
 
-# Pk only
+# extract transformed gene counts
+# gene_counts_vst <- data.frame(assays(vsd)[[1]])
+# colnames(gene_counts_vst) <- colData(gse)$sample
+# gene_counts_vst <- gene_counts_vst %>%
+#   mutate(gene_id = rownames(gene_counts_vst)) %>%
+#   left_join(transcript_info$gene, by = "gene_id")
+
+# Pk genes
 txi_pk <- tximport(salmon_quant_files,
   type = "salmon",
   tx2gene = transcript_info$tx2gene %>% filter(str_detect(gene_id, "PKNH")),
   txOut = FALSE
 )
 gse_pk <- DESeqDataSetFromTximport(txi_pk, colData = samples, design = ~1)
+
+# variance stabilizing transformation
 vsd_pk <- vst(gse_pk, blind = TRUE)
 meanSdPlot(assay(vsd_pk))
-gene_counts_vst_pk <- data.frame(assays(vsd_pk)[[1]])
-colnames(gene_counts_vst_pk) <- colData(vsd_pk)$sample
-gene_counts_vst_pk <- gene_counts_vst_pk %>%
-  mutate(gene_id = rownames(gene_counts_vst_pk)) %>%
-  left_join(transcript_info$gene, by = "gene_id")
+
+# extract transformed gene counts
+# gene_counts_vst_pk <- data.frame(assays(vsd_pk)[[1]])
+# colnames(gene_counts_vst_pk) <- colData(vsd_pk)$sample
+# gene_counts_vst_pk <- gene_counts_vst_pk %>%
+#   mutate(gene_id = rownames(gene_counts_vst_pk)) %>%
+#   left_join(transcript_info$gene, by = "gene_id")
 
 # clean up
-# rm(gse)
-# rm(txi)
+rm(txi)
+rm(txi_pk)
 ```
 
-The raw counts can optionally be pre-filtered, e.g. to a minimum of 10 reads per group (or sample in our case) as suggested by DESeq2.
+## Filtering raw counts
+
+The raw counts can optionally be pre-filtered, e.g. to a minimum of 10 reads for at least a single sample, as suggested by the DESeq2 vignette.
 
 ```{r message=FALSE}
-# filter all vst counts
-smallestGroupSize <- 1
-keep <- rowSums(counts(gse) >= 10) >= smallestGroupSize
-gse_filtered <- gse[keep, ]
+# create filter for all genes on the level of the DESeq/tximport gene counts
+filter_all_genes <- rowSums(counts(gse) >= 10) >= 1
+# should be the same as filtering on tximport raw gene counts from nf-core pipeline
+stopifnot(all( filter_all_genes == (rowSums(gene_counts_txi[,3:18] >= 10) >= 1)))
+
+# create filtered versions of full deseq2 objects
+gse_filtered <- gse[filter_all_genes, ]
 vsd_filtered <- vst(gse_filtered, blind = TRUE)
 meanSdPlot(assay(vsd_filtered))
-gene_counts_vst_filtered <- data.frame(assays(vsd_filtered)[[1]])
-colnames(gene_counts_vst_filtered) <- colData(vsd_filtered)$sample
-gene_counts_vst_filtered <- gene_counts_vst_filtered %>%
-  mutate(gene_id = rownames(gene_counts_vst_filtered)) %>%
-  left_join(transcript_info$gene, by = "gene_id")
 
-# filter pk vst counts
-keep <- rowSums(counts(gse_pk) >= 10) >= smallestGroupSize
-gse_pk_filtered <- gse_pk[keep, ]
+# create filter for pk genes
+filter_pk_genes <- rowSums(counts(gse_pk) >= 10) >= 1
+
+# create filtered versions of Pk deseq2 objects
+gse_pk_filtered <- gse_pk[filter_pk_genes, ]
 vsd_pk_filtered <- vst(gse_pk_filtered, blind = TRUE)
 meanSdPlot(assay(vsd_pk_filtered))
-gene_counts_vst_pk_filtered <- data.frame(assays(vsd_pk_filtered)[[1]])
-colnames(gene_counts_vst_pk_filtered) <- colData(vsd_pk_filtered)$sample
-gene_counts_vst_pk_filtered <- gene_counts_vst_pk_filtered %>%
-  mutate(gene_id = rownames(gene_counts_vst_pk_filtered)) %>%
-  left_join(transcript_info$gene, by = "gene_id")
+
+# create filtered versions of other count matrices
+gene_tpm_filtered <- gene_tpm[filter_all_genes,]
+gene_counts_txi_filtered <- gene_tpm[filter_all_genes,]
+# gene counts salmon are in long format, so use join instead of filter mask
+gene_counts_salmon_filtered <- gene_counts_salmon %>% inner_join(gene_tpm_filtered %>% select("gene_id"), by = "gene_id")
+
+# # filtering on pk tximport list should be the same as extracting pk genes from all gene filter
+# gse_pk_filtered2 <- gene_counts_gse_filtered[gene_counts_gse_filtered$species == "pk",1:18]
+# 
+# gene_counts_pk_gse_filtered <- data.frame(assays(gse_pk_filtered)[[1]])
+# colnames(gene_counts_pk_gse_filtered) <- colData(gse)$sample
+# gene_counts_pk_gse_filtered <- gene_counts_pk_gse_filtered %>%
+#   mutate(gene_id = rownames(gene_counts_pk_gse_filtered)) %>%
+#   left_join(transcript_info$gene, by = "gene_id")
+# 
+# stopifnot(all(gse_pk_filtered2 == gene_counts_pk_gse_filtered))
+
+# for the other matrices, filtering using deseq-filter list should be the same as filtering on tximport csv
+# gene_counts_gse_filtered <- data.frame(assays(gse_filtered)[[1]])
+# colnames(gene_counts_gse_filtered) <- colData(gse)$sample
+# gene_counts_gse_filtered <- gene_counts_gse_filtered %>%
+#   mutate(gene_id = rownames(gene_counts_gse_filtered)) %>%
+#   left_join(transcript_info$gene, by = "gene_id")
+# gene_tpm_filtered <- gene_tpm %>% inner_join(gene_counts_gse_filtered %>% select("gene_id"), by = "gene_id")
+# 
+# gene_tpm_filtered2 <- gene_tpm[(rowSums(gene_counts_txi[,3:18] >= 10) >= 1),]
+# 
+# stopifnot(all(gene_tpm_filtered == gene_tpm_filtered2))
+# stopifnot(all(gene_tpm[filter_all_genes,] == gene_tpm_filtered))
 ```
 
 The number of genes were filtered down from `r dim(gse)[1]`  to `r dim(gse_filtered)[1]` and from `r dim(gse_pk)[1]` to `r dim(gse_pk_filtered)[1]`, for all genes and *P. knowlesi* genes respectively (only for VST transformed counts, not for the TPM or other count matrices). So in conclusion, the effect is relatively minor for *P. knowlesi*, but for all reads a substantial number of low counts are removed.
 
-**TODO: It is difficult to determine an appropriate threshold for filtering on the TPM level, so instead we filter on the raw count level (>10 per sample), and only retain those genes in the TPM matrix. The same is done for the raw counts.**
+It is difficult to determine an appropriate threshold for filtering on the TPM level, so instead we filter the same genes as before on the raw count level (>=10 for at least 1 sample).
 
 ```{r}
 dim(gene_tpm)
@@ -215,13 +244,12 @@ mean.tpm <- apply(gene_tpm[, 3:18], 1, mean)
 hist(log10(mean.tpm))
 # hist(log10(mean.tpm+1e-5))
 
-gene_tpm_filtered <- gene_tpm %>% inner_join(gene_counts_vst_filtered %>% select("gene_id"), by = "gene_id")
 dim(gene_tpm_filtered)
 mean.tpm <- apply(gene_tpm_filtered[, 3:18], 1, mean)
 hist(log10(mean.tpm))
-
-salmon_gene_counts_filtered <- salmon_gene_counts %>% inner_join(gene_counts_vst_filtered %>% select("gene_id"), by = "gene_id")
 ```
+
+## Add species information
 
 Split datasets into *P. knowlesi* and human subsets:
 
@@ -234,77 +262,50 @@ add_species <- function(data) {
     ))
 }
 
-salmon_gene_counts <- add_species(salmon_gene_counts)
-salmon_gene_counts_filtered <- add_species(salmon_gene_counts_filtered)
-salmon_transcript_counts <- add_species(salmon_transcript_counts)
+gene_counts_salmon <- add_species(gene_counts_salmon)
+gene_counts_salmon_filtered <- add_species(gene_counts_salmon_filtered)
+
+gene_counts_txi <- add_species(gene_counts_txi)
+gene_counts_txi_filtered <- add_species(gene_counts_txi_filtered)
+
 gene_tpm <- add_species(gene_tpm)
 gene_tpm_filtered <- add_species(gene_tpm_filtered)
-gene_counts_scaled <- add_species(gene_counts_scaled)
-gene_counts_length_scaled <- add_species(gene_counts_length_scaled)
-gene_counts_vst <- add_species(gene_counts_vst)
-gene_counts_vst_pk <- add_species(gene_counts_vst_pk)
-gene_counts_vst_filtered <- add_species(gene_counts_vst_filtered)
-gene_counts_vst_pk_filtered <- add_species(gene_counts_vst_pk_filtered)
-
-# df_list <- list(salmon_gene_counts, salmon_transcript_counts, gene_tpm, gene_counts_scaled, gene_counts_length_scaled)
-# lapply(seq_along(df_list), function(n) add_species(df_list[[n]]))
-# l <- df_list %>% lapply( add_species )
 ```
 
 ## Annotating rRNA and globin genes
 
 ### rRNA {.tabset}
 
-The GENCODE `gff` file contains info on `rRNA` and `Mt_rRNA` in the `gene_type` attributes:
+The RefSeq `gff` files contains info on `rRNA` in the `gene_biotype` attribute of gene entries (including mitochondrial rRNA) for both species (i.e., we collected featured labelled as `gene` in the 3rd column of the gff, not rRNA directly, since counts were aggregated on the gene level).
 
 ```
-chr21   ENSEMBL gene    8212572 8212724 .       +       .       ID=ENSG00000278233.1;gene_id=ENSG00000278233.1;gene_type=rRNA;gene_name=RNA5-8SN2;level=3;hgnc_id=HGNC:53521
-chr21   ENSEMBL transcript      8212572 8212724 .       +       .       ID=ENST00000612463.1;Parent=ENSG00000278233.1;gene_id=ENSG00000278233.1;transcript_id=ENST00000612463.1;gene_type=rRNA;gene_name=RNA5-8SN2;transcript_type=rRNA;transcript_name=RNA5-8SN2-201;level=3;transcript_support_level=NA;hgnc_id=HGNC:53521;tag=basic,Ensembl_canonical
-chr21   ENSEMBL exon    8212572 8212724 .       +       .       ID=exon:ENST00000612463.1:1;Parent=ENST00000612463.1;gene_id=ENSG00000278233.1;transcript_id=ENST00000612463.1;gene_type=rRNA;gene_name=RNA5-8SN2;transcript_type=rRNA;transcript_name=RNA5-8SN2-201;exon_number=1;exon_id=ENSE00003742227.1;level=3;transcript_support_level=NA;hgnc_id=HGNC:53521;tag=basic,Ensembl_canonical
+NC_011902.2	RefSeq	gene	825471	825594	.	+	.	ID=gene-PKNH_0117700;Dbxref=GeneID:7318405;Name=PKNH_0117700;end_range=825594,.;gbkey=Gene;gene_biotype=rRNA;locus_tag=PKNH_0117700;old_locus_tag=PKH_011712;partial=true;start_range=.,825471
+
+NC_011902.2	RefSeq	rRNA	825471	825594	.	+	.	ID=rna-XR_002461722.1;Parent=gene-PKNH_0117700;Dbxref=GeneID:7318405,GenBank:XR_002461722.1;Name=XR_002461722.1;end_range=825594,.;gbkey=rRNA;locus_tag=PKNH_0117700;orig_transcript_id=gnl|WGS:CADCXE|mrna.PKNH_0117700-RA;partial=true;product=5.8S ribosomal RNA;start_range=.,825471;transcript_id=XR_002461722.1
+
+NC_011902.2	RefSeq	exon	825471	825594	.	+	.	ID=exon-XR_002461722.1-1;Parent=rna-XR_002461722.1;Dbxref=GeneID:7318405,GenBank:XR_002461722.1;end_range=825594,.;gbkey=rRNA;locus_tag=PKNH_0117700;orig_transcript_id=gnl|WGS:CADCXE|mrna.PKNH_0117700-RA;partial=true;product=5.8S ribosomal RNA;start_range=.,825471;transcript_id=XR_002461722.1
 ```
 
-<!-- ignores rRNA_pseudogene lncRNA etc. -->
+The bash script in [`scripts/2_expression_analysis/0_gene_annotations-refseq.sh`](./scripts/2_expression_analysis/0_gene_annotations-refseq.sh) was used to retrieve the rRNA from both annotation files.
 
-As does the PlasmoDB Pk `gff`:
-
-```
-PKNH_MIT_v2     VEuPathDB       ncRNA_gene      2       32      .       +       .       ID=PKNH_MIT00100;description=ribosomal RNA fragment;ebi_biotype=rRNA
-PKNH_MIT_v2     VEuPathDB       rRNA    2       32      .       +       .       ID=PKNH_MIT00100:rRNA;Parent=PKNH_MIT00100;description=ribosomal RNA fragment;gene_ebi_biotype=rRNA
-PKNH_MIT_v2     VEuPathDB       exon    2       32      .       +       .       ID=exon_PKNH_MIT00100:rRNA-E1;Parent=PKNH_MIT00100:rRNA;gene_id=PKNH_MIT00100
+```{bash}
+#| echo: fenced
+zcat "${ref_human}" | awk '$3 ~ /gene/' | cut -f9 | grep -E "gene_biotype=rRNA" | grep -v "rRNA_pseudo" | grep -o "ID=[^;]*" | sed 's/ID=/human_rRNA;/' >> "${output_file}"
+zcat "${ref_pk}" | cut -f9 | grep -E "gene_biotype=rRNA" | grep -o "ID=[^;]*" | sed 's/ID=/pk_rRNA;/' >> "${output_file}"
 ```
 
-The bash script in [`scripts/2_expression_analysis/0_gene_annotations.sh`](./scripts/2_expression_analysis/0_gene_annotations.sh) was used to retrieve the rRNA from both annotation files.
-
-```bash
-# zcat "${ref_human}"| awk '$3 ~ /gene/' | cut -f9 | grep -E "gene_type=rRNA" | grep -v "rRNA_pseudo" | grep -o "ID=[^;]*" | sed 's/ID=/human_rRNA;/' >> "${output_file}"
-# zcat "${ref_human}"| awk '$3 ~ /gene/' | cut -f9 | grep -E "gene_type=Mt_rRNA" | grep -o "ID=[^;]*" | sed 's/ID=/human_Mt_rRNA;/' >> "${output_file}"
-# cut -f9 "${ref_pk}" | grep ";ebi_biotype=rRNA" | grep -o "ID=[^;]*" | sed 's/ID=/pk_rRNA;/' >> "${output_file}"
+```{r message=FALSE}
+# read in gene type table
+gene_types_df <- read_csv2(here("data/ref-refseq-refseq/gene_types.csv")) %>% left_join(transcript_info$gene, by = "gene_id")
 ```
 
 **Note that the GENCODE and RefSeq annotation file contain different subsets of annotated rRNA genes!** See semi-comprehensive list of human rRNA genes here: https://www.genenames.org/data/genegroup/#!/group/848. Some are not included in any reference assembly, but some are only present in either GENCODE or RefSeq. Some examples include RNA18S and 28S being present in RefSeq only. Moreover, for GENCODE, the majority of rRNA counts are zero across the board, with the exception of:
 
-- Mitochondrial `RNR1/2` are high across all samples.
-- `RNA5-8SN2` in samples 11 through 16 + 7 and low counts in 2
-- `5_8S_rRNA` in 12-16 + 6 + 8
-- `RNA5-8SN3`in 12-16 + 9 and low counts in 1 and 3
-- `RNA5-8SN1`in 12-16 + 5
-- `RNA5-8SN5` in 12-6
-- `RNA5-8SN4`in 12-16 + 10
-- `RNA5S1` in sample 13, `RNA5S2` in sample 12, `RNA5S6` in sample 14, `RNA5S13` in 16, `RNA5S14` in 15 and 16, 
-- extremely low counts for `RNA5S9` in sample 8, 14, 15 and 16, and for `RNA5SP150` in 16
-
-For RefSeq:
-
-- Mitochondrial `RNR1/2` are high across all samples
-- ...
-
-(Checked using `awk -F';' '$1 ~ /human_rRNA/ {print $2}' data/ref-refseq-refseq/gene_types.csv | while read -r line; do echo "$line"; grep "${line}" results-refseq/star_salmon/tx2gene.tsv; grep "$line" results-refseq/star_salmon/**/quant.gene*; done`)
-
 See tables below for a full breakdown:
 
-```{r message=FALSE}
-gene_types_df <- read_csv2(here("data/ref-refseq-refseq/gene_types.csv")) %>% left_join(transcript_info$gene, by = "gene_id")
+<!-- (Checked using `awk -F';' '$1 ~ /human_rRNA/ {print $2}' data/ref-refseq-refseq/gene_types.csv | while read -r line; do echo "$line"; grep "${line}" results-refseq/star_salmon/tx2gene.tsv; grep "$line" results-refseq/star_salmon/**/quant.gene*; done`) -->
 
+```{r message=FALSE}
 knitr::kable(
   gene_types_df %>%
     filter((gene_type == "human_rRNA") | (gene_type == "Mt_rRNA")) %>%
@@ -339,152 +340,6 @@ if (file.exists(here("data/ref/gene_types.csv"))) {
 }
 ```
 
-#### GENCODE annotated gene list
-
-| gene_type     | gene_id           | gene_name |
-|---------------|-------------------|-----------|
-| human_rRNA    | ENSG00000283274.1 | 5_8S_rRNA |
-| human_rRNA    | ENSG00000283568.1 | 5_8S_rRNA |
-| human_rRNA    | ENSG00000283291.1 | 5_8S_rRNA |
-| human_rRNA    | ENSG00000275877.1 | 5_8S_rRNA |
-| human_rRNA    | ENSG00000277739.1 | 5_8S_rRNA |
-| human_rRNA    | ENSG00000276871.1 | 5_8S_rRNA |
-| human_rRNA    | ENSG00000273730.1 | 5_8S_rRNA |
-| human_rRNA    | ENSG00000278294.1 | 5_8S_rRNA |
-| human_rRNA    | ENSG00000275757.1 | 5_8S_rRNA |
-| human_rRNA    | ENSG00000276861.1 | 5S_rRNA   |
-| human_rRNA    | ENSG00000277411.1 | 5S_rRNA   |
-| human_rRNA    | ENSG00000277488.1 | 5S_rRNA   |
-| human_rRNA    | ENSG00000278457.1 | 5S_rRNA   |
-| human_Mt_rRNA | ENSG00000211459.2 | MT-RNR1   |
-| human_Mt_rRNA | ENSG00000210082.2 | MT-RNR2   |
-| human_rRNA    | ENSG00000278189.1 | RNA5-8SN1 |
-| human_rRNA    | ENSG00000278233.1 | RNA5-8SN2 |
-| human_rRNA    | ENSG00000275215.1 | RNA5-8SN3 |
-| human_rRNA    | ENSG00000276700.1 | RNA5-8SN4 |
-| human_rRNA    | ENSG00000274917.1 | RNA5-8SN5 |
-| human_rRNA    | ENSG00000199352.1 | RNA5S1    |
-| human_rRNA    | ENSG00000199910.1 | RNA5S10   |
-| human_rRNA    | ENSG00000199334.1 | RNA5S11   |
-| human_rRNA    | ENSG00000199270.1 | RNA5S12   |
-| human_rRNA    | ENSG00000202526.1 | RNA5S13   |
-| human_rRNA    | ENSG00000201355.1 | RNA5S14   |
-| human_rRNA    | ENSG00000201925.1 | RNA5S15   |
-| human_rRNA    | ENSG00000202257.1 | RNA5S16   |
-| human_rRNA    | ENSG00000200370.1 | RNA5S17   |
-| human_rRNA    | ENSG00000201588.1 | RNA5S2    |
-| human_rRNA    | ENSG00000199337.1 | RNA5S3    |
-| human_rRNA    | ENSG00000200381.1 | RNA5S4    |
-| human_rRNA    | ENSG00000199396.1 | RNA5S5    |
-| human_rRNA    | ENSG00000200624.1 | RNA5S6    |
-| human_rRNA    | ENSG00000202521.1 | RNA5S7    |
-| human_rRNA    | ENSG00000200343.1 | RNA5S8    |
-| human_rRNA    | ENSG00000201321.1 | RNA5S9    |
-| human_rRNA    | ENSG00000199839.1 | RNA5SP150 |
-| human_rRNA    | ENSG00000201931.1 | RNA5SP172 |
-| human_rRNA    | ENSG00000201532.1 | RNA5SP194 |
-| human_rRNA    | ENSG00000284736.1 | RNA5SP343 |
-| human_rRNA    | ENSG00000199953.1 | RNA5SP443 |
-| human_rRNA    | ENSG00000201285.1 | RNA5SP524 |
-| human_rRNA    | ENSG00000212595.1 | RNA5SP525 |
-| human_rRNA    | ENSG00000274663.1 | RNA5SP526 |
-| human_rRNA    | ENSG00000274759.1 | RNA5SP527 |
-| human_rRNA    | ENSG00000275305.1 | RNA5SP528 |
-| human_rRNA    | ENSG00000276442.1 | RNA5SP529 |
-| human_rRNA    | ENSG00000277049.1 | RNA5SP530 |
-| human_rRNA    | ENSG00000277418.1 | RNA5SP531 |
-| human_rRNA    | ENSG00000283433.1 | RNA5SP532 |
-| human_rRNA    | ENSG00000252830.2 | RNA5SP533 |
-| human_rRNA    | ENSG00000274059.1 | RNA5SP534 |
-| human_rRNA    | ENSG00000274097.1 | RNA5SP535 |
-| human_rRNA    | ENSG00000274408.1 | RNA5SP536 |
-
-
-#### RefSeq annotated gene list
-
-| gene_type  | gene_id           |
-|------------|-------------------|
-| human_rRNA | gene-LOC124905422 |
-| human_rRNA | gene-LOC124905424 |
-| human_rRNA | gene-LOC124905425 |
-| human_rRNA | gene-LOC124905426 |
-| human_rRNA | gene-LOC124905427 |
-| human_rRNA | gene-LOC124905428 |
-| human_rRNA | gene-LOC124905429 |
-| human_rRNA | gene-LOC124905430 |
-| human_rRNA | gene-LOC124905431 |
-| human_rRNA | gene-LOC124905432 |
-| human_rRNA | gene-LOC124905433 |
-| human_rRNA | gene-LOC124905434 |
-| human_rRNA | gene-LOC124905435 |
-| human_rRNA | gene-LOC124905436 |
-| human_rRNA | gene-LOC124905437 |
-| human_rRNA | gene-LOC124905438 |
-| human_rRNA | gene-RNA18SN1     |
-| human_rRNA | gene-RNA18SN1-2   |
-| human_rRNA | gene-RNA18SN2     |
-| human_rRNA | gene-RNA18SN3     |
-| human_rRNA | gene-RNA18SN3-2   |
-| human_rRNA | gene-RNA18SN4     |
-| human_rRNA | gene-RNA18SN5     |
-| human_rRNA | gene-RNA28SN1     |
-| human_rRNA | gene-RNA28SN1-2   |
-| human_rRNA | gene-RNA28SN2     |
-| human_rRNA | gene-RNA28SN3     |
-| human_rRNA | gene-RNA28SN3-2   |
-| human_rRNA | gene-RNA28SN4     |
-| human_rRNA | gene-RNA28SN5     |
-| human_rRNA | gene-RNA45SN1     |
-| human_rRNA | gene-RNA45SN1-2   |
-| human_rRNA | gene-RNA45SN2     |
-| human_rRNA | gene-RNA45SN3     |
-| human_rRNA | gene-RNA45SN3-2   |
-| human_rRNA | gene-RNA45SN4     |
-| human_rRNA | gene-RNA45SN5     |
-| human_rRNA | gene-RNA5-8SN1    |
-| human_rRNA | gene-RNA5-8SN1-2  |
-| human_rRNA | gene-RNA5-8SN2    |
-| human_rRNA | gene-RNA5-8SN3    |
-| human_rRNA | gene-RNA5-8SN3-2  |
-| human_rRNA | gene-RNA5-8SN4    |
-| human_rRNA | gene-RNA5-8SN5    |
-| human_rRNA | gene-RNA5S1       |
-| human_rRNA | gene-RNA5S1-2     |
-| human_rRNA | gene-RNA5S10      |
-| human_rRNA | gene-RNA5S10-2    |
-| human_rRNA | gene-RNA5S11      |
-| human_rRNA | gene-RNA5S11-2    |
-| human_rRNA | gene-RNA5S12      |
-| human_rRNA | gene-RNA5S12-2    |
-| human_rRNA | gene-RNA5S13      |
-| human_rRNA | gene-RNA5S13-2    |
-| human_rRNA | gene-RNA5S14      |
-| human_rRNA | gene-RNA5S14-2    |
-| human_rRNA | gene-RNA5S15      |
-| human_rRNA | gene-RNA5S15-2    |
-| human_rRNA | gene-RNA5S16      |
-| human_rRNA | gene-RNA5S16-2    |
-| human_rRNA | gene-RNA5S17      |
-| human_rRNA | gene-RNA5S17-2    |
-| human_rRNA | gene-RNA5S2       |
-| human_rRNA | gene-RNA5S2-2     |
-| human_rRNA | gene-RNA5S3       |
-| human_rRNA | gene-RNA5S3-2     |
-| human_rRNA | gene-RNA5S4       |
-| human_rRNA | gene-RNA5S4-2     |
-| human_rRNA | gene-RNA5S5       |
-| human_rRNA | gene-RNA5S5-2     |
-| human_rRNA | gene-RNA5S6       |
-| human_rRNA | gene-RNA5S6-2     |
-| human_rRNA | gene-RNA5S7       |
-| human_rRNA | gene-RNA5S7-2     |
-| human_rRNA | gene-RNA5S8       |
-| human_rRNA | gene-RNA5S8-2     |
-| human_rRNA | gene-RNA5S9       |
-| human_rRNA | gene-RNA5S9-2     |
-| human_rRNA | gene-RNR1         |
-| human_rRNA | gene-RNR2         |
-
 ### Globins
 
 For human globins, the following genes were included: "HBB","HBD","HBBP1","HBG1","HBG2","HBE1","HBZ","HBM","HBA2","HBA1","HBQ1".
@@ -495,14 +350,16 @@ globin_df <- tibble(gene_name = globin_names, gene_type = "human_globin") %>% le
 
 gene_types_df <- gene_types_df %>% bind_rows(globin_df)
 
+# export full gene type file
 write_csv2(gene_types_df, here("data/ref-refseq-refseq/gene_types_R.csv"))
 
+# some gene id share the same gene name
 # gene_types_df %>%
 #     group_by(gene_name) %>%
 #     filter(n()>1)
 ```
 
-Merge annotations with counts and fill in missing gene_types:
+Merge annotations with counts and fill in missing gene_types (= non-rRNA/globin) with species identifier:
 
 ```{r}
 # merge gene_type annotation and fill in missing types using species name
@@ -512,29 +369,14 @@ annotate_gene_type <- function(data, gene_types) {
     mutate("gene_type" = coalesce(gene_type, species))
 }
 
-salmon_gene_counts <- annotate_gene_type(salmon_gene_counts, gene_types_df)
-salmon_gene_counts_filtered <- annotate_gene_type(salmon_gene_counts_filtered, gene_types_df)
-salmon_transcript_counts <- annotate_gene_type(salmon_transcript_counts, gene_types_df)
+gene_counts_salmon <- annotate_gene_type(gene_counts_salmon, gene_types_df)
+gene_counts_salmon_filtered <- annotate_gene_type(gene_counts_salmon_filtered, gene_types_df)
+
+gene_counts_txi <- annotate_gene_type(gene_counts_txi, gene_types_df)
+gene_counts_txi_filtered <- annotate_gene_type(gene_counts_txi_filtered, gene_types_df)
+
 gene_tpm <- annotate_gene_type(gene_tpm, gene_types_df)
 gene_tpm_filtered <- annotate_gene_type(gene_tpm_filtered, gene_types_df)
-gene_counts_scaled <- annotate_gene_type(gene_counts_scaled, gene_types_df)
-gene_counts_length_scaled <- annotate_gene_type(gene_counts_length_scaled, gene_types_df)
-gene_counts_vst <- annotate_gene_type(gene_counts_vst, gene_types_df)
-gene_counts_vst_pk <- annotate_gene_type(gene_counts_vst_pk, gene_types_df)
-gene_counts_vst_filtered <- annotate_gene_type(gene_counts_vst_filtered, gene_types_df)
-gene_counts_vst_pk_filtered <- annotate_gene_type(gene_counts_vst_pk_filtered, gene_types_df)
-# gene_counts_rld <- annotate_gene_type(gene_counts_rld, gene_types_df)
-# gene_counts_ntd <- annotate_gene_type(gene_counts_ntd, gene_types_df)
-
-# # merge gene_type annotation and fill in missing types using species name
-# salmon_gene_counts <- salmon_gene_counts %>%
-#   left_join(gene_types_df, by = c("gene_id", "gene_name")) %>%
-#   mutate(gene_type = coalesce(gene_type, species))
-#
-# # merge gene_type annotation with length scaled counts
-# gene_counts_length_scaled <- gene_counts_length_scaled %>%
-#   left_join(gene_types_df, by = c("gene_id", "gene_name")) %>%
-#   mutate(gene_type = coalesce(gene_type, species))
 
 # cast to long format
 to_long <- function(data) {
@@ -544,76 +386,64 @@ to_long <- function(data) {
     mutate(sample = str_sub(sample, 2, -1))
 }
 
+gene_counts_txi_long <- to_long(gene_counts_txi)
+gene_counts_txi_filtered_long <- to_long(gene_counts_txi_filtered)
+
 gene_tpm_long <- to_long(gene_tpm)
 gene_tpm_filtered_long <- to_long(gene_tpm_filtered)
-gene_counts_scaled_long <- to_long(gene_counts_scaled)
-gene_counts_length_scaled_long <- to_long(gene_counts_length_scaled)
-gene_counts_vst_long <- gene_counts_vst %>%
-  pivot_longer(cols = `104974-001-001_S1_L001`:`104974-001-016_S1_L001`, names_to = "sample", values_to = "counts")
-gene_counts_vst_pk_long <- gene_counts_vst_pk %>%
-  pivot_longer(cols = `104974-001-001_S1_L001`:`104974-001-016_S1_L001`, names_to = "sample", values_to = "counts")
-gene_counts_vst_filtered_long <- gene_counts_vst_filtered %>%
-  pivot_longer(cols = `104974-001-001_S1_L001`:`104974-001-016_S1_L001`, names_to = "sample", values_to = "counts")
-gene_counts_vst_pk_filtered_long <- gene_counts_vst_pk_filtered %>%
-  pivot_longer(cols = `104974-001-001_S1_L001`:`104974-001-016_S1_L001`, names_to = "sample", values_to = "counts")
-
-# gene_counts_rld_long <- gene_counts_rld %>%
-# pivot_longer(cols = `104974-001-001_S1_L001`:`104974-001-016_S1_L001`, names_to = "sample", values_to = "counts")
-# gene_counts_ntd_long <- gene_counts_ntd %>%
-# pivot_longer(cols = `104974-001-001_S1_L001`:`104974-001-016_S1_L001`, names_to = "sample", values_to = "counts")
-
-# gene_counts_length_scaled_long <-
-#   pivot_longer(gene_counts_length_scaled, cols = `X104974.001.001_S1_L001`:`X104974.001.016_S1_L001`, names_to = "sample", values_to = "counts") %>%
-#   mutate(sample = str_replace(sample, ".", replacement = "-")) %>%
-#   mutate(sample = str_sub(sample, 2, -1))
-
-#   rename_at(`X104974.001.001_S1_L001`:`X104974.001.016_S1_L001`, str_replace(".", "-"))
-# 104974-001-001_S1_L001
 ```
 
-### RDS objects {#rds-objects}
+### Other gene types
+
+Extract general gene types from GFF file:
+
+```{r message=FALSE, cache=TRUE}
+# https://stackoverflow.com/questions/63969719/tidyr-separate-a-column-into-a-variable-number-of-columns
+gff <- read_delim(here("data/ref-refseq-refseq/GCF_000006355.2_GCA_000006355.2_genomic.gff"), comment = "#", col_names = c("seqname", "source", "feature", "start", "end", "score", "strand", "frame", "attribute")) %>%
+  mutate(id = row_number()) %>%
+  separate_rows(attribute, sep = ";") %>%
+  separate(attribute, c("attribute", "attribute_value"), sep = "=") %>%
+  pivot_wider(names_from = attribute, values_from = attribute_value) %>%
+  filter(!is.na(gene_biotype)) %>%
+  select(c(gene_biotype, ID)) %>%
+  rename(gene_id = ID) %>%
+  left_join(transcript_info$gene, by = "gene_id")
+```
+
+
+## Export RDS objects {#rds-objects}
 
 Save all output to rds object for easier loading.
 
 ```{r message = FALSE}
 # dir.create(here("results-refseq/r_objects/"), showWarnings = FALSE)
-#
+# 
 # purrr::iwalk(
 #   tibble:::lst(
 #     fastq_screen,
 #     fastq_screen_mapping_stats_df,
-#     gene_counts_length_scaled,
-#     gene_counts_length_scaled_long,
-#     gene_counts_scaled,
-#     gene_counts_scaled_long,
-#     gene_counts_vst,
-#     gene_counts_vst_filtered,
-#     gene_counts_vst_filtered_long,
-#     gene_counts_vst_long,
-#     gene_counts_vst_pk,
-#     gene_counts_vst_pk_filtered,
-#     gene_counts_vst_pk_filtered_long,
-#     gene_counts_vst_pk_long,
+#     gene_counts_salmon,
+#     gene_counts_salmon_filtered,
+#     gene_counts_txi,
+#     gene_counts_txi_long,
+#     gene_counts_txi_filtered,
+#     gene_counts_txi_filtered_long,
 #     gene_tpm,
+#     gene_tpm_long,
 #     gene_tpm_filtered,
 #     gene_tpm_filtered_long,
-#     gene_tpm_long,
 #     gene_types_df,
 #     gene_types_gencode_df,
+#     gff,
 #     globin_df,
 #     gse,
 #     gse_filtered,
 #     gse_pk,
 #     gse_pk_filtered,
 #     mapping_stats_df,
-#     salmon_gene_counts,
-#     salmon_gene_counts_filtered,
-#     salmon_transcript_counts,
 #     samples,
 #     transcript_info,
 #     transcript_info_gencode,
-#     txi,
-#     txi_pk,
 #     vsd,
 #     vsd_filtered,
 #     vsd_pk,
@@ -621,6 +451,13 @@ Save all output to rds object for easier loading.
 #   ),
 #   ~ saveRDS(.x, file = here(paste0("results-refseq/r_objects/", .y, ".RDS")))
 # )
+# 
+# # clean up
+# rm(gene_types_df)
+# rm(globin_df)
+# rm(gene_tpm_gencode)
+# rm(gene_types_gencode_df)
+# rm(transcript_info_gencode)
 ```
 
 # Analyses and figures
@@ -768,45 +605,89 @@ ggplot(
 
 **TPM values appear to be the most appropriate metric to use.**
 
-### Salmon original gene-level counts
+### Salmon gene-level counts
+
+These gene counts were aggregated at the sample level (salmon gene output).
 
 ```{r}
-salmon_counts_by_sample_gene_type <- salmon_gene_counts %>%
+gene_counts_salmon_by_sample_gene_type <- gene_counts_salmon %>%
   left_join(mapping_stats_df, by = "sample") %>%
   group_by(condition, gene_type) %>%
   summarise(sum_reads = sum(NumReads, na.rm = TRUE)) %>%
   mutate(per = 100 * sum_reads / sum(sum_reads))
 
-p <- ggplot(salmon_counts_by_sample_gene_type, aes(y = sum_reads, x = condition, fill = gene_type))
+p <- ggplot(gene_counts_salmon_by_sample_gene_type, aes(y = sum_reads, x = condition, fill = gene_type))
 p + geom_bar(position = "fill", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
 
-p <- ggplot(salmon_counts_by_sample_gene_type, aes(y = sum_reads, x = condition, fill = gene_type))
+p <- ggplot(gene_counts_salmon_by_sample_gene_type, aes(y = sum_reads, x = condition, fill = gene_type))
 p + geom_bar(position = "dodge", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
 
-p <- ggplot(salmon_counts_by_sample_gene_type, aes(y = sum_reads, x = condition, fill = gene_type))
+p <- ggplot(gene_counts_salmon_by_sample_gene_type, aes(y = sum_reads, x = condition, fill = gene_type))
 p + geom_bar(stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
 ```
 
-### Salmon original gene-level counts - filtered
+### Salmon gene-level counts - filtered
 
-Filtered to only genes with a minimum count of 10 reads for at least 1 sample.
+These gene counts were aggregated at the sample level (salmon gene output) and filtered to only genes with a minimum count of 10 reads for at least 1 sample.
 
-**TODO: filtering seems to work ok on dataframe level, but the plots do not appear to change because the differences in total count are so minor.**
+*Filtering seems to work ok on dataframe level, but the plots do not appear to change because the differences in total count are so minor.**
 
 ```{r}
-salmon_counts_filtered_by_sample_gene_type <- salmon_gene_counts_filtered %>%
+gene_counts_salmon_filtered_by_sample_gene_type <- gene_counts_salmon_filtered %>%
   left_join(mapping_stats_df, by = "sample") %>%
   group_by(condition, gene_type) %>%
   summarise(sum_reads = sum(NumReads, na.rm = TRUE)) %>%
   mutate(per = 100 * sum_reads / sum(sum_reads))
 
-p <- ggplot(salmon_counts_filtered_by_sample_gene_type, aes(y = sum_reads, x = condition, fill = gene_type))
+p <- ggplot(gene_counts_salmon_filtered_by_sample_gene_type, aes(y = sum_reads, x = condition, fill = gene_type))
 p + geom_bar(position = "fill", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
 
-p <- ggplot(salmon_counts_filtered_by_sample_gene_type, aes(y = sum_reads, x = condition, fill = gene_type))
+p <- ggplot(gene_counts_salmon_filtered_by_sample_gene_type, aes(y = sum_reads, x = condition, fill = gene_type))
 p + geom_bar(position = "dodge", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
 
-p <- ggplot(salmon_counts_filtered_by_sample_gene_type, aes(y = sum_reads, x = condition, fill = gene_type))
+p <- ggplot(gene_counts_salmon_filtered_by_sample_gene_type, aes(y = sum_reads, x = condition, fill = gene_type))
+p + geom_bar(stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
+```
+
+### Gene-level counts tximport
+
+These gene counts were aggregated across all samples (tximport of transcript counts).
+
+```{r}
+gene_counts_txi_by_sample_gene_type <- gene_counts_txi_long %>%
+  left_join(mapping_stats_df, by = "sample") %>%
+  group_by(condition, gene_type) %>%
+  summarise(sum_reads = sum(counts, na.rm = TRUE)) %>%
+  mutate(per = 100 * sum_reads / sum(sum_reads))
+
+p <- ggplot(gene_counts_txi_by_sample_gene_type, aes(y = sum_reads, x = condition, fill = gene_type))
+p + geom_bar(position = "fill", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
+
+p <- ggplot(gene_counts_txi_by_sample_gene_type, aes(y = sum_reads, x = condition, fill = gene_type))
+p + geom_bar(position = "dodge", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
+
+p <- ggplot(gene_counts_txi_by_sample_gene_type, aes(y = sum_reads, x = condition, fill = gene_type))
+p + geom_bar(stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
+```
+
+### Gene-level counts tximport - filtered
+
+These gene counts were aggregated across all samples (tximport of transcript counts) and filtered to only genes with a minimum count of 10 reads for at least 1 sample.
+
+```{r}
+gene_counts_txi_filtered_by_sample_gene_type <- gene_counts_txi_filtered_long %>%
+  left_join(mapping_stats_df, by = "sample") %>%
+  group_by(condition, gene_type) %>%
+  summarise(sum_reads = sum(counts, na.rm = TRUE)) %>%
+  mutate(per = 100 * sum_reads / sum(sum_reads))
+
+p <- ggplot(gene_counts_txi_filtered_by_sample_gene_type, aes(y = sum_reads, x = condition, fill = gene_type))
+p + geom_bar(position = "fill", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
+
+p <- ggplot(gene_counts_txi_filtered_by_sample_gene_type, aes(y = sum_reads, x = condition, fill = gene_type))
+p + geom_bar(position = "dodge", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
+
+p <- ggplot(gene_counts_txi_filtered_by_sample_gene_type, aes(y = sum_reads, x = condition, fill = gene_type))
 p + geom_bar(stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
 ```
 
@@ -831,6 +712,8 @@ p + geom_bar(stat = "identity") + scale_fill_viridis(option = "viridis", discret
 
 ### Gene-level TPM - filtered
 
+Filtered to only genes with a minimum count of 10 reads for at least 1 sample.
+
 ```{r}
 gene_tpm_filtered_by_sample_gene_type <- gene_tpm_filtered_long %>%
   left_join(mapping_stats_df, by = "sample") %>%
@@ -848,149 +731,183 @@ p <- ggplot(gene_tpm_filtered_by_sample_gene_type, aes(y = sum_reads, x = condit
 p + geom_bar(stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
 ```
 
-### Library-scaled counts from abundance
-
-```{r}
-counts_scaled_by_sample_gene_type <- gene_counts_scaled_long %>%
-  left_join(mapping_stats_df, by = "sample") %>%
-  left_join(samples) %>%
-  group_by(condition, gene_type) %>%
-  summarise(sum_reads = sum(counts, na.rm = TRUE)) %>%
-  mutate(per = 100 * sum_reads / sum(sum_reads))
-
-p <- ggplot(counts_scaled_by_sample_gene_type, aes(y = sum_reads, x = condition, fill = gene_type))
-p + geom_bar(position = "fill", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
-
-p <- ggplot(counts_scaled_by_sample_gene_type, aes(y = sum_reads, x = condition, fill = gene_type))
-p + geom_bar(position = "dodge", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
-
-p <- ggplot(counts_scaled_by_sample_gene_type, aes(y = sum_reads, x = condition, fill = gene_type))
-p + geom_bar(stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
-```
-
-### Length and library-scaled counts from abundance
-
-```{r}
-counts_length_scaled_by_sample_gene_type <- gene_counts_length_scaled_long %>%
-  left_join(mapping_stats_df, by = "sample") %>%
-  left_join(samples) %>%
-  group_by(condition, gene_type) %>%
-  summarise(sum_reads = sum(counts, na.rm = TRUE)) %>%
-  mutate(per = 100 * sum_reads / sum(sum_reads))
-
-p <- ggplot(counts_length_scaled_by_sample_gene_type, aes(y = sum_reads, x = condition, fill = gene_type))
-p + geom_bar(position = "fill", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
-
-p <- ggplot(counts_length_scaled_by_sample_gene_type, aes(y = sum_reads, x = condition, fill = gene_type))
-p + geom_bar(position = "dodge", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
-
-p <- ggplot(counts_length_scaled_by_sample_gene_type, aes(y = sum_reads, x = condition, fill = gene_type))
-p + geom_bar(stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
-```
-
-### VST
-
-**VST transformed counts are acting weird => the transformation appears to act more strongly on Pk genes than human ones, removing the former?**
-
-```{r}
-counts_vst_by_sample_gene_type <- gene_counts_vst_long %>%
-  left_join(mapping_stats_df, by = "sample") %>%
-  left_join(samples) %>%
-  group_by(condition, gene_type) %>%
-  summarise(sum_reads = sum(counts, na.rm = TRUE)) %>%
-  mutate(per = 100 * sum_reads / sum(sum_reads))
-
-p <- ggplot(counts_vst_by_sample_gene_type, aes(y = sum_reads, x = condition, fill = gene_type))
-p + geom_bar(position = "fill", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
-
-p <- ggplot(counts_vst_by_sample_gene_type, aes(y = sum_reads, x = condition, fill = gene_type))
-p + geom_bar(position = "dodge", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
-
-p <- ggplot(counts_vst_by_sample_gene_type, aes(y = sum_reads, x = condition, fill = gene_type))
-p + geom_bar(stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
-```
-
-Filtered variant:
-
-```{r}
-counts_vst_filtered_by_sample_gene_type <- gene_counts_vst_filtered_long %>%
-  left_join(mapping_stats_df, by = "sample") %>%
-  left_join(samples) %>%
-  group_by(condition, gene_type) %>%
-  summarise(sum_reads = sum(counts, na.rm = TRUE)) %>%
-  mutate(per = 100 * sum_reads / sum(sum_reads))
-
-p <- ggplot(counts_vst_filtered_by_sample_gene_type, aes(y = sum_reads, x = condition, fill = gene_type))
-p + geom_bar(position = "fill", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
-
-p <- ggplot(counts_vst_filtered_by_sample_gene_type, aes(y = sum_reads, x = condition, fill = gene_type))
-p + geom_bar(position = "dodge", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
-
-p <- ggplot(counts_vst_filtered_by_sample_gene_type, aes(y = sum_reads, x = condition, fill = gene_type))
-p + geom_bar(stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
-```
-
-### VST - *P. knowlesi*
-
-```{r}
-counts_vst_pk_filtered_by_sample_gene_type <- gene_counts_vst_pk_filtered_long %>%
-  left_join(mapping_stats_df, by = "sample") %>%
-  left_join(samples) %>%
-  group_by(condition, gene_type) %>%
-  summarise(sum_reads = sum(counts, na.rm = TRUE)) %>%
-  mutate(per = 100 * sum_reads / sum(sum_reads))
-
-p <- ggplot(counts_vst_pk_filtered_by_sample_gene_type, aes(y = sum_reads, x = condition, fill = gene_type))
-p + geom_bar(position = "fill", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
-
-p <- ggplot(counts_vst_pk_filtered_by_sample_gene_type, aes(y = sum_reads, x = condition, fill = gene_type))
-p + geom_bar(position = "dodge", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
-
-p <- ggplot(counts_vst_pk_filtered_by_sample_gene_type, aes(y = sum_reads, x = condition, fill = gene_type))
-p + geom_bar(stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
-```
-
-<!-- ### Rlog -->
-
-<!-- ```{r} -->
-<!-- counts_rld_by_sample_gene_type <- gene_counts_rld_long %>% -->
-<!--   left_join(mapping_stats_df, by = "sample") %>% -->
-<!--   left_join(samples) %>% -->
-<!--   group_by(condition, gene_type) %>% -->
-<!--   summarise(sum_reads = sum(counts, na.rm = TRUE)) %>% -->
-<!--   mutate(per = 100 * sum_reads / sum(sum_reads)) -->
-
-<!-- p <- ggplot(counts_rld_by_sample_gene_type, aes(y = sum_reads, x = condition, fill = gene_type)) -->
-<!-- p + geom_bar(position = "fill", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip() -->
-
-<!-- p <- ggplot(counts_rld_by_sample_gene_type, aes(y = sum_reads, x = condition, fill = gene_type)) -->
-<!-- p + geom_bar(position = "dodge", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip() -->
-
-<!-- p <- ggplot(counts_rld_by_sample_gene_type, aes(y = sum_reads, x = condition, fill = gene_type)) -->
-<!-- p + geom_bar(stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip() -->
-<!-- ``` -->
-
-<!-- ### Log -->
-
-<!-- ```{r} -->
-<!-- counts_ntd_by_sample_gene_type <- gene_counts_ntd_long %>% -->
-<!--   left_join(mapping_stats_df, by = "sample") %>% -->
-<!--   left_join(samples) %>% -->
-<!--   group_by(condition, gene_type) %>% -->
-<!--   summarise(sum_reads = sum(counts, na.rm = TRUE)) %>% -->
-<!--   mutate(per = 100 * sum_reads / sum(sum_reads)) -->
-
-<!-- p <- ggplot(counts_ntd_by_sample_gene_type, aes(y = sum_reads, x = condition, fill = gene_type)) -->
-<!-- p + geom_bar(position = "fill", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip() -->
-
-<!-- p <- ggplot(counts_ntd_by_sample_gene_type, aes(y = sum_reads, x = condition, fill = gene_type)) -->
-<!-- p + geom_bar(position = "dodge", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip() -->
-
-<!-- p <- ggplot(counts_ntd_by_sample_gene_type, aes(y = sum_reads, x = condition, fill = gene_type)) -->
-<!-- p + geom_bar(stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip() -->
-<!-- ``` -->
-
 ## Plot percentage of reads for each species {.tabset}
+
+### Salmon gene-level counts {.tabset}
+
+These gene counts were aggregated at the sample level (salmon gene output).
+
+#### Samples
+
+```{r}
+gene_counts_salmon_by_sample_species <- gene_counts_salmon %>%
+  left_join(mapping_stats_df, by = "sample") %>%
+  left_join(samples) %>%
+  group_by(sample, species) %>%
+  summarise(sum_reads = sum(NumReads, na.rm = TRUE)) %>%
+  mutate(per = 100 * sum_reads / sum(sum_reads))
+
+p <- ggplot(gene_counts_salmon_by_sample_species, aes(y = sum_reads, x = sample, fill = species))
+p + geom_bar(position = "fill", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
+
+p <- ggplot(gene_counts_salmon_by_sample_species, aes(y = sum_reads, x = sample, fill = species))
+p + geom_bar(position = "dodge", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
+
+p <- ggplot(gene_counts_salmon_by_sample_species, aes(y = sum_reads, x = sample, fill = species))
+p + geom_bar(stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
+```
+
+#### Conditions
+
+```{r}
+gene_counts_salmon_by_sample_species <- gene_counts_salmon %>%
+  left_join(mapping_stats_df, by = "sample") %>%
+  left_join(samples) %>%
+  group_by(condition, species) %>%
+  summarise(sum_reads = sum(NumReads, na.rm = TRUE)) %>%
+  mutate(per = 100 * sum_reads / sum(sum_reads))
+
+p <- ggplot(gene_counts_salmon_by_sample_species, aes(y = sum_reads, x = condition, fill = species))
+p + geom_bar(position = "fill", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
+
+p <- ggplot(gene_counts_salmon_by_sample_species, aes(y = sum_reads, x = condition, fill = species))
+p + geom_bar(position = "dodge", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
+
+p <- ggplot(gene_counts_salmon_by_sample_species, aes(y = sum_reads, x = condition, fill = species))
+p + geom_bar(stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
+```
+
+### Salmon gene-level counts - filtered {.tabset}
+
+These gene counts were aggregated at the sample level (salmon gene output) and filtered to only genes with a minimum count of 10 reads for at least 1 sample.
+
+#### Samples
+
+```{r}
+gene_counts_salmon_filtered_by_sample_species <- gene_counts_salmon_filtered %>%
+  left_join(mapping_stats_df, by = "sample") %>%
+  left_join(samples) %>%
+  group_by(sample, species) %>%
+  summarise(sum_reads = sum(NumReads, na.rm = TRUE)) %>%
+  mutate(per = 100 * sum_reads / sum(sum_reads))
+
+p <- ggplot(gene_counts_salmon_filtered_by_sample_species, aes(y = sum_reads, x = sample, fill = species))
+p + geom_bar(position = "fill", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
+
+p <- ggplot(gene_counts_salmon_filtered_by_sample_species, aes(y = sum_reads, x = sample, fill = species))
+p + geom_bar(position = "dodge", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
+
+p <- ggplot(gene_counts_salmon_filtered_by_sample_species, aes(y = sum_reads, x = sample, fill = species))
+p + geom_bar(stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
+```
+
+#### Conditions
+
+```{r}
+gene_counts_salmon_filtered_by_sample_species <- gene_counts_salmon_filtered %>%
+  left_join(mapping_stats_df, by = "sample") %>%
+  left_join(samples) %>%
+  group_by(condition, species) %>%
+  summarise(sum_reads = sum(NumReads, na.rm = TRUE)) %>%
+  mutate(per = 100 * sum_reads / sum(sum_reads))
+
+p <- ggplot(gene_counts_salmon_filtered_by_sample_species, aes(y = sum_reads, x = condition, fill = species))
+p + geom_bar(position = "fill", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
+
+p <- ggplot(gene_counts_salmon_filtered_by_sample_species, aes(y = sum_reads, x = condition, fill = species))
+p + geom_bar(position = "dodge", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
+
+p <- ggplot(gene_counts_salmon_filtered_by_sample_species, aes(y = sum_reads, x = condition, fill = species))
+p + geom_bar(stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
+```
+
+### Gene-level counts tximport {.tabset}
+
+These gene counts were aggregated across all samples (tximport of transcript counts).
+
+#### Samples
+
+```{r}
+gene_counts_txi_by_samples_species <- gene_counts_txi_long %>%
+  left_join(mapping_stats_df, by = "sample") %>%
+  left_join(samples) %>%
+  group_by(sample, species) %>%
+  summarise(sum_reads = sum(counts, na.rm = TRUE)) %>%
+  mutate(per = 100 * sum_reads / sum(sum_reads))
+
+p <- ggplot(gene_counts_txi_by_samples_species, aes(y = sum_reads, x = sample, fill = species))
+p + geom_bar(position = "fill", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
+
+p <- ggplot(gene_counts_txi_by_samples_species, aes(y = sum_reads, x = sample, fill = species))
+p + geom_bar(position = "dodge", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
+
+p <- ggplot(gene_counts_txi_by_samples_species, aes(y = sum_reads, x = sample, fill = species))
+p + geom_bar(stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
+```
+
+#### Conditions
+
+```{r}
+gene_counts_txi_by_samples_species <- gene_counts_txi_long %>%
+  left_join(mapping_stats_df, by = "sample") %>%
+  left_join(samples) %>%
+  group_by(condition, species) %>%
+  summarise(sum_reads = sum(counts, na.rm = TRUE)) %>%
+  mutate(per = 100 * sum_reads / sum(sum_reads))
+
+p <- ggplot(gene_counts_txi_by_samples_species, aes(y = sum_reads, x = condition, fill = species))
+p + geom_bar(position = "fill", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
+
+p <- ggplot(gene_counts_txi_by_samples_species, aes(y = sum_reads, x = condition, fill = species))
+p + geom_bar(position = "dodge", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
+
+p <- ggplot(gene_counts_txi_by_samples_species, aes(y = sum_reads, x = condition, fill = species))
+p + geom_bar(stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
+```
+
+### Gene-level counts tximport - filtered {.tabset}
+
+These gene counts were aggregated across all samples (tximport of transcript counts) and filtered to only genes with a minimum count of 10 reads for at least 1 sample.
+
+#### Samples
+
+```{r}
+gene_counts_txi_filtered_by_samples_species <- gene_counts_txi_filtered_long %>%
+  left_join(mapping_stats_df, by = "sample") %>%
+  left_join(samples) %>%
+  group_by(sample, species) %>%
+  summarise(sum_reads = sum(counts, na.rm = TRUE)) %>%
+  mutate(per = 100 * sum_reads / sum(sum_reads))
+
+p <- ggplot(gene_counts_txi_filtered_by_samples_species, aes(y = sum_reads, x = sample, fill = species))
+p + geom_bar(position = "fill", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
+
+p <- ggplot(gene_counts_txi_filtered_by_samples_species, aes(y = sum_reads, x = sample, fill = species))
+p + geom_bar(position = "dodge", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
+
+p <- ggplot(gene_counts_txi_filtered_by_samples_species, aes(y = sum_reads, x = sample, fill = species))
+p + geom_bar(stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
+```
+
+#### Conditions
+
+```{r}
+gene_counts_txi_filtered_by_samples_species <- gene_counts_txi_filtered_long %>%
+  left_join(mapping_stats_df, by = "sample") %>%
+  left_join(samples) %>%
+  group_by(condition, species) %>%
+  summarise(sum_reads = sum(counts, na.rm = TRUE)) %>%
+  mutate(per = 100 * sum_reads / sum(sum_reads))
+
+p <- ggplot(gene_counts_txi_filtered_by_samples_species, aes(y = sum_reads, x = condition, fill = species))
+p + geom_bar(position = "fill", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
+
+p <- ggplot(gene_counts_txi_filtered_by_samples_species, aes(y = sum_reads, x = condition, fill = species))
+p + geom_bar(position = "dodge", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
+
+p <- ggplot(gene_counts_txi_filtered_by_samples_species, aes(y = sum_reads, x = condition, fill = species))
+p + geom_bar(stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
+```
 
 ### Gene-level TPM {.tabset}
 
@@ -1031,49 +948,6 @@ p <- ggplot(gene_tpm_by_samples_species, aes(y = sum_reads, x = condition, fill 
 p + geom_bar(position = "dodge", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
 
 p <- ggplot(gene_tpm_by_samples_species, aes(y = sum_reads, x = condition, fill = species))
-p + geom_bar(stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
-```
-
-
-### Salmon original gene-level counts {.tabset}
-
-#### Samples
-
-```{r}
-salmon_counts_by_sample_species <- salmon_gene_counts %>%
-  left_join(mapping_stats_df, by = "sample") %>%
-  left_join(samples) %>%
-  group_by(sample, species) %>%
-  summarise(sum_reads = sum(NumReads, na.rm = TRUE)) %>%
-  mutate(per = 100 * sum_reads / sum(sum_reads))
-
-p <- ggplot(salmon_counts_by_sample_species, aes(y = sum_reads, x = sample, fill = species))
-p + geom_bar(position = "fill", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
-
-p <- ggplot(salmon_counts_by_sample_species, aes(y = sum_reads, x = sample, fill = species))
-p + geom_bar(position = "dodge", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
-
-p <- ggplot(salmon_counts_by_sample_species, aes(y = sum_reads, x = sample, fill = species))
-p + geom_bar(stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
-```
-
-#### Conditions
-
-```{r}
-salmon_counts_by_sample_species <- salmon_gene_counts %>%
-  left_join(mapping_stats_df, by = "sample") %>%
-  left_join(samples) %>%
-  group_by(condition, species) %>%
-  summarise(sum_reads = sum(NumReads, na.rm = TRUE)) %>%
-  mutate(per = 100 * sum_reads / sum(sum_reads))
-
-p <- ggplot(salmon_counts_by_sample_species, aes(y = sum_reads, x = condition, fill = species))
-p + geom_bar(position = "fill", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
-
-p <- ggplot(salmon_counts_by_sample_species, aes(y = sum_reads, x = condition, fill = species))
-p + geom_bar(position = "dodge", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
-
-p <- ggplot(salmon_counts_by_sample_species, aes(y = sum_reads, x = condition, fill = species))
 p + geom_bar(stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
 ```
 
@@ -1286,7 +1160,7 @@ v
 
 ### *P. knowlesi* genes only - filtered
 
-Gene counts were filtered on a minimum (raw) count of 10 before checking for presence/absence. 
+Gene counts were filtered on a minimum (raw) count of 10 for at least 1 sample before checking for presence/absence. 
 
 ```{r}
 v <- draw_venn(
@@ -1440,22 +1314,6 @@ co_genes + theme_bw() + scale_x_continuous(trans = "log1p") + scale_y_continuous
 
 #### Protein-coding genes
 
-Extract general gene types from GFF file:
-
-```{r message=FALSE, cache=TRUE}
-# https://stackoverflow.com/questions/63969719/tidyr-separate-a-column-into-a-variable-number-of-columns
-gff <- read_delim(here("data/ref-refseq-refseq/GCF_000006355.2_GCA_000006355.2_genomic.gff"), comment = "#", col_names = c("seqname", "source", "feature", "start", "end", "score", "strand", "frame", "attribute")) %>%
-  mutate(id = row_number()) %>%
-  separate_rows(attribute, sep = ";") %>%
-  separate(attribute, c("attribute", "attribute_value"), sep = "=") %>%
-  pivot_wider(names_from = attribute, values_from = attribute_value) %>%
-  filter(!is.na(gene_biotype)) %>%
-  select(c(gene_biotype, ID)) %>%
-  rename(gene_id = ID) %>%
-  left_join(transcript_info$gene, by = "gene_id")
-```
-
-
 ```{r message=FALSE}
 co_genes <- ggpairs(
   gene_tpm %>%
@@ -1558,8 +1416,6 @@ pheatmap(assay(vsd_pk)[select, ],
 ```
 
 Protein-coding only (not normalized):
-
-**TODO: check why there still are tRNAs?**
 
 ```{r}
 gene_list <- intersect(rownames(counts(gse_pk)), gff %>%
