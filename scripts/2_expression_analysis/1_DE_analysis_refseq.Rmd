@@ -42,7 +42,7 @@ ggplot2::theme_set(theme_bw())
 
 # Data import
 
-**If the RDS objects have already been created in a previous run, the following cell can be uncommented and run, and the remaining cells in the data import section can be skipped. See [RDS object section](#rds-objects)).**
+If the RDS objects have already been created in a previous run, the following cell can be uncommented and run, and the remaining cells in the data import section can be skipped. See [RDS object section](#rds-objects)).
 
 ```{r message = FALSE}
 # data_list <- list.files(path = here("results-refseq/r_objects"),
@@ -70,7 +70,7 @@ fastq_screen <- list.files(
   mutate(sample = as.factor(str_remove(read, "_R[1,2].*"))) %>%
   mutate(Genome = as.factor(Genome))
 
-# combine R1 and R2 per species and recalculate percentages
+# combine R1 and R2 stats per species and recalculate percentages
 fastq_screen <- fastq_screen %>%
   select(!starts_with("%")) %>%
   group_by(sample, Genome) %>%
@@ -78,21 +78,41 @@ fastq_screen <- fastq_screen %>%
   mutate(across(.cols = `#Unmapped`:`#Multiple_hits_multiple_genomes`, .fns = ~ .x / `#Reads_processed`, .names = "%_{.col}")) %>%
   rename_with(~ str_replace(.x, "#", ""), .cols = starts_with("%"))
 
-# read in flagstat and metadata file and join with fastq screen df
+# read in samtools flagstat and metadata files
 mapping_stats_df <- read_delim((here("results-refseq/mapping_stats.csv")), col_types = list(sample = "factor")) %>%
   mutate(primary_mapped_human = primary_mapped_all - primary_mapped_pk) %>%
   mutate(primary_mapped_human = primary_mapped_all - primary_mapped_pk)
 
-# join the two dataframes
+# merge dataframes
 fastq_screen_mapping_stats_df <- mapping_stats_df %>%
   left_join(fastq_screen, by = "sample")
 ```
 
-## Read in `salmon` transcript counts/abundance files
+## Read in `salmon` gene counts and tximport gene counts/TPM abundances
 
-`salmon` outputs two types of counts: transcript-level (`quant.sf`) and gene-level (`quant.genes.sf`). Both offer feature length, effective length, TPM, and number of reads. However, when importing counts with `tximport` for downstream differential expression analysis, transcript-level is preferred, because `tximport` will perform gene-level aggregation across all samples, instead of the per-sample aggregation that is done for the `quant.genes.sf` files. See: https://github.com/COMBINE-lab/salmon/issues/437.
+Import the following sets of count files:
 
-For `tximport`, there are still several different ways of creating count matrices. See the description of different options provided by the nf-core/rnaseq pipeline: https://nf-co.re/rnaseq/3.14.0/docs/output/#pseudoalignment and the `tximport` docs here: https://bioconductor.org/packages/release/bioc/vignettes/tximport/inst/doc/tximport.html.
+- Salmon gene-level quant files. TODO: remove these as they are redundant
+- Gene-level counts (created in `nf-core/rnaseq` pipeline through `tximport` of Salmon transcript-level counts )
+- Gene-level TPM (created in `nf-core/rnaseq` pipeline through `tximport` of Salmon transcript-level counts )
+- Gene-level counts inside DESeq/SummarizedExperiment object (created by manually importing Salmon `quant.sf` files via `tximport`. Values should correspond exactly to the other gene-level counts).
+
+Background info on the different types of counts and how to import them:
+
+> `salmon` outputs two types of counts: transcript-level (`quant.sf`) and gene-level (`quant.genes.sf`). Both offer feature length, effective length, TPM, and number of reads. However, when importing counts with `tximport` for downstream differential expression analysis, transcript-level is preferred, because `tximport` can perform gene-level aggregation across all samples, instead of the per-sample aggregation that is done for the `quant.genes.sf` files. See: https://github.com/COMBINE-lab/salmon/issues/437.
+
+> For `tximport`, there are still several different ways of creating count matrices (i.e., using a length offset or by scaling the TPM abundances, but this should only be relevant for downstream differential expression testing TODO) See the description of different options provided by the nf-core/rnaseq pipeline: https://nf-co.re/rnaseq/3.14.0/docs/output/#pseudoalignment and the `tximport` docs here: https://bioconductor.org/packages/release/bioc/vignettes/tximport/inst/doc/tximport.html.
+
+> The Salmon transcript-level quant files can also be imported using tximport and then converted into a DESeq object (~SummarizedExperiment), as done below. This approach provides the same count matrix as the tximport gene counts csv file, but it enables the DESeq2 approach for visualisation, namely transforming the counts using `vst` (variance stabilizing transformation) or `rlog` in order to remove the dependence of the variance on the mean. See [DESeq2 vignette](https://bioconductor.org/packages/devel/bioc/vignettes/DESeq2/inst/doc/DESeq2.html#data-transformations-and-visualization).
+
+TODO
+
+The Salmon transcript-level counts can also be imported using `tximport` and then converted into a DESeq/SummarizedExperiment object, as done below, and then transformed using `vst` or `rlog` for visualization purposes. 
+
+However, since we have many zero counts (e.g., rRNA being depleted in some samples), the transformation might not work as well as intended.
+
+TODO: for low number of samples, and large differences between them (in our case, we expect many zero counts for e.g. depleted rRNA genes in some samples).
+
 
 ```{r include=FALSE}
 # read in sample metadata
@@ -128,155 +148,56 @@ gene_counts_txi <- read_delim(here("results-refseq/star_salmon/salmon.merged.gen
 # txi gene-level TPM abundances
 gene_tpm <- read_delim(here("results-refseq/star_salmon/salmon.merged.gene_tpm.tsv"))
 
-# # txi gene-level library-scaled counts
-# gene_counts_scaled <- read_delim(here("results-refseq/star_salmon/salmon.merged.gene_counts_scaled.tsv"))
-
-# # txi gene-level length + library scaled counts
-# gene_counts_length_scaled <- read_delim(here("results-refseq/star_salmon/salmon.merged.gene_counts_length_scaled.tsv"))
-```
-
-## DESeq tximport objects
-
-The final variant is the DESeq2 approach using `vst` (variance stabilizing transformation) on the raw counts (see [DESeq2 vignette](https://bioconductor.org/packages/devel/bioc/vignettes/DESeq2/inst/doc/DESeq2.html#data-transformations-and-visualization). This is the preferred approach for visualisations. The main goal of this transformation is to remove the dependence of the variance on the mean. However, since we have many zero counts (e.g., rRNA being depleted in some samples), the transformation might not work as well as intended.
-
-```{r message=FALSE}
-# txi original counts + offset - to be used with DESeq2's vst/rlog transform for visualisations
+# DESeqDataSetFromTximport - original counts + offset tximport
+# to be used with DESeq2's vst/rlog transform for visualisations
 salmon_quant_files <- paste0("./results-refseq/star_salmon/", list.files(path = "./results-refseq/star_salmon/", pattern = "quant.sf", recursive = TRUE))
 
-# all genes
 txi <- tximport(salmon_quant_files, type = "salmon", tx2gene = transcript_info$tx2gene, txOut = FALSE)
 gse <- DESeqDataSetFromTximport(txi, colData = samples, design = ~1)
 
-# variance stabilizing transformation
-vsd <- vst(gse, blind = TRUE)
-meanSdPlot(assay(vsd))
-
-# extract transformed gene counts
-# gene_counts_vst <- data.frame(assays(vsd)[[1]])
-# colnames(gene_counts_vst) <- colData(gse)$sample
-# gene_counts_vst <- gene_counts_vst %>%
-#   mutate(gene_id = rownames(gene_counts_vst)) %>%
-#   left_join(transcript_info$gene, by = "gene_id")
-
-# Pk genes
-txi_pk <- tximport(salmon_quant_files,
-  type = "salmon",
-  tx2gene = transcript_info$tx2gene %>% filter(str_detect(gene_id, "PKNH")),
-  txOut = FALSE
-)
-gse_pk <- DESeqDataSetFromTximport(txi_pk, colData = samples, design = ~1)
-
-# variance stabilizing transformation
-vsd_pk <- vst(gse_pk, blind = TRUE)
-meanSdPlot(assay(vsd_pk))
-
-# extract transformed gene counts
-# gene_counts_vst_pk <- data.frame(assays(vsd_pk)[[1]])
-# colnames(gene_counts_vst_pk) <- colData(vsd_pk)$sample
-# gene_counts_vst_pk <- gene_counts_vst_pk %>%
-#   mutate(gene_id = rownames(gene_counts_vst_pk)) %>%
-#   left_join(transcript_info$gene, by = "gene_id")
-
 # clean up
 rm(txi)
-rm(txi_pk)
 ```
 
-## Filtering raw counts
+## Collect gene annotation
 
-The raw counts can optionally be pre-filtered, e.g. to a minimum of 10 reads for at least a single sample, as suggested by the DESeq2 vignette.
-
-```{r message=FALSE}
-# create filter for all genes on the level of the DESeq/tximport gene counts
-filter_all_genes <- rowSums(counts(gse) >= 10) >= 1
-# should be the same as filtering on tximport raw gene counts from nf-core pipeline
-stopifnot(all( filter_all_genes == (rowSums(gene_counts_txi[,3:18] >= 10) >= 1)))
-
-# create filtered versions of full deseq2 objects
-gse_filtered <- gse[filter_all_genes, ]
-vsd_filtered <- vst(gse_filtered, blind = TRUE)
-meanSdPlot(assay(vsd_filtered))
-
-# create filter for pk genes
-filter_pk_genes <- rowSums(counts(gse_pk) >= 10) >= 1
-
-# create filtered versions of Pk deseq2 objects
-gse_pk_filtered <- gse_pk[filter_pk_genes, ]
-vsd_pk_filtered <- vst(gse_pk_filtered, blind = TRUE)
-meanSdPlot(assay(vsd_pk_filtered))
-
-# create filtered versions of other count matrices
-gene_tpm_filtered <- gene_tpm[filter_all_genes,]
-gene_counts_txi_filtered <- gene_tpm[filter_all_genes,]
-# gene counts salmon are in long format, so use join instead of filter mask
-gene_counts_salmon_filtered <- gene_counts_salmon %>% inner_join(gene_tpm_filtered %>% select("gene_id"), by = "gene_id")
-
-# # filtering on pk tximport list should be the same as extracting pk genes from all gene filter
-# gse_pk_filtered2 <- gene_counts_gse_filtered[gene_counts_gse_filtered$species == "pk",1:18]
-# 
-# gene_counts_pk_gse_filtered <- data.frame(assays(gse_pk_filtered)[[1]])
-# colnames(gene_counts_pk_gse_filtered) <- colData(gse)$sample
-# gene_counts_pk_gse_filtered <- gene_counts_pk_gse_filtered %>%
-#   mutate(gene_id = rownames(gene_counts_pk_gse_filtered)) %>%
-#   left_join(transcript_info$gene, by = "gene_id")
-# 
-# stopifnot(all(gse_pk_filtered2 == gene_counts_pk_gse_filtered))
-
-# for the other matrices, filtering using deseq-filter list should be the same as filtering on tximport csv
-# gene_counts_gse_filtered <- data.frame(assays(gse_filtered)[[1]])
-# colnames(gene_counts_gse_filtered) <- colData(gse)$sample
-# gene_counts_gse_filtered <- gene_counts_gse_filtered %>%
-#   mutate(gene_id = rownames(gene_counts_gse_filtered)) %>%
-#   left_join(transcript_info$gene, by = "gene_id")
-# gene_tpm_filtered <- gene_tpm %>% inner_join(gene_counts_gse_filtered %>% select("gene_id"), by = "gene_id")
-# 
-# gene_tpm_filtered2 <- gene_tpm[(rowSums(gene_counts_txi[,3:18] >= 10) >= 1),]
-# 
-# stopifnot(all(gene_tpm_filtered == gene_tpm_filtered2))
-# stopifnot(all(gene_tpm[filter_all_genes,] == gene_tpm_filtered))
-```
-
-The number of genes were filtered down from `r dim(gse)[1]`  to `r dim(gse_filtered)[1]` and from `r dim(gse_pk)[1]` to `r dim(gse_pk_filtered)[1]`, for all genes and *P. knowlesi* genes respectively (only for VST transformed counts, not for the TPM or other count matrices). So in conclusion, the effect is relatively minor for *P. knowlesi*, but for all reads a substantial number of low counts are removed.
-
-It is difficult to determine an appropriate threshold for filtering on the TPM level, so instead we filter the same genes as before on the raw count level (>=10 for at least 1 sample).
+- Add species information to genes by gathering list of *P. knowlesi* genes from `gff` file.
+- Add `gene_biotype` info for *P. knowlesi* genes (protein coding and r/t/nc/sn/snoRNA).
+- Add globin and rRNA gene annotation for both species.
 
 ```{r}
-dim(gene_tpm)
-mean.tpm <- apply(gene_tpm[, 3:18], 1, mean)
-hist(log10(mean.tpm))
-# hist(log10(mean.tpm+1e-5))
+# Note: not all Pk genes start with the prefix PKNH, so it is safer to read genes from GFF instead
+gff <- read_delim(here("data/ref-refseq-refseq/GCF_000006355.2_GCA_000006355.2_genomic.gff.gz"), comment = "#", col_names = c("seqname", "source", "feature", "start", "end", "score", "strand", "frame", "attribute")) %>%
+  # only keep genes, since we use aggregated gene counts
+  filter(feature=="gene") %>%
+  mutate(id = row_number()) %>%
+  separate_rows(attribute, sep = ";") %>%
+  separate(attribute, c("attribute", "attribute_value"), sep = "=") %>%
+  pivot_wider(names_from = attribute, values_from = attribute_value) %>%
+  select(c(gene_biotype, ID)) %>%
+  rename(gene_id = ID) %>%
+  mutate(species = "pk")
 
-dim(gene_tpm_filtered)
-mean.tpm <- apply(gene_tpm_filtered[, 3:18], 1, mean)
-hist(log10(mean.tpm))
+# check to make sure there are no genes in gff that do not appear in transcript info file
+stopifnot(all(gff$gene_id %in% transcript_info$gene$gene_id))
+
+# create gene annotation df (based on one of the count matrices, not tx2gene
+# because the latter contains more features, namely pseudogenes)
+gene_annotation <- gene_counts_txi %>% 
+  select(c(gene_id, gene_name)) %>% 
+  left_join(gff, by = "gene_id") %>%
+  mutate(species = case_when(is.na(species) ~ "human", .default = species))
+
+# check to make sure all genes were assigned a species
+stopifnot(!any(is.na(gene_annotation$species)))
+
+# naive check to make sure "most" Pk genes are assigned the correct species
+stopifnot((gene_annotation %>% filter(str_detect(gene_id, "PKNH")) %>% select(species) %>% unique()) == "pk")
 ```
 
-## Add species information
+#### Annotate rRNA and globin genes
 
-Split datasets into *P. knowlesi* and human subsets:
-
-```{r}
-add_species <- function(data) {
-  data %>%
-    mutate(species = case_when(
-      str_detect(gene_id, "PKNH") ~ "pk",
-      .default = "human"
-    ))
-}
-
-gene_counts_salmon <- add_species(gene_counts_salmon)
-gene_counts_salmon_filtered <- add_species(gene_counts_salmon_filtered)
-
-gene_counts_txi <- add_species(gene_counts_txi)
-gene_counts_txi_filtered <- add_species(gene_counts_txi_filtered)
-
-gene_tpm <- add_species(gene_tpm)
-gene_tpm_filtered <- add_species(gene_tpm_filtered)
-```
-
-## Annotating rRNA and globin genes
-
-### rRNA {.tabset}
+##### rRNA {.tabset}
 
 The RefSeq `gff` files contains info on `rRNA` in the `gene_biotype` attribute of gene entries (including mitochondrial rRNA) for both species (i.e., we collected featured labelled as `gene` in the 3rd column of the gff, not rRNA directly, since counts were aggregated on the gene level).
 
@@ -342,7 +263,7 @@ if (file.exists(here("data/ref/gene_types.csv"))) {
 }
 ```
 
-### Globins
+##### Globins
 
 For human globins, the following genes were included: "HBB","HBD","HBBP1","HBG1","HBG2","HBE1","HBZ","HBM","HBA2","HBA1","HBQ1".
 
@@ -361,25 +282,108 @@ write_csv2(gene_types_df, here("data/ref-refseq-refseq/gene_types_R.csv"))
 #     filter(n()>1)
 ```
 
-Merge annotations with counts and fill in missing gene_types (= non-rRNA/globin) with species identifier:
+Merge globin and rRNA annotations with gene annotation dataframe:
+
+```{r}
+gene_annotation <- gene_annotation %>% 
+  left_join(gene_types_df, by = c("gene_id", "gene_name")) %>%
+  mutate("gene_type" = coalesce(gene_type, species))
+```
+
+### Add annotations to counts
 
 ```{r}
 # merge gene_type annotation and fill in missing types using species name
-annotate_gene_type <- function(data, gene_types) {
+annotate_gene_type <- function(data, gene_annotation) {
   data %>%
-    left_join(gene_types, by = c("gene_id", "gene_name")) %>%
-    mutate("gene_type" = coalesce(gene_type, species))
-}
+    left_join(gene_annotation, by = c("gene_id", "gene_name"))
+  }
 
-gene_counts_salmon <- annotate_gene_type(gene_counts_salmon, gene_types_df)
-gene_counts_salmon_filtered <- annotate_gene_type(gene_counts_salmon_filtered, gene_types_df)
+gene_counts_salmon <- annotate_gene_type(gene_counts_salmon, gene_annotation)
+gene_counts_txi <- annotate_gene_type(gene_counts_txi, gene_annotation)
+gene_tpm <- annotate_gene_type(gene_tpm, gene_annotation)
 
-gene_counts_txi <- annotate_gene_type(gene_counts_txi, gene_types_df)
-gene_counts_txi_filtered <- annotate_gene_type(gene_counts_txi_filtered, gene_types_df)
+# for SummarizedExperiment DESeq2 object, add annotations to rowData
+rowData(gse) <- gene_annotation
 
-gene_tpm <- annotate_gene_type(gene_tpm, gene_types_df)
-gene_tpm_filtered <- annotate_gene_type(gene_tpm_filtered, gene_types_df)
+# ensure genes are in the same order in annotation data and count files
+# stopifnot(all(rownames(txi$abundance) == gene_annotation$gene_id))
+stopifnot(all(rownames(gse) == gene_annotation$gene_id))
+```
 
+### Create gene subset filters for species and gene types
+
+TODO: after count filtering
+
+```{r}
+pk_genes <- gene_annotation %>% filter(species == "pk") %>% select(gene_id)
+
+```
+
+### Subset DESeq object on Pk genes
+
+```{r}
+gse_pk <- gse[rowData(gse)$species == "pk",]
+
+gene_annotation %>% filter(species == "pk") %>% select(gene_id)
+```
+
+
+## Filtering out low count genes
+
+The raw counts can optionally be pre-filtered, e.g. to a minimum of 10 reads for at least a single sample, as suggested by the DESeq2 vignette.
+
+```{r message=FALSE}
+# create filter for all genes on the level of the DESeq/tximport gene counts
+filter_all_genes <- rowSums(counts(gse) >= 10) >= 1
+# should be the same as filtering on tximport raw gene counts from nf-core pipeline
+stopifnot(all( filter_all_genes == (rowSums(gene_counts_txi[,3:18] >= 10) >= 1)))
+
+# create filtered versions of full deseq2 objects
+gse_filtered <- gse[filter_all_genes, ]
+gse_pk_filtered <- gse_filtered[rowData(gse_filtered)$species == "pk",]
+
+# create filtered versions of other count matrices
+gene_tpm_filtered <- gene_tpm[filter_all_genes,]
+gene_counts_txi_filtered <- gene_counts_txi[filter_all_genes,]
+# gene counts salmon are in long format, so use join instead of filter mask
+gene_counts_salmon_filtered <- gene_counts_salmon %>% inner_join(gene_tpm_filtered %>% select("gene_id"), by = "gene_id")
+
+# check if filter was applied correctly, i.e. order of genes is the same in gse and tpm matrix
+stopifnot(all.equal(gene_tpm_filtered, gene_tpm[(rowSums(gene_counts_txi[,3:18] >= 10) >= 1),]))
+stopifnot(gene_tpm$gene_id == rownames(gse))
+stopifnot(gene_tpm_filtered$gene_id == rownames(gse_filtered))
+stopifnot(all.equal(gene_counts_txi_filtered, gene_counts_txi[(rowSums(gene_counts_txi[,3:18] >= 10) >= 1),]))
+stopifnot(gene_counts_txi$gene_id == rownames(gse))
+stopifnot(gene_counts_txi$gene_id == gene_tpm$gene_id)
+stopifnot(gene_counts_txi_filtered$gene_id == rownames(gse_filtered))
+```
+
+The number of genes were filtered down from `r dim(gse)[1]`  to `r dim(gse_filtered)[1]` and from `r dim(gse_pk)[1]` to `r dim(gse_pk_filtered)[1]`, for all genes and *P. knowlesi* genes respectively. So in conclusion, the effect is relatively minor for *P. knowlesi*, but a substantial number of human genes were removed.
+
+It is difficult to determine an appropriate threshold for filtering on the TPM level, so instead we filter the same genes as on the raw count level (>=10 for at least 1 sample).
+
+```{r}
+dim(gene_tpm)
+mean.tpm <- apply(gene_tpm[, 3:18], 1, mean)
+hist(log10(mean.tpm))
+# hist(log10(mean.tpm+1e-5))
+
+dim(gene_tpm_filtered)
+mean.tpm <- apply(gene_tpm_filtered[, 3:18], 1, mean)
+hist(log10(mean.tpm))
+```
+
+Lastly, we also perform filtering on protein coding Pk genes only:
+
+```{r}
+gse_pk_filtered_protein <- gse_pk_filtered[rowData(gse_pk_filtered)$gene_biotype == "protein_coding",]
+vsd_pk_filtered_protein <- vst(gse_pk_filtered_protein, blind = TRUE)
+```
+
+## Transform dataframes to long format
+
+```{r}
 # cast to long format
 to_long <- function(data) {
   data %>%
@@ -395,23 +399,37 @@ gene_tpm_long <- to_long(gene_tpm)
 gene_tpm_filtered_long <- to_long(gene_tpm_filtered)
 ```
 
-### Other gene types
+## Transform counts for visualisation
 
-Extract general gene types from GFF file:
+```{r}
+# variance stabilizing transformation
+vsd <- vst(gse, blind = TRUE)
+meanSdPlot(assay(vsd))
 
-```{r message=FALSE, cache=TRUE}
-# https://stackoverflow.com/questions/63969719/tidyr-separate-a-column-into-a-variable-number-of-columns
-gff <- read_delim(here("data/ref-refseq-refseq/GCF_000006355.2_GCA_000006355.2_genomic.gff"), comment = "#", col_names = c("seqname", "source", "feature", "start", "end", "score", "strand", "frame", "attribute")) %>%
-  mutate(id = row_number()) %>%
-  separate_rows(attribute, sep = ";") %>%
-  separate(attribute, c("attribute", "attribute_value"), sep = "=") %>%
-  pivot_wider(names_from = attribute, values_from = attribute_value) %>%
-  filter(!is.na(gene_biotype)) %>%
-  select(c(gene_biotype, ID)) %>%
-  rename(gene_id = ID) %>%
-  left_join(transcript_info$gene, by = "gene_id")
+# extract transformed gene counts
+# gene_counts_vst <- data.frame(assays(vsd)[[1]])
+# colnames(gene_counts_vst) <- colData(gse)$sample
+# gene_counts_vst <- gene_counts_vst %>%
+#   mutate(gene_id = rownames(gene_counts_vst)) %>%
+#   left_join(transcript_info$gene, by = "gene_id")
+
+# variance stabilizing transformation
+vsd_pk <- vst(gse_pk, blind = TRUE)
+meanSdPlot(assay(vsd_pk))
+
+# extract transformed gene counts
+# gene_counts_vst_pk <- data.frame(assays(vsd_pk)[[1]])
+# colnames(gene_counts_vst_pk) <- colData(vsd_pk)$sample
+# gene_counts_vst_pk <- gene_counts_vst_pk %>%
+#   mutate(gene_id = rownames(gene_counts_vst_pk)) %>%
+#   left_join(transcript_info$gene, by = "gene_id")
+
+vsd_filtered <- vst(gse_filtered, blind = TRUE)
+meanSdPlot(assay(vsd_filtered))
+
+vsd_pk_filtered <- vst(gse_pk_filtered, blind = TRUE)
+meanSdPlot(assay(vsd_pk_filtered))
 ```
-
 
 ## Export RDS objects {#rds-objects}
 
@@ -424,6 +442,7 @@ Save all output to rds object for easier loading.
 #   tibble:::lst(
 #     fastq_screen,
 #     fastq_screen_mapping_stats_df,
+#     gene_annotation,
 #     gene_counts_salmon,
 #     gene_counts_salmon_filtered,
 #     gene_counts_txi,
@@ -434,32 +453,34 @@ Save all output to rds object for easier loading.
 #     gene_tpm_long,
 #     gene_tpm_filtered,
 #     gene_tpm_filtered_long,
-#     gene_types_df,
-#     gene_types_gencode_df,
-#     gff,
-#     globin_df,
 #     gse,
 #     gse_filtered,
 #     gse_pk,
 #     gse_pk_filtered,
+#     gse_pk_filtered_protein,
 #     mapping_stats_df,
 #     samples,
-#     transcript_info,
-#     transcript_info_gencode,
 #     vsd,
 #     vsd_filtered,
 #     vsd_pk,
-#     vsd_pk_filtered
+#     vsd_pk_filtered,
+#     vsd_pk_filtered_protein
 #   ),
 #   ~ saveRDS(.x, file = here(paste0("results-refseq/r_objects/", .y, ".RDS")))
 # )
-# 
-# # clean up
-# rm(gene_types_df)
-# rm(globin_df)
-# rm(gene_tpm_gencode)
-# rm(gene_types_gencode_df)
-# rm(transcript_info_gencode)
+```
+
+Data clean up
+
+```{r}
+# clean up
+rm(gene_types_df)
+rm(globin_df)
+rm(gene_tpm_gencode)
+rm(gene_types_gencode_df)
+rm(transcript_info_gencode)
+rm(transcript_info)
+rm(gff)
 ```
 
 # Analyses and figures
@@ -468,6 +489,52 @@ Save all output to rds object for easier loading.
 dir.create(here("results-refseq/figures/"), showWarnings = FALSE)
 ```
 
+## Summary of annotated genes 
+
+Number of genes per species:
+
+```{r}
+gene_counts_txi %>% group_by(species) %>% summarise(n=n()) %>% ungroup %>% mutate(total = sum(n), rel.freq = n / total)
+```
+
+Number of genes per species after filtering low counts (n < 10 for all samples):
+
+```{r}
+gene_counts_txi_filtered %>% group_by(species) %>% summarise(n=n()) %>% ungroup %>% mutate(total = sum(n), rel.freq = n / total)
+```
+
+Number of gene types per species:
+
+```{r}
+gene_counts_txi %>% group_by(species, gene_type) %>% summarise(n=n()) %>% ungroup %>% mutate(total = sum(n), rel.freq = round(n / total, 5))
+```
+
+Number of gene types per species after filtering out low counts (n < 10 for all samples):
+
+```{r}
+gene_counts_txi_filtered %>% group_by(species, gene_type) %>% summarise(n=n()) %>% ungroup %>% mutate(total = sum(n), rel.freq = round(n / total, 5))
+```
+
+```{r}
+n_genes <- dim(gene_counts_txi)[1]
+stopifnot(dim(gene_counts_txi)[1] == (gene_counts_salmon %>% group_by(sample) %>% summarise(n = n()) %>% select(n) %>% unique()))
+n_genes_filtered <- dim(gse_filtered)[1]
+
+n_human_genes <- gene_counts_txi %>% filter(species == "human") %>% count() %>% pull()
+n_human_genes_filtered <- gene_counts_txi_filtered %>% filter(species == "human") %>% count() %>% pull()
+
+n_pk_genes <- dim(gse_pk)[1]
+stopifnot( dim(gse_pk)[1] == (gene_counts_txi %>% filter(species == "pk") %>% count()))
+n_pk_genes_filtered <- dim(gse_pk_filtered)[1]
+stopifnot( dim(gse_pk_filtered)[1] == (gene_counts_txi_filtered %>% filter(species == "pk") %>% count()))
+
+# intersect(rownames(counts(gse_pk)), gff %>%
+#   filter(gene_biotype == "protein_coding") %>%
+#   pull(gene_id))
+
+# n_pk_protein_coding <- dim(gse_pk)[1]
+
+```
 
 ## Flagstat mapping statistics
 
@@ -476,6 +543,8 @@ mapping_stats_df
 ```
 
 ## Top expressed reads in TPM {.tabset}
+
+TODO: for filtered data
 
 ```{r}
 gene_tpm_long %>%
@@ -1291,64 +1360,11 @@ pheatmap(sampleDistMatrix,
 mapping_stats_df
 ```
 
-## Correlation plots
-
-### TPM {.tabset}
-
-#### All genes
-
-```{r message=FALSE, cache=TRUE}
-# subset of samples for quick visualisation tests
-# co_genes <- ggpairs(gene_tpm %>% filter(species == "pk"), columns = 3:5, lower = list(
-#   continuous = "smooth"
-# ), upper = list(continuous = wrap("cor", size = 2)))
-# co_genes + theme_bw() + scale_x_continuous(trans = "log1p") + scale_y_continuous(trans = "log1p")
-
-
-# all samples
-co_genes <- ggpairs(gene_tpm %>% filter(species == "pk"), columns = 3:18, lower = list(
-  continuous = "smooth"
-), upper = list(continuous = wrap("cor", size = 2)))
-co_genes + theme_bw() + scale_x_continuous(trans = "log1p") + scale_y_continuous(trans = "log1p")
-
-# ggsave(here("results-refseq/figures/correlation_all_genes.png"))
-```
-
-#### Protein-coding genes
-
-```{r message=FALSE}
-co_genes <- ggpairs(
-  gene_tpm %>%
-    filter(species == "pk") %>%
-    left_join(gff, by = "gene_id") %>%
-    filter(gene_biotype == "protein_coding"),
-  columns = 3:18, lower = list(continuous = "smooth"),
-  upper = list(continuous = wrap("cor", size = 2))
-)
-co_genes + theme_bw() + scale_x_continuous(trans = "log1p") + scale_y_continuous(trans = "log1p")
-
-# ggsave(here("results-refseq/figures/correlation_protein_coding_genes.png"))
-```
-
-<!-- #### Pk VST genes -->
-
-<!-- ```{r message=FALSE} -->
-<!-- co_genes <- ggpairs( -->
-<!--   gene_counts_vst_pk %>% -->
-<!--     filter(species == "pk") %>% -->
-<!--     left_join(gff, by = "gene_id") %>% -->
-<!--     filter(gene_biotype == "protein_coding_gene"), -->
-<!--   columns = 1:16, lower = list(continuous = "smooth"), -->
-<!--   upper = list(continuous = wrap("cor", size = 2)) -->
-<!-- ) -->
-<!-- co_genes + theme_bw() + scale_x_continuous(trans = "log1p") + scale_y_continuous(trans = "log1p") -->
-
-<!-- ggsave(here("results-refseq/figures/correlation_protein_coding_genes_pk.png")) -->
-<!-- ``` -->
-
 ## Heatmap of count matrix {.tabset}
 
 **TODO: try quantile breaks for better separation between values instead, see https://slowkow.com/notes/pheatmap-tutorial/** 
+
+<!-- TODO: check if heatmaps should be made using transformed or raw counts -->
 
 ### All genes
 
@@ -1417,16 +1433,14 @@ pheatmap(assay(vsd_pk)[select, ],
 )
 ```
 
+<!-- TODO - subsetting should happen after transform (except low counts), but check for effects since differences in non-protein genes might be stark -->
+
 Protein-coding only (not normalized):
 
 ```{r}
-gene_list <- intersect(rownames(counts(gse_pk)), gff %>%
-  filter(gene_biotype == "protein_coding") %>%
-  pull(gene_id))
-
-select <- order(rowMeans(counts(gse_pk, normalized = FALSE)[gene_list, ]),
-  decreasing = TRUE
-)[1:20]
+select <- order(rowMeans(counts(gse_pk[rowData(gse_pk)$gene_biotype == "protein_coding",], normalized = FALSE)),
+                decreasing = TRUE
+                )[1:20]
 df <- as.data.frame(colData(gse_pk)[, c("RNA_type", "removal", "WBC_depletion")])
 
 pheatmap(assay(vsd_pk)[select, ],
@@ -1436,18 +1450,23 @@ pheatmap(assay(vsd_pk)[select, ],
 )
 ```
 
+```{r}
+select <- order(rowMeans(counts(gse_pk_filtered_protein, normalized = FALSE)),
+                decreasing = TRUE
+                )[1:20]
+df <- as.data.frame(colData(gse_pk_filtered_protein)[, c("RNA_type", "removal", "WBC_depletion")])
+
+pheatmap(assay(vsd_pk_filtered_protein)[select, ],
+  cluster_rows = FALSE, show_rownames = FALSE,
+  cluster_cols = FALSE, annotation_col = df,
+  color = viridis(10)
+)
+```
+
 Protein-coding only + filtered on low counts:
 
 ```{r}
-# select <- order(rowMeans(counts(gse_pk, normalized = FALSE)[gene_counts_vst_pk_filtered$gene_id,]),
-#   decreasing = TRUE
-# )[1:20]
-
-gene_list <- intersect(rownames(counts(gse_pk_filtered)), gff %>%
-  filter(gene_biotype == "protein_coding") %>%
-  pull(gene_id))
-
-select <- order(rowMeans(counts(gse_pk_filtered, normalized = FALSE)[gene_list, ]),
+select <- order(rowMeans(counts(gse_pk_filtered[rowData(gse_pk_filtered)$gene_biotype == "protein_coding",], normalized = FALSE)),
   decreasing = TRUE
 )[1:20]
 df <- as.data.frame(colData(gse_pk)[, c("RNA_type", "removal", "WBC_depletion")])
@@ -1460,6 +1479,10 @@ pheatmap(assay(vsd_pk_filtered)[select, ],
 ```
 
 ## PCA plots {.tabset}
+
+TODO check impact of filtering transformed data vs filtering prior to transformation
+
+All PCA plots use the top 500 most variable genes, unless otherwise stated.
 
 ### VSD - all genes
 
@@ -1534,7 +1557,7 @@ ggplot(pcaData, aes(PC1, PC2, color = kit, shape = WBC_depletion)) +
 ```{r}
 protein_gene_filter <- intersect(rownames(rowData(vsd_pk_filtered)), gff %>% filter(gene_biotype == "protein_coding") %>% select(gene_id) %>% pull())
 
-pcaData <- plotPCA(vsd_pk_filtered[protein_gene_filter,], intgroup = c("kit", "WBC_depletion"), returnData = TRUE)
+pcaData <- plotPCA(vsd_pk_filtered[protein_gene_filter,], intgroup = c("kit", "WBC_depletion"), returnData = TRUE, ntop=500)
 percentVar <- round(100 * attr(pcaData, "percentVar"))
 ggplot(pcaData, aes(PC1, PC2, color = kit, shape = WBC_depletion)) +
   geom_point(size = 4) +
@@ -1546,6 +1569,215 @@ ggplot(pcaData, aes(PC1, PC2, color = kit, shape = WBC_depletion)) +
   scale_color_viridis(discrete = TRUE) +
   theme_bw()
 ```
+
+### VSD - Pk genes - filtered - protein coding only - top 1000 genes
+
+```{r}
+protein_gene_filter <- intersect(rownames(rowData(vsd_pk_filtered)), gff %>% filter(gene_biotype == "protein_coding") %>% select(gene_id) %>% pull())
+
+pcaData <- plotPCA(vsd_pk_filtered[protein_gene_filter,], intgroup = c("kit", "WBC_depletion"), returnData = TRUE, ntop=1000)
+percentVar <- round(100 * attr(pcaData, "percentVar"))
+ggplot(pcaData, aes(PC1, PC2, color = kit, shape = WBC_depletion)) +
+  geom_point(size = 4) +
+  xlab(paste0("PC1: ", percentVar[1], "% variance")) +
+  ylab(paste0("PC2: ", percentVar[2], "% variance")) +
+  labs(title = expression(paste("PCA of VST counts of ", italic("P. knowlesi"), " protein coding genes")),
+       color = "Library preparation kit", shape = "Depletion method") +
+  coord_fixed() +
+  scale_color_viridis(discrete = TRUE) +
+  theme_bw()
+```
+
+### VSD - Pk genes - filtered - protein coding only - top all genes
+
+```{r}
+protein_gene_filter <- intersect(rownames(rowData(vsd_pk_filtered)), gff %>% filter(gene_biotype == "protein_coding") %>% select(gene_id) %>% pull())
+
+pcaData <- plotPCA(vsd_pk_filtered[protein_gene_filter,], intgroup = c("kit", "WBC_depletion"), returnData = TRUE, ntop=5098)
+percentVar <- round(100 * attr(pcaData, "percentVar"))
+ggplot(pcaData, aes(PC1, PC2, color = kit, shape = WBC_depletion)) +
+  geom_point(size = 4) +
+  xlab(paste0("PC1: ", percentVar[1], "% variance")) +
+  ylab(paste0("PC2: ", percentVar[2], "% variance")) +
+  labs(title = expression(paste("PCA of VST counts of ", italic("P. knowlesi"), " protein coding genes")),
+       color = "Library preparation kit", shape = "Depletion method") +
+  coord_fixed() +
+  scale_color_viridis(discrete = TRUE) +
+  theme_bw()
+```
+
+<!-- TODO: try vst on pre-filtered (pk genes + low counts + protein coding) directly -->
+
+
+
+
+```{r}
+
+
+meanSdPlot(assay(vsd_prefiltered))
+
+
+pcaData <- plotPCA(vsd_prefiltered, intgroup = c("kit", "WBC_depletion"), returnData = TRUE, ntop=5098)
+percentVar <- round(100 * attr(pcaData, "percentVar"))
+ggplot(pcaData, aes(PC1, PC2, color = kit, shape = WBC_depletion)) +
+  geom_point(size = 4) +
+  xlab(paste0("PC1: ", percentVar[1], "% variance")) +
+  ylab(paste0("PC2: ", percentVar[2], "% variance")) +
+  labs(title = expression(paste("PCA of VST counts of ", italic("P. knowlesi"), " protein coding genes")),
+       color = "Library preparation kit", shape = "Depletion method") +
+  coord_fixed() +
+  scale_color_viridis(discrete = TRUE) +
+  theme_bw()
+```
+
+### Transformations and filtering considerations 
+
+Quick check to see if applying VST to pre-filtered set of counts differs from filtering a pre-transformed list of counts. It appears not to for the Pk genes and subsetting on protein coding genes only, but it does for bigger filters. 
+
+```{r}
+vsd_prefiltered <- vst(gse_pk_filtered[protein_gene_filter])
+vsd_prefiltered
+vsd_pk_filtered[protein_gene_filter]
+vsd[protein_gene_filter]
+
+
+rowData(vsd_prefiltered)
+rowData(vsd_pk_filtered[protein_gene_filter])
+rowData(vsd[protein_gene_filter])
+
+all.equal(vsd_prefiltered,vsd_pk_filtered[protein_gene_filter])
+
+all.equal(vsd_prefiltered,rowData(vsd[protein_gene_filter]))
+```
+
+---
+
+Transform after filtering on protein coding
+
+
+```{r}
+vsd_test <- varianceStabilizingTransformation(gse_pk_filtered[(rowData(gse_pk_filtered)$gene_biotype == "protein_coding")], blind = TRUE)
+
+pcaData <- plotPCA(vsd_test, intgroup = c("kit", "WBC_depletion"), returnData = TRUE)
+percentVar <- round(100 * attr(pcaData, "percentVar"))
+ggplot(pcaData, aes(PC1, PC2, color = kit, shape = WBC_depletion)) +
+  geom_point(size = 4) +
+  xlab(paste0("PC1: ", percentVar[1], "% variance")) +
+  ylab(paste0("PC2: ", percentVar[2], "% variance")) +
+  labs(title = expression(paste("PCA of VST counts of human and ", italic("P. knowlesi"), " genes")),
+       color = "Library preparation kit", shape = "Depletion method") +
+  coord_fixed() +
+  scale_color_viridis(discrete = TRUE) +
+  theme_bw()
+```
+
+Transform before filtering on protein coding
+
+```{r}
+pcaData <- plotPCA(vsd_pk_filtered[rowData(vsd_pk_filtered)$gene_biotype == "protein_coding"], intgroup = c("kit", "WBC_depletion"), returnData = TRUE)
+percentVar <- round(100 * attr(pcaData, "percentVar"))
+ggplot(pcaData, aes(PC1, PC2, color = kit, shape = WBC_depletion)) +
+  geom_point(size = 4) +
+  xlab(paste0("PC1: ", percentVar[1], "% variance")) +
+  ylab(paste0("PC2: ", percentVar[2], "% variance")) +
+  labs(title = expression(paste("PCA of VST counts of human and ", italic("P. knowlesi"), " genes")),
+       color = "Library preparation kit", shape = "Depletion method") +
+  coord_fixed() +
+  scale_color_viridis(discrete = TRUE) +
+  theme_bw()
+```
+
+Transform after filtering on non-protein coding
+
+```{r}
+# vsd_test <- vst(gse_pk_filtered[(rowData(gse_pk_filtered)$gene_biotype != "protein_coding")], blind = TRUE)
+
+vsd_test <- varianceStabilizingTransformation(gse_pk_filtered[(rowData(gse_pk_filtered)$gene_biotype != "protein_coding")], blind = TRUE)
+
+pcaData <- plotPCA(vsd_test, intgroup = c("kit", "WBC_depletion"), returnData = TRUE)
+percentVar <- round(100 * attr(pcaData, "percentVar"))
+ggplot(pcaData, aes(PC1, PC2, color = kit, shape = WBC_depletion)) +
+  geom_point(size = 4) +
+  xlab(paste0("PC1: ", percentVar[1], "% variance")) +
+  ylab(paste0("PC2: ", percentVar[2], "% variance")) +
+  labs(title = expression(paste("PCA of VST counts of human and ", italic("P. knowlesi"), " genes")),
+       color = "Library preparation kit", shape = "Depletion method") +
+  coord_fixed() +
+  scale_color_viridis(discrete = TRUE) +
+  theme_bw()
+```
+
+Transform before filtering on non-protein coding
+
+```{r}
+pcaData <- plotPCA(vsd_pk_filtered[rowData(vsd_pk_filtered)$gene_biotype != "protein_coding"], intgroup = c("kit", "WBC_depletion"), returnData = TRUE)
+percentVar <- round(100 * attr(pcaData, "percentVar"))
+ggplot(pcaData, aes(PC1, PC2, color = kit, shape = WBC_depletion)) +
+  geom_point(size = 4) +
+  xlab(paste0("PC1: ", percentVar[1], "% variance")) +
+  ylab(paste0("PC2: ", percentVar[2], "% variance")) +
+  labs(title = expression(paste("PCA of VST counts of human and ", italic("P. knowlesi"), " genes")),
+       color = "Library preparation kit", shape = "Depletion method") +
+  coord_fixed() +
+  scale_color_viridis(discrete = TRUE) +
+  theme_bw()
+```
+
+## Correlation plots
+
+### TPM {.tabset}
+
+#### All genes
+
+```{r message=FALSE, cache=TRUE}
+# subset of samples for quick visualisation tests
+# co_genes <- ggpairs(gene_tpm %>% filter(species == "pk"), columns = 3:5, lower = list(
+#   continuous = "smooth"
+# ), upper = list(continuous = wrap("cor", size = 2)))
+# co_genes + theme_bw() + scale_x_continuous(trans = "log1p") + scale_y_continuous(trans = "log1p")
+
+
+# all samples
+co_genes <- ggpairs(gene_tpm %>% filter(species == "pk"), columns = 3:18, lower = list(
+  continuous = "smooth"
+), upper = list(continuous = wrap("cor", size = 2)))
+co_genes + theme_bw() + scale_x_continuous(trans = "log1p") + scale_y_continuous(trans = "log1p")
+
+# ggsave(here("results-refseq/figures/correlation_all_genes.png"))
+```
+
+#### Protein-coding genes
+
+```{r message=FALSE}
+co_genes <- ggpairs(
+  gene_tpm %>%
+    filter(species == "pk") %>%
+    left_join(gff, by = "gene_id") %>%
+    filter(gene_biotype == "protein_coding"),
+  columns = 3:18, lower = list(continuous = "smooth"),
+  upper = list(continuous = wrap("cor", size = 2))
+)
+co_genes + theme_bw() + scale_x_continuous(trans = "log1p") + scale_y_continuous(trans = "log1p")
+
+# ggsave(here("results-refseq/figures/correlation_protein_coding_genes.png"))
+```
+
+<!-- #### Pk VST genes -->
+
+<!-- ```{r message=FALSE} -->
+<!-- co_genes <- ggpairs( -->
+<!--   gene_counts_vst_pk %>% -->
+<!--     filter(species == "pk") %>% -->
+<!--     left_join(gff, by = "gene_id") %>% -->
+<!--     filter(gene_biotype == "protein_coding_gene"), -->
+<!--   columns = 1:16, lower = list(continuous = "smooth"), -->
+<!--   upper = list(continuous = wrap("cor", size = 2)) -->
+<!-- ) -->
+<!-- co_genes + theme_bw() + scale_x_continuous(trans = "log1p") + scale_y_continuous(trans = "log1p") -->
+
+<!-- ggsave(here("results-refseq/figures/correlation_protein_coding_genes_pk.png")) -->
+<!-- ``` -->
+
 
 ----
 
