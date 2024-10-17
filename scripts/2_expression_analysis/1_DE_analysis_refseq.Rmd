@@ -617,6 +617,53 @@ stopifnot( dim(gse_pk_filtered)[1] == (gene_counts_txi_filtered %>% filter(speci
 
 ```
 
+## Comparison of total RNA levels
+
+> The direct comparison of RPKM and TPM across samples is meaningful only when there are equal total RNAs between compared samples and the distribution of RNA populations are close to each other. 
+
+> Make sure both samples use the same RNA isolation approach [poly(A)+ selection versus ribosomal RNA depletion]. If not, they should not be compared.
+
+> Check the fraction of the ribosomal, mitochondrial and globin RNAs, and the top highly expressed transcripts and see whether such RNAs constitute a very large part of the sequenced reads in a sample, and thus decrease the sequencing “real estate” available for the remaining genes in that sample. If the calculated fractions in two samples differ significantly, do not compare RPKM or TPM values directly.
+
+> TPM should never be used for quantitative comparisons across samples when the total RNA contents and its distributions are very different. However, under appropriate circumstances, TPM can still be useful for qualitative comparison such as PCA and clustering analysis. 
+
+(Zhao et al., 2020 - http://dx.doi.org/10.1261/rna.074922.120)
+
+Looking at our samples, especially the ones prepared using the Illumina kit exhibit much higher total RNA content. Based on the output of Picard MarkDuplicates, the differences can at least partially be attributed to the number of PCR duplicates. The proportion of duplicates is comparable across kits, but they do appear to be consistently higher for some depletion methods (no filter > centpip > plasmo > pmacs > cellulose).
+
+```{r}
+gene_counts_txi %>% summarise(across(starts_with("X"), sum)) %>% to_long() %>% left_join(samples, by = "sample") %>% 
+  ggplot(aes(x = sample, y = counts, fill = kit)) + 
+  geom_bar(stat = "identity") + 
+  scale_fill_viridis(option = "viridis", discrete = T) + 
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+  scale_y_continuous(labels = scales::label_number(scale_cut = cut_short_scale())) +
+  labs(y = "Number of reads")
+```
+
+```{r}
+pcr_dups <- read_delim(here("results-refseq/multiqc/star_salmon/multiqc_report_data/multiqc_picard_dups.txt"), delim = "\t")
+
+pcr_dups %>% 
+  mutate(READS_IN_DUPLICATE_PAIRS = 2*READ_PAIR_DUPLICATES) %>% 
+  mutate(READS_IN_UNIQUE_PAIRS = 2 * (READ_PAIRS_EXAMINED - READ_PAIR_DUPLICATES)) %>% 
+  mutate(READS_IN_UNIQUE_UNPAIRED = UNPAIRED_READS_EXAMINED - UNPAIRED_READ_DUPLICATES) %>% 
+  mutate(READS_IN_DUPLICATE_PAIRS_OPTICAL = 2 * READ_PAIR_OPTICAL_DUPLICATES) %>% 
+  mutate(READS_IN_DUPLICATE_PAIRS_NONOPTICAL = READS_IN_DUPLICATE_PAIRS - READS_IN_DUPLICATE_PAIRS_OPTICAL) %>% 
+  mutate(READS_IN_DUPLICATE_UNPAIRED = UNPAIRED_READ_DUPLICATES) %>% 
+  mutate(READS_UNMAPPED = UNMAPPED_READS) %>% 
+  select(c(Sample, READS_IN_UNIQUE_PAIRS, READS_IN_UNIQUE_UNPAIRED, READS_IN_DUPLICATE_PAIRS_OPTICAL, READS_IN_DUPLICATE_PAIRS_NONOPTICAL, READS_IN_DUPLICATE_UNPAIRED)) %>% 
+  pivot_longer(cols = 2:6, names_to = "type", values_to = "counts") %>% 
+  ggplot(aes(x = Sample, y = counts, fill = type)) +
+      geom_bar(position = "stack", stat = "identity") +
+      scale_fill_viridis(option = "viridis", discrete = T) +
+      theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+      coord_flip() +
+      scale_x_discrete(limits = rev) +
+      scale_y_continuous(labels = scales::label_number(scale_cut = cut_short_scale())) +
+      labs(y = "Number of reads")
+```
+
 ## Flagstat mapping statistics
 
 ```{r}
