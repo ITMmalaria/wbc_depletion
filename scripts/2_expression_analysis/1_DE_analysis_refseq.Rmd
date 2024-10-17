@@ -92,7 +92,6 @@ fastq_screen_mapping_stats_df <- mapping_stats_df %>%
 
 Import the following sets of count files:
 
-- Salmon gene-level quant files. TODO: remove these as they are redundant
 - Gene-level counts (created in `nf-core/rnaseq` pipeline through `tximport` of Salmon transcript-level counts )
 - Gene-level TPM (created in `nf-core/rnaseq` pipeline through `tximport` of Salmon transcript-level counts )
 - Gene-level counts inside DESeq/SummarizedExperiment object (created by manually importing Salmon `quant.sf` files via `tximport`. Values should correspond exactly to the other gene-level counts).
@@ -128,17 +127,6 @@ transcript_info <- list(
   gene = unique(transcript_info[, 2:3]),
   tx2gene = transcript_info[, 1:2]
 )
-
-# salmon quant.genes.sf gene-level counts
-# per-sample aggregation
-gene_counts_salmon <- list.files(
-  path = here("results-refseq/star_salmon"), pattern = "quant.genes.sf",
-  recursive = TRUE, full.names = TRUE
-) %>%
-  read_delim(id = "sample") %>%
-  mutate(sample = basename(dirname(sample))) %>%
-  rename(gene_id = Name) %>%
-  left_join(transcript_info$gene, by = "gene_id")
 
 # txi gene-level counts - same as using tximport and DESeqDataSetFromTximport except rounding needs to be done manually
 # gene-level aggregation across all samples
@@ -423,8 +411,6 @@ gse_pk_filtered <- gse_filtered[rowData(gse_filtered)$species == "pk",]
 # create filtered versions of other count matrices
 gene_tpm_filtered <- gene_tpm[filter_all_genes,]
 gene_counts_txi_filtered <- gene_counts_txi[filter_all_genes,]
-# gene counts salmon are in long format, so use join instead of filter mask
-gene_counts_salmon_filtered <- gene_counts_salmon %>% inner_join(gene_tpm_filtered %>% select("gene_id"), by = "gene_id")
 
 # check if filter was applied correctly, i.e. order of genes is the same in gse and tpm matrix
 stopifnot(all.equal(gene_tpm_filtered, gene_tpm[(rowSums(gene_counts_txi[,3:18] >= 10) >= 1),]))
@@ -898,50 +884,6 @@ gene_annotation %>%
 
 **TPM values appear to be the most appropriate metric to use.**
 
-### Salmon gene-level counts
-
-These gene counts were aggregated at the sample level (salmon gene output).
-
-```{r}
-gene_counts_salmon_by_sample_gene_type <- gene_counts_salmon %>%
-  left_join(mapping_stats_df, by = "sample") %>%
-  group_by(condition, gene_type) %>%
-  summarise(sum_reads = sum(NumReads, na.rm = TRUE)) %>%
-  mutate(per = 100 * sum_reads / sum(sum_reads))
-
-p <- ggplot(gene_counts_salmon_by_sample_gene_type, aes(y = sum_reads, x = condition, fill = gene_type))
-p + geom_bar(position = "fill", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
-
-p <- ggplot(gene_counts_salmon_by_sample_gene_type, aes(y = sum_reads, x = condition, fill = gene_type))
-p + geom_bar(position = "dodge", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
-
-p <- ggplot(gene_counts_salmon_by_sample_gene_type, aes(y = sum_reads, x = condition, fill = gene_type))
-p + geom_bar(stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
-```
-
-### Salmon gene-level counts - filtered
-
-These gene counts were aggregated at the sample level (salmon gene output) and filtered to only genes with a minimum count of 10 reads for at least 1 sample.
-
-*Filtering seems to work ok on dataframe level, but the plots do not appear to change because the differences in total count are so minor.**
-
-```{r}
-gene_counts_salmon_filtered_by_sample_gene_type <- gene_counts_salmon_filtered %>%
-  left_join(mapping_stats_df, by = "sample") %>%
-  group_by(condition, gene_type) %>%
-  summarise(sum_reads = sum(NumReads, na.rm = TRUE)) %>%
-  mutate(per = 100 * sum_reads / sum(sum_reads))
-
-p <- ggplot(gene_counts_salmon_filtered_by_sample_gene_type, aes(y = sum_reads, x = condition, fill = gene_type))
-p + geom_bar(position = "fill", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
-
-p <- ggplot(gene_counts_salmon_filtered_by_sample_gene_type, aes(y = sum_reads, x = condition, fill = gene_type))
-p + geom_bar(position = "dodge", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
-
-p <- ggplot(gene_counts_salmon_filtered_by_sample_gene_type, aes(y = sum_reads, x = condition, fill = gene_type))
-p + geom_bar(stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
-```
-
 ### Gene-level counts tximport
 
 These gene counts were aggregated across all samples (tximport of transcript counts).
@@ -1025,94 +967,6 @@ p + geom_bar(stat = "identity") + scale_fill_viridis(option = "viridis", discret
 ```
 
 ## Plot percentage of reads for each species {.tabset}
-
-### Salmon gene-level counts {.tabset}
-
-These gene counts were aggregated at the sample level (salmon gene output).
-
-#### Samples
-
-```{r}
-gene_counts_salmon_by_sample_species <- gene_counts_salmon %>%
-  left_join(mapping_stats_df, by = "sample") %>%
-  left_join(samples) %>%
-  group_by(sample, species) %>%
-  summarise(sum_reads = sum(NumReads, na.rm = TRUE)) %>%
-  mutate(per = 100 * sum_reads / sum(sum_reads))
-
-p <- ggplot(gene_counts_salmon_by_sample_species, aes(y = sum_reads, x = sample, fill = species))
-p + geom_bar(position = "fill", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
-
-p <- ggplot(gene_counts_salmon_by_sample_species, aes(y = sum_reads, x = sample, fill = species))
-p + geom_bar(position = "dodge", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
-
-p <- ggplot(gene_counts_salmon_by_sample_species, aes(y = sum_reads, x = sample, fill = species))
-p + geom_bar(stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
-```
-
-#### Conditions
-
-```{r}
-gene_counts_salmon_by_sample_species <- gene_counts_salmon %>%
-  left_join(mapping_stats_df, by = "sample") %>%
-  left_join(samples) %>%
-  group_by(condition, species) %>%
-  summarise(sum_reads = sum(NumReads, na.rm = TRUE)) %>%
-  mutate(per = 100 * sum_reads / sum(sum_reads))
-
-p <- ggplot(gene_counts_salmon_by_sample_species, aes(y = sum_reads, x = condition, fill = species))
-p + geom_bar(position = "fill", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
-
-p <- ggplot(gene_counts_salmon_by_sample_species, aes(y = sum_reads, x = condition, fill = species))
-p + geom_bar(position = "dodge", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
-
-p <- ggplot(gene_counts_salmon_by_sample_species, aes(y = sum_reads, x = condition, fill = species))
-p + geom_bar(stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
-```
-
-### Salmon gene-level counts - filtered {.tabset}
-
-These gene counts were aggregated at the sample level (salmon gene output) and filtered to only genes with a minimum count of 10 reads for at least 1 sample.
-
-#### Samples
-
-```{r}
-gene_counts_salmon_filtered_by_sample_species <- gene_counts_salmon_filtered %>%
-  left_join(mapping_stats_df, by = "sample") %>%
-  left_join(samples) %>%
-  group_by(sample, species) %>%
-  summarise(sum_reads = sum(NumReads, na.rm = TRUE)) %>%
-  mutate(per = 100 * sum_reads / sum(sum_reads))
-
-p <- ggplot(gene_counts_salmon_filtered_by_sample_species, aes(y = sum_reads, x = sample, fill = species))
-p + geom_bar(position = "fill", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
-
-p <- ggplot(gene_counts_salmon_filtered_by_sample_species, aes(y = sum_reads, x = sample, fill = species))
-p + geom_bar(position = "dodge", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
-
-p <- ggplot(gene_counts_salmon_filtered_by_sample_species, aes(y = sum_reads, x = sample, fill = species))
-p + geom_bar(stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
-```
-
-#### Conditions
-
-```{r}
-gene_counts_salmon_filtered_by_sample_species <- gene_counts_salmon_filtered %>%
-  left_join(mapping_stats_df, by = "sample") %>%
-  left_join(samples) %>%
-  group_by(condition, species) %>%
-  summarise(sum_reads = sum(NumReads, na.rm = TRUE)) %>%
-  mutate(per = 100 * sum_reads / sum(sum_reads))
-
-p <- ggplot(gene_counts_salmon_filtered_by_sample_species, aes(y = sum_reads, x = condition, fill = species))
-p + geom_bar(position = "fill", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
-
-p <- ggplot(gene_counts_salmon_filtered_by_sample_species, aes(y = sum_reads, x = condition, fill = species))
-p + geom_bar(position = "dodge", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
-
-p <- ggplot(gene_counts_salmon_filtered_by_sample_species, aes(y = sum_reads, x = condition, fill = species))
-p + geom_bar(stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
-```
 
 ### Gene-level counts tximport {.tabset}
 
