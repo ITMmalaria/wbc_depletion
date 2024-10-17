@@ -35,6 +35,7 @@ library(stringr)
 library(GGally)
 library(VennDiagram)
 library(UpSetR)
+library(scales)
 # library(GenomicFeatures)
 
 ggplot2::theme_set(theme_bw())
@@ -54,7 +55,6 @@ If the RDS objects have already been created in a previous run, the following ce
 # list2env(data_list, .GlobalEnv)
 # rm(data_list)
 ```
-
 
 ## Read in fastq-screen and mapping statistics
 
@@ -80,12 +80,17 @@ fastq_screen <- fastq_screen %>%
 
 # read in samtools flagstat and metadata files
 mapping_stats_df <- read_delim((here("results-refseq/mapping_stats.csv")), col_types = list(sample = "factor")) %>%
-  mutate(primary_mapped_human = primary_mapped_all - primary_mapped_pk) %>%
   mutate(primary_mapped_human = primary_mapped_all - primary_mapped_pk)
 
 # merge dataframes
 fastq_screen_mapping_stats_df <- mapping_stats_df %>%
   left_join(fastq_screen, by = "sample")
+
+# Picard PCR duplicates
+pcr_dups <- read_delim(here("results-refseq/multiqc/star_salmon/multiqc_report_data/multiqc_picard_dups.txt"), delim = "\t")
+
+# STAR mapping statistics
+star_stats <- read_delim(here("results-refseq/multiqc/star_salmon/multiqc_report_data/mqc_star_alignment_plot_1.txt"), delim = "\t")
 ```
 
 ## Read in `salmon` gene counts and tximport gene counts/TPM abundances
@@ -106,7 +111,10 @@ Background info on the different types of counts and how to import them:
 
 ```{r include=FALSE}
 # read in sample metadata
-samples <- read_csv(here("./data/samplesheet.csv"), col_select = c("sample", "condition", "RNA_type", "library_kit", "removal", "WBC_depletion", "kit"), col_types = "c")
+samples <- read_csv(here("./data/samplesheet.csv"), col_select = c("sample", "condition", "RNA_type", "library_kit", "removal", "WBC_depletion", "kit"), col_types = "c") %>% 
+  mutate(kit = str_replace_all(kit, "_", " ")) %>% 
+  mutate(sample_name = str_replace(str_replace(sample, "104974-001-0", "Sample "), "_S1_L001", paste(" -", kit, "-", WBC_depletion))) %>% 
+  mutate(sample_short = str_replace(str_replace(sample, "104974-001-0", "Sample "), "_S1_L001", ""))
 
 # read in transcript info - transcript id, gene id and genes names
 transcript_info <- read.csv(here("results-refseq/star_salmon/tx2gene.tsv"),
@@ -196,7 +204,6 @@ NC_011902.2	RefSeq	exon	825471	825594	.	+	.	ID=exon-XR_002461722.1-1;Parent=rna-
 The bash script in [`scripts/2_expression_analysis/0_gene_annotations-refseq.sh`](./scripts/2_expression_analysis/0_gene_annotations-refseq.sh) was used to retrieve the rRNA genes from both annotation files.
 
 ```{bash}
-#| echo: fenced
 # zcat "${ref_human}" | awk '$3 ~ /gene/' | cut -f9 | grep -E "gene_biotype=rRNA" | grep -v "rRNA_pseudo" | grep -o "ID=[^;]*" | sed 's/ID=/human_rRNA;/' >> "${output_file}"
 # zcat "${ref_pk}" | cut -f9 | grep -E "gene_biotype=rRNA" | grep -o "ID=[^;]*" | sed 's/ID=/pk_rRNA;/' >> "${output_file}"
 ```
@@ -622,18 +629,17 @@ Looking at our samples, especially the ones prepared using the Illumina kit exhi
 
 ```{r}
 gene_counts_txi %>% summarise(across(starts_with("X"), sum)) %>% to_long() %>% left_join(samples, by = "sample") %>% 
-  ggplot(aes(x = sample, y = counts, fill = kit)) + 
+  ggplot(aes(x = sample_short, y = counts, fill = kit)) + 
   geom_bar(stat = "identity") + 
-  scale_fill_viridis(option = "viridis", discrete = T) + 
+  scale_fill_viridis(option = "viridis", discrete = T, labels = c("mRNA Illumina", "mRNA Qiagen globin depletion", "mRNA Qiagen globin/rRNA depletion", "tRNA Qiagen globin/rRNA depletion")) + 
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
   scale_y_continuous(labels = scales::label_number(scale_cut = cut_short_scale())) +
-  labs(y = "Number of reads")
+  labs(x = "Sample", y = "Number of reads", fill = "Kit")
 ```
 
 ```{r}
-pcr_dups <- read_delim(here("results-refseq/multiqc/star_salmon/multiqc_report_data/multiqc_picard_dups.txt"), delim = "\t")
-
 pcr_dups %>% 
+  left_join(samples, by = join_by(Sample == sample)) %>% 
   mutate(READS_IN_DUPLICATE_PAIRS = 2*READ_PAIR_DUPLICATES) %>% 
   mutate(READS_IN_UNIQUE_PAIRS = 2 * (READ_PAIRS_EXAMINED - READ_PAIR_DUPLICATES)) %>% 
   mutate(READS_IN_UNIQUE_UNPAIRED = UNPAIRED_READS_EXAMINED - UNPAIRED_READ_DUPLICATES) %>% 
@@ -641,22 +647,56 @@ pcr_dups %>%
   mutate(READS_IN_DUPLICATE_PAIRS_NONOPTICAL = READS_IN_DUPLICATE_PAIRS - READS_IN_DUPLICATE_PAIRS_OPTICAL) %>% 
   mutate(READS_IN_DUPLICATE_UNPAIRED = UNPAIRED_READ_DUPLICATES) %>% 
   mutate(READS_UNMAPPED = UNMAPPED_READS) %>% 
-  select(c(Sample, READS_IN_UNIQUE_PAIRS, READS_IN_UNIQUE_UNPAIRED, READS_IN_DUPLICATE_PAIRS_OPTICAL, READS_IN_DUPLICATE_PAIRS_NONOPTICAL, READS_IN_DUPLICATE_UNPAIRED)) %>% 
-  pivot_longer(cols = 2:6, names_to = "type", values_to = "counts") %>% 
-  ggplot(aes(x = Sample, y = counts, fill = type)) +
+  select(c(sample_name, condition, kit, READS_IN_UNIQUE_PAIRS, READS_IN_UNIQUE_UNPAIRED, READS_IN_DUPLICATE_PAIRS_OPTICAL, READS_IN_DUPLICATE_PAIRS_NONOPTICAL, READS_IN_DUPLICATE_UNPAIRED)) %>% 
+  pivot_longer(cols = 4:8, names_to = "type", values_to = "counts") %>% 
+  ggplot(aes(x = sample_name, y = counts, fill = type)) +
       geom_bar(position = "stack", stat = "identity") +
       scale_fill_viridis(option = "viridis", discrete = T) +
       theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
       coord_flip() +
       scale_x_discrete(limits = rev) +
       scale_y_continuous(labels = scales::label_number(scale_cut = cut_short_scale())) +
-      labs(y = "Number of reads")
+      labs(x = "Sample", y = "Number of reads", fill = "Deduplication stats")
 ```
 
-## Flagstat mapping statistics
+## Alignment statistics
+
+The output reported by `samtool flagstats` and STAR's `Log.final.out` files cannot be compared directly: the latter reports counts of read-pairs as opposed to individual reads, and the former does not contain unmapped reads (these are not added to the `.bam` outputs by default) while also counting multi-mapped reads.
+
+```{r}
+star_stats
+```
+
+```{r}
+star_stats  %>% 
+  pivot_longer(cols = 2:6, names_to = "type", values_to = "counts") %>% 
+  left_join(samples, by = join_by(Sample == sample)) %>% 
+  ggplot(aes(x = sample_name, y = counts, fill = type)) +
+      geom_bar(position = "stack", stat = "identity") +
+      scale_fill_viridis(option = "viridis", discrete = T) +
+      theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+      coord_flip() +
+      scale_x_discrete(limits = rev) +
+      scale_y_continuous(labels = scales::label_number(scale_cut = cut_short_scale())) +
+      labs(x = "Sample", y = "Number of read pairs", fill = "Mapping stats")
+```
 
 ```{r}
 mapping_stats_df
+```
+
+```{r}
+mapping_stats_df %>% 
+  left_join(samples, by = "sample") %>% 
+  pivot_longer(cols = primary_mapped_pk:primary_mapped_human, names_to = "type", values_to = "counts") %>% 
+  ggplot(aes(x = sample_name, y = counts, fill = type)) +
+      geom_bar(position = "stack", stat = "identity") +
+      scale_fill_viridis(option = "viridis", discrete = T) + 
+      theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+      coord_flip() +
+      scale_x_discrete(limits = rev) +
+      scale_y_continuous(labels = scales::label_number(scale_cut = cut_short_scale())) +
+      labs(x = "Sample", y = "Number of primary reads", fill = "Samtools flagstat")
 ```
 
 ## Top expressed reads in TPM {.tabset}
