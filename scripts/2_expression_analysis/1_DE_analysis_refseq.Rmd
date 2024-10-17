@@ -355,7 +355,6 @@ annotate_gene_type <- function(data, gene_annotation) {
     left_join(gene_annotation, by = c("gene_id", "gene_name"))
   }
 
-gene_counts_salmon <- annotate_gene_type(gene_counts_salmon, gene_annotation)
 gene_counts_txi <- annotate_gene_type(gene_counts_txi, gene_annotation)
 gene_tpm <- annotate_gene_type(gene_tpm, gene_annotation)
 
