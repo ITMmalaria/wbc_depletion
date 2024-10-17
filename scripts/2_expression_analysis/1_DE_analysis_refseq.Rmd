@@ -464,10 +464,19 @@ gene_tpm_filtered_long <- to_long(gene_tpm_filtered)
 
 ## Transform counts for visualisation
 
+For visualisation purposes (e.g., PCA or heatmaps), gene counts should be transformed so that they all have the same range of variances, i.e. homoskedastic, instead of the variance depending on the mean. DESeq2 offers two transform options to stabilize the variance, `vst` and `rlog`. According to [Love et al., 2019](https://bioconductor.org/packages/release/workflows/vignettes/rnaseqGene/inst/doc/rnaseqGene.html#exploratory-analysis-and-visualization), rlog, while slower, works better for small datasets (n < 30) and when there are large differences in sequencing depth across samples. 
+
+We use `blind=TRUE` to obtain a fully unsupervised transformation (independent of the design, although we are using an intercept-only model anyway), generally intended to observe batch effects. However, since we can have large differences in counts between samples due to our experimental design (e.g., zero counts for rRNA or globins in some samples), the transformation might not work as well as intended and shrink values too much ([DESeq2 vignette](https://bioconductor.org/packages/devel/bioc/vignettes/DESeq2/inst/doc/DESeq2.html#blind-dispersion-estimation)).
+
+Also note that attempting to transform unfiltered counts can also lead to strange outcomes.
+
+Lastly, the transformation should ideally be performed once on the entire set of gene counts (after filtering out low counts), and only then subset on different gene groups of interest (e.g., species, protein-coding genes only, etc.), rather than re-applying the transformation to a subset of counts.
+
 ```{r}
-# variance stabilizing transformation
+# variance stabilizing transformation without filtering
 vsd <- vst(gse, blind = TRUE)
-meanSdPlot(assay(vsd))
+p <- meanSdPlot(assay(vsd))
+p$gg + labs(title = "VST on unfiltered counts")
 
 # extract transformed gene counts
 # gene_counts_vst <- data.frame(assays(vsd)[[1]])
@@ -476,9 +485,24 @@ meanSdPlot(assay(vsd))
 #   mutate(gene_id = rownames(gene_counts_vst)) %>%
 #   left_join(transcript_info$gene, by = "gene_id")
 
-# variance stabilizing transformation
+# repeat for filtered object
+vsd_filtered <- vst(gse_filtered, blind = TRUE)
+p <- meanSdPlot(assay(vsd_filtered))
+p$gg + labs(title = "VST on filtered counts")
+
+# compare with rlog transform
+rld_filtered <- rlog(gse_filtered, blind=TRUE)
+p <- meanSdPlot(assay(rld_filtered))
+p$gg + labs(title = "Rlog on filtered counts")
+
+# transform after subsetting - not recommended
 vsd_pk <- vst(gse_pk, blind = TRUE)
-meanSdPlot(assay(vsd_pk))
+p <- meanSdPlot(assay(vsd_pk))
+p$gg + labs(title = "VST on filtered counts after subsetting Pk genes")
+
+rld_pk <- rlog(gse_pk, blind = TRUE)
+p <- meanSdPlot(assay(rld_pk))
+p$gg + labs(title = "Rlog on filtered counts after subsetting Pk genes")
 
 # extract transformed gene counts
 # gene_counts_vst_pk <- data.frame(assays(vsd_pk)[[1]])
@@ -486,12 +510,6 @@ meanSdPlot(assay(vsd_pk))
 # gene_counts_vst_pk <- gene_counts_vst_pk %>%
 #   mutate(gene_id = rownames(gene_counts_vst_pk)) %>%
 #   left_join(transcript_info$gene, by = "gene_id")
-
-vsd_filtered <- vst(gse_filtered, blind = TRUE)
-meanSdPlot(assay(vsd_filtered))
-
-vsd_pk_filtered <- vst(gse_pk_filtered, blind = TRUE)
-meanSdPlot(assay(vsd_pk_filtered))
 ```
 
 ## Export RDS objects {#rds-objects}
