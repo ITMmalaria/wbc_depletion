@@ -139,16 +139,14 @@ transcript_info <- list(
 # txi gene-level counts - same as using tximport and DESeqDataSetFromTximport except rounding needs to be done manually
 # gene-level aggregation across all samples
 gene_counts_txi <- read_delim(here("results-refseq/star_salmon/salmon.merged.gene_counts.tsv")) %>%
-  mutate(across(starts_with("X"), \(x) as.integer(round(x)))) 
-# %>%
-#   rename_with(~ str_replace_all(.x, pattern = "\\.", replacement = "-"), .cols = `X104974.001.001_S1_L001`:`X104974.001.016_S1_L001`) %>% 
-#   rename_with(~ str_sub(.x, 2, -1), .cols = `X104974-001-001_S1_L001`:`X104974-001-016_S1_L001`) 
+  mutate(across(starts_with("X"), \(x) as.integer(round(x)))) %>%
+  rename_with(~ str_replace_all(.x, pattern = "\\.", replacement = "-"), .cols = `X104974.001.001_S1_L001`:`X104974.001.016_S1_L001`) %>%
+  rename_with(~ str_sub(.x, 2, -1), .cols = `X104974-001-001_S1_L001`:`X104974-001-016_S1_L001`)
 
 # txi gene-level TPM abundances
-gene_tpm <- read_delim(here("results-refseq/star_salmon/salmon.merged.gene_tpm.tsv")) 
-# %>% 
-#   rename_with(~ str_replace_all(.x, pattern = "\\.", replacement = "-"), .cols = `X104974.001.001_S1_L001`:`X104974.001.016_S1_L001`) %>% 
-#   rename_with(~ str_sub(.x, 2, -1), .cols = `X104974-001-001_S1_L001`:`X104974-001-016_S1_L001`) 
+gene_tpm <- read_delim(here("results-refseq/star_salmon/salmon.merged.gene_tpm.tsv")) %>%
+  rename_with(~ str_replace_all(.x, pattern = "\\.", replacement = "-"), .cols = `X104974.001.001_S1_L001`:`X104974.001.016_S1_L001`) %>%
+  rename_with(~ str_sub(.x, 2, -1), .cols = `X104974-001-001_S1_L001`:`X104974-001-016_S1_L001`)
 
 # DESeqDataSetFromTximport - original counts + offset tximport
 # to be used with DESeq2's vst/rlog transform for visualisations
