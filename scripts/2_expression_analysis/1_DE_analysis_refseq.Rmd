@@ -87,10 +87,10 @@ fastq_screen_mapping_stats_df <- mapping_stats_df %>%
   left_join(fastq_screen, by = "sample")
 
 # Picard PCR duplicates
-pcr_dups <- read_delim(here("results-refseq/multiqc/star_salmon/multiqc_report_data/multiqc_picard_dups.txt"), delim = "\t")
+pcr_dups <- read_delim(here("results-refseq/multiqc/star_salmon/multiqc_report_data/multiqc_picard_dups.txt"), delim = "\t", col_types = list(Sample = "factor"))
 
 # STAR mapping statistics
-star_stats <- read_delim(here("results-refseq/multiqc/star_salmon/multiqc_report_data/mqc_star_alignment_plot_1.txt"), delim = "\t")
+star_stats <- read_delim(here("results-refseq/multiqc/star_salmon/multiqc_report_data/mqc_star_alignment_plot_1.txt"), delim = "\t", col_types = list(Sample = "factor"))
 ```
 
 ## Read in `salmon` gene counts and tximport gene counts/TPM abundances
@@ -111,10 +111,19 @@ Background info on the different types of counts and how to import them:
 
 ```{r include=FALSE}
 # read in sample metadata
-samples <- read_csv(here("./data/samplesheet.csv"), col_select = c("sample", "condition", "RNA_type", "library_kit", "removal", "WBC_depletion", "kit"), col_types = "c") %>% 
-  mutate(kit = str_replace_all(kit, "_", " ")) %>% 
-  mutate(sample_name = str_replace(str_replace(sample, "104974-001-0", "Sample "), "_S1_L001", paste(" -", kit, "-", WBC_depletion))) %>% 
-  mutate(sample_short = str_replace(str_replace(sample, "104974-001-0", "Sample "), "_S1_L001", ""))
+samples <- read_csv(here("./data/samplesheet.csv"), 
+                    col_select = c("sample", "condition", "RNA_type", "library_kit", "removal", "WBC_depletion", "kit"), 
+                    col_types =cols(.default = "f")) %>% 
+  mutate(RNA_type = str_to_title(RNA_type)) %>% 
+  mutate(filter_name = factor(WBC_depletion, 
+                         levels = c("nofilter", "centpip", "plasmo", "pmacs", "cellulose"), 
+                         labels = c("no filter", "cent/pip", "plasmodipur", "PMACS", "cellulose"))) %>% 
+  # mutate(kit = as.factor(str_replace_all(kit, "_", " "))) %>% 
+  mutate(kit_name = factor(kit,
+                      levels = c("mRNA_qiagen_FSglob", "mRNA_qiagen_FSglobH", "tRNA_qiagen_FSglobH", "mRNA_illumina"),
+                      labels = c("mRNA Qiagen FS globin", "mRNA Qiagen FS globin/rRNA", "tRNA Qiagen FS globin/rRNA", "mRNA Illumina"))) %>% 
+  mutate(sample_name = as.factor(str_replace(str_replace(sample, "104974-001-0", "Sample "), "_S1_L001", paste(" -", kit_name, "-", filter_name)))) %>% 
+  mutate(sample_short = as.factor(str_replace(str_replace(sample, "104974-001-0", "Sample "), "_S1_L001", "")))
 
 # read in transcript info - transcript id, gene id and genes names
 transcript_info <- read.csv(here("results-refseq/star_salmon/tx2gene.tsv"),
@@ -224,7 +233,7 @@ knitr::kable(
   gene_types_df %>%
     filter((gene_type == "human_rRNA") | (gene_type == "Mt_rRNA")) %>%
     left_join(gene_tpm, by = c("gene_id", "gene_name")) %>%
-    filter(rowSums(across(starts_with("X"))) != 0),
+    filter(rowSums(across(.cols = `104974-001-001_S1_L001`:`104974-001-016_S1_L001`)) != 0),
   caption = "Non-zero counts of human rRNA genes annotated in RefSeq"
 )
 
@@ -277,19 +286,17 @@ if (file.exists(here("data/ref/gene_types.csv"))) {
 
 gene_types_df %>%
   left_join(gene_tpm, by = c("gene_id", "gene_name")) %>%
-  filter(rowSums(across(starts_with("X"))) != 0) %>%
-  pivot_longer(cols = `X104974.001.001_S1_L001`:`X104974.001.016_S1_L001`,
+  filter(rowSums(across(.cols = `104974-001-001_S1_L001`:`104974-001-016_S1_L001`)) != 0) %>%
+  pivot_longer(cols = `104974-001-001_S1_L001`:`104974-001-016_S1_L001`,
                names_to = "sample",
                values_to = "counts") %>%
-  mutate(sample = str_replace_all(sample, "\\.", replacement = "-")) %>%
-  mutate(sample = str_sub(sample, 2, -1)) %>%
-  left_join(mapping_stats_df, by = "sample") %>%
+  left_join(samples, by = "sample") %>%
   group_by(gene_id) %>%
   mutate(total = sum(counts)) %>%
   ungroup() %>%
   arrange(gene_type, desc(total)) %>% 
   mutate(gene_name = factor(gene_name, levels = unique(gene_name))) %>%
-  ggplot(aes(x = gene_name, y = counts, fill = `sample`)) +
+  ggplot(aes(x = gene_name, y = counts, fill = sample_short)) +
     geom_bar(position = "stack", stat = "identity") +
     scale_fill_viridis(option = "viridis", discrete = T) +
     theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
@@ -297,7 +304,8 @@ gene_types_df %>%
     scale_x_discrete(limits = rev) +
     labs(fill = "Sample", title = "RefSeq annotated rRNA - TPM") +
     ylab(label = "TPM") + xlab(label = "Gene name") +
-    facet_wrap(~kit)
+    facet_wrap(~kit) +
+    scale_y_continuous(labels = scales::label_number(scale_cut = cut_short_scale()))
 ```
 
 ```{r}
@@ -309,13 +317,13 @@ gene_types_gencode_df %>%
                values_to = "counts") %>%
   mutate(sample = str_replace_all(sample, "\\.", replacement = "-")) %>%
   mutate(sample = str_sub(sample, 2, -1)) %>%
-  left_join(mapping_stats_df, by = "sample") %>%
+  left_join(samples, by = "sample") %>%
   group_by(gene_id) %>%
   mutate(total = sum(counts)) %>%
   ungroup() %>%
   arrange(gene_type, desc(total)) %>% 
   mutate(gene_name = factor(gene_name, levels = unique(gene_name))) %>%
-  ggplot(aes(x = gene_name, y = counts, fill = `sample`)) +
+  ggplot(aes(x = gene_name, y = counts, fill = sample_short)) +
     geom_bar(position = "stack", stat = "identity") +
     scale_fill_viridis(option = "viridis", discrete = T) +
     theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
@@ -323,7 +331,8 @@ gene_types_gencode_df %>%
     scale_x_discrete(limits = rev) +
     labs(fill = "Sample", title = "GENCODE annotated rRNA - TPM") +
     ylab(label = "TPM") + xlab(label = "Gene name") +
-    facet_wrap(~kit)
+    facet_wrap(~kit) +
+    scale_y_continuous(labels = scales::label_number(scale_cut = cut_short_scale()))
 ```
 
 ##### Globins
@@ -446,9 +455,7 @@ vsd_pk_filtered_protein <- vst(gse_pk_filtered_protein, blind = TRUE)
 # cast to long format
 to_long <- function(data) {
   data %>%
-    pivot_longer(cols = `X104974.001.001_S1_L001`:`X104974.001.016_S1_L001`, names_to = "sample", values_to = "counts") %>%
-    mutate(sample = str_replace_all(sample, "\\.", replacement = "-")) %>%
-    mutate(sample = str_sub(sample, 2, -1))
+    pivot_longer(cols = `104974-001-001_S1_L001`:`104974-001-016_S1_L001`, names_to = "sample", values_to = "counts")
 }
 
 gene_counts_txi_long <- to_long(gene_counts_txi)
@@ -494,6 +501,10 @@ p$gg + labs(title = "Rlog on filtered counts")
 # transform after subsetting - not recommended
 vsd_pk <- vst(gse_pk, blind = TRUE)
 p <- meanSdPlot(assay(vsd_pk))
+p$gg + labs(title = "VST on unfiltered counts after subsetting Pk genes")
+
+vsd_pk_filtered <- vst(gse_pk_filtered, blind = TRUE)
+p <- meanSdPlot(assay(vsd_pk_filtered))
 p$gg + labs(title = "VST on filtered counts after subsetting Pk genes")
 
 rld_pk <- rlog(gse_pk, blind = TRUE)
@@ -628,10 +639,13 @@ stopifnot( dim(gse_pk_filtered)[1] == (gene_counts_txi_filtered %>% filter(speci
 Looking at our samples, especially the ones prepared using the Illumina kit exhibit much higher total RNA content. Based on the output of Picard MarkDuplicates, the differences can at least partially be attributed to the number of PCR duplicates. The proportion of duplicates is comparable across kits, but they do appear to be consistently higher for some depletion methods (no filter > centpip > plasmo > pmacs > cellulose).
 
 ```{r}
-gene_counts_txi %>% summarise(across(starts_with("X"), sum)) %>% to_long() %>% left_join(samples, by = "sample") %>% 
-  ggplot(aes(x = sample_short, y = counts, fill = kit)) + 
+gene_counts_txi %>% summarise(across(`104974-001-001_S1_L001`:`104974-001-016_S1_L001`, sum)) %>%
+  to_long() %>% 
+  left_join(samples, by = "sample") %>% 
+  ggplot(aes(x = sample_short, y = counts, fill = kit_name)) + 
   geom_bar(stat = "identity") + 
-  scale_fill_viridis(option = "viridis", discrete = T, labels = c("mRNA Illumina", "mRNA Qiagen globin depletion", "mRNA Qiagen globin/rRNA depletion", "tRNA Qiagen globin/rRNA depletion")) + 
+  scale_fill_viridis(option = "viridis", discrete = T) +
+                     # labels = c("mRNA Illumina", "mRNA Qiagen globin depletion", "mRNA Qiagen globin/rRNA depletion", "tRNA Qiagen globin/rRNA depletion")) + 
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
   scale_y_continuous(labels = scales::label_number(scale_cut = cut_short_scale())) +
   labs(x = "Sample", y = "Number of reads", fill = "Kit")
@@ -656,7 +670,7 @@ pcr_dups %>%
       coord_flip() +
       scale_x_discrete(limits = rev) +
       scale_y_continuous(labels = scales::label_number(scale_cut = cut_short_scale())) +
-      labs(x = "Sample", y = "Number of reads", fill = "Deduplication stats")
+      labs(x = "Sample", y = "Number of reads", fill = "Picard deduplication stats")
 ```
 
 ## Alignment statistics
@@ -727,7 +741,7 @@ for (i in unique(gene_tpm_long$sample)) {
 
 Also see figure in [results-refseq/fastq-screen/](results-refseq/fastq-screen/) and [results-refseq/multiqc-fastq-screen-samtools-pk/multiqc_report.html](results-refseq/multiqc-fastq-screen-samtools-pk/multiqc_report.html).
 
-### Combined - sample names
+### All reads for both species
 
 ```{r}
 fastq_screen_transformed <- bind_rows(
@@ -752,131 +766,75 @@ fastq_screen_transformed <- bind_rows(
     distinct(sample, .keep_all = TRUE) %>%
     mutate("Mapped reads" = "Multiple genomes")
 ) %>%
-  mutate(`Mapped reads` = factor(`Mapped reads`, levels = c("Human", "PknowlesiH", "Multiple genomes", "No hits")))
+  mutate(`Mapped reads` = factor(`Mapped reads`, levels = c("Human", "PknowlesiH", "Multiple genomes", "No hits"))) %>% 
+  left_join(samples, by = "sample")
 
-ggplot(fastq_screen_transformed, aes(x = sample, y = pct, fill = `Mapped reads`)) +
+ggplot(fastq_screen_transformed, aes(x = sample_short, y = pct, fill = `Mapped reads`)) +
   geom_bar(position = "stack", stat = "identity") +
   scale_fill_viridis(option = "viridis", discrete = T) +
   coord_flip() +
   scale_x_discrete(limits = rev) +
-  labs(fill = expression("FastQ Screen mapped reads")) +
+  labs(fill = expression("FastQ Screen mapped reads"), x = "Sample") +
   ylab(label = "% of mapped reads")
 ```
 
-### Combined - conditions
-
-```{r}
-ggplot(fastq_screen_transformed %>% left_join(samples, by = "sample"), aes(x = condition, y = pct, fill = `Mapped reads`)) +
-  geom_bar(position = "stack", stat = "identity") +
-  scale_fill_viridis(option = "viridis", discrete = T) +
-  coord_flip() +
-  scale_x_discrete(limits = rev) +
-  labs(fill = expression("FastQ Screen mapped reads")) +
-  ylab(label = "% of mapped reads")
-
-
-# fastq_screen %>%
-#   filter(Genome == "Human") %>%
-#   mutate(`No hits` = )
-#
-#   pivot_longer(cols = starts_with("%"),
-#                               names_to = "fastq_screen_pct_type",
-#                               values_to = "fastq_screen_pct_value")
-#
-# fastq_screen %>%
-#   group_by(sample, Genome) %>%
-#   summarise(`%_total_hits` = sum(c(`%_One_hit_one_genome`, `%_Multiple_hits_one_genome`))) %>%
-#   ungroup()
-```
-
-### Human reads
+### Human reads only
 
 ```{r}
 # Human reads
-ggplot(
-  fastq_screen %>% pivot_longer(
-    cols = starts_with("%"),
-    names_to = "fastq_screen_pct_type",
-    values_to = "fastq_screen_pct_value"
-  ) %>%
-    filter(Genome == "Human"),
-  aes(x = sample, y = fastq_screen_pct_value, fill = fastq_screen_pct_type)
-) +
-  geom_bar(position = "stack", stat = "identity") +
-  scale_fill_viridis(option = "viridis", discrete = T) +
-  coord_flip() +
-  scale_x_discrete(limits = rev) +
-  labs(fill = "FastQ screen statistics for human reads")
+fastq_screen %>% pivot_longer(
+  cols = starts_with("%"),
+  names_to = "fastq_screen_pct_type",
+  values_to = "fastq_screen_pct_value") %>%
+  filter(Genome == "Human") %>% 
+  left_join(samples) %>% 
+  ggplot(aes(x = sample_short, y = fastq_screen_pct_value, fill = fastq_screen_pct_type)) +
+    geom_bar(position = "stack", stat = "identity") +
+    scale_fill_viridis(option = "viridis", discrete = T) +
+    coord_flip() +
+    scale_x_discrete(limits = rev) +
+    labs(fill = "FastQ screen statistics for human reads", x = "Sample", y = "% of mapped reads")
 ```
 
 ### Pk reads
 
 ```{r}
 # Pk reads
-ggplot(
-  fastq_screen %>% pivot_longer(
-    cols = starts_with("%"),
-    names_to = "fastq_screen_pct_type",
-    values_to = "fastq_screen_pct_value"
-  ) %>%
-    filter(Genome == "PknowlesiH"),
-  aes(x = sample, y = fastq_screen_pct_value, fill = fastq_screen_pct_type)
-) +
-  geom_bar(position = "stack", stat = "identity") +
-  scale_fill_viridis(option = "viridis", discrete = T) +
-  coord_flip() +
-  scale_x_discrete(limits = rev) +
-  labs(fill = expression("FastQ screen statistics for" ~ italic("P. knowlesi") ~ "reads"))
+fastq_screen %>% pivot_longer(
+  cols = starts_with("%"),
+  names_to = "fastq_screen_pct_type",
+  values_to = "fastq_screen_pct_value"
+) %>%
+  filter(Genome == "PknowlesiH") %>% 
+  left_join(samples) %>% 
+    ggplot(aes(x = sample_short, y = fastq_screen_pct_value, fill = fastq_screen_pct_type)) +
+    geom_bar(position = "stack", stat = "identity") +
+    scale_fill_viridis(option = "viridis", discrete = T) +
+    coord_flip() +
+    scale_x_discrete(limits = rev) +
+    labs(fill = expression("FastQ screen statistics for" ~ italic("P. knowlesi") ~ "reads"),  x = "Sample", y = "% of mapped reads")
 ```
 
 ## rRNA and globin levels
 
-
 ```{r}
-gene_types_df %>%
-  left_join(gene_tpm, by = c("gene_id", "gene_name")) %>%
-  filter(rowSums(across(starts_with("X"))) != 0) %>%
-  pivot_longer(cols = `X104974.001.001_S1_L001`:`X104974.001.016_S1_L001`,
-               names_to = "sample",
-               values_to = "counts") %>%
-  mutate(sample = str_replace_all(sample, "\\.", replacement = "-")) %>%
-  mutate(sample = str_sub(sample, 2, -1)) %>%
-  left_join(mapping_stats_df, by = "sample") %>%
-  group_by(gene_id) %>%
-  mutate(total = sum(counts)) %>%
-  ungroup() %>%
-  arrange(desc(total)) %>%
-  mutate(gene_name = factor(gene_name, levels = unique(gene_name))) %>%
-  ggplot(aes(x = gene_name, y = counts, fill = `sample`)) +
-    geom_bar(position = "stack", stat = "identity") +
-    scale_fill_viridis(option = "viridis", discrete = T) +
-    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
-    coord_flip() +
-    scale_x_discrete(limits = rev) +
-    labs(fill = "Sample") +
-    ylab(label = "TPM") + xlab(label = "Gene name") +
-    facet_wrap(~kit)
-
-# try ordering by species, then total. Optionally, split out globins separately
-
-# switched to gene_annotation df!
+# switched to gene_annotation df
 
 gene_annotation %>%
+  # select rRNA and globins
   filter(! gene_type %in% c("human","pk")) %>% 
-  left_join(gene_tpm, by = c("gene_id", "gene_name")) %>%
-  filter(rowSums(across(starts_with("X"))) != 0) %>%
-  pivot_longer(cols = `X104974.001.001_S1_L001`:`X104974.001.016_S1_L001`,
+  left_join(gene_tpm[1:18], by = c("gene_id", "gene_name")) %>%
+  filter(rowSums(across(.cols = `104974-001-001_S1_L001`:`104974-001-016_S1_L001`)) != 0) %>%
+  pivot_longer(cols = `104974-001-001_S1_L001`:`104974-001-016_S1_L001`,
                names_to = "sample",
                values_to = "counts") %>%
-  mutate(sample = str_replace_all(sample, "\\.", replacement = "-")) %>%
-  mutate(sample = str_sub(sample, 2, -1)) %>%
-  left_join(mapping_stats_df, by = "sample") %>%
+  left_join(samples, by = "sample") %>%
   group_by(gene_id) %>%
   mutate(total = sum(counts)) %>% 
   ungroup() %>% 
   arrange(species, gene_type, desc(total)) %>% 
   mutate(gene_name = factor(gene_name, levels = unique(gene_name))) %>%
-  ggplot(aes(x = gene_name, y = counts, fill = `sample`)) +
+  ggplot(aes(x = gene_name, y = counts, fill = sample_short)) +
     geom_bar(position = "stack", stat = "identity") +
     scale_fill_viridis(option = "viridis", discrete = T) +
     theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
@@ -884,26 +842,59 @@ gene_annotation %>%
     scale_x_discrete(limits = rev) +
     labs(fill = "Sample") +
     ylab(label = "TPM") + xlab(label = "Gene name") +
-    facet_wrap(~kit)
+    facet_wrap(~kit) +
+    scale_y_continuous(labels = scales::label_number(scale_cut = cut_short_scale()))
 ```
 
+TODO: log TPM is often plotted instead of raw values, but can be misleading on barplot...
+
 ```{r}
 gene_annotation %>%
   filter(! gene_type %in% c("human","pk")) %>% 
-  left_join(gene_tpm, by = c("gene_id", "gene_name")) %>%
-  filter(rowSums(across(starts_with("X"))) != 0) %>%
-  pivot_longer(cols = `X104974.001.001_S1_L001`:`X104974.001.016_S1_L001`,
+  left_join(gene_tpm[1:18], by = c("gene_id", "gene_name")) %>%
+  filter(rowSums(across(.cols = `104974-001-001_S1_L001`:`104974-001-016_S1_L001`)) != 0) %>%
+  pivot_longer(cols = `104974-001-001_S1_L001`:`104974-001-016_S1_L001`,
                names_to = "sample",
                values_to = "counts") %>%
   mutate(sample = str_replace_all(sample, "\\.", replacement = "-")) %>%
   mutate(sample = str_sub(sample, 2, -1)) %>%
-  left_join(mapping_stats_df, by = "sample") %>%
+  left_join(samples, by = "sample") %>%
   group_by(gene_id) %>%
   mutate(total = sum(counts)) %>% 
   ungroup() %>% 
   arrange(species, gene_type, desc(total)) %>% 
   mutate(gene_name = factor(gene_name, levels = unique(gene_name))) %>%
-  ggplot(aes(x = gene_name, y = counts, fill = sample)) +
+  ggplot(aes(x = gene_name, y = counts, fill = sample_short)) +
+    geom_point(aes(colour = sample)) +
+    scale_colour_viridis(option = "viridis", discrete = T) +
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+    coord_flip() +
+    scale_x_discrete(limits = rev) +
+    # labs(colour = "Sample") +
+    ylab(label = "log(TPM+1)") + xlab(label = "Gene name") +
+    facet_wrap(~sample) +
+    scale_y_continuous(trans = 'log1p')
+```
+
+Globin-only:
+
+```{r}
+gene_annotation %>%
+  filter(gene_type == "human_globin") %>% 
+  left_join(gene_tpm[1:18], by = c("gene_id", "gene_name")) %>%
+  filter(rowSums(across(.cols = `104974-001-001_S1_L001`:`104974-001-016_S1_L001`)) != 0) %>%
+  pivot_longer(cols = `104974-001-001_S1_L001`:`104974-001-016_S1_L001`,
+               names_to = "sample",
+               values_to = "counts") %>%
+  mutate(sample = str_replace_all(sample, "\\.", replacement = "-")) %>%
+  mutate(sample = str_sub(sample, 2, -1)) %>%
+  left_join(samples, by = "sample") %>%
+  group_by(gene_id) %>%
+  mutate(total = sum(counts)) %>% 
+  ungroup() %>% 
+  arrange(species, gene_type, desc(total)) %>% 
+  mutate(gene_name = factor(gene_name, levels = unique(gene_name))) %>%
+  ggplot(aes(x = gene_name, y = counts, fill = sample_short)) +
     geom_point(aes(colour = sample)) +
     scale_colour_viridis(option = "viridis", discrete = T) +
     theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
@@ -912,56 +903,31 @@ gene_annotation %>%
     # labs(colour = "Sample") +
     ylab(label = "TPM") + xlab(label = "Gene name") +
     facet_wrap(~sample) +
-    scale_y_continuous(trans = 'log1p')
-```
-
-```{r}
-gene_annotation %>%
-  filter(gene_type == "human_globin") %>% 
-  left_join(gene_tpm, by = c("gene_id", "gene_name")) %>%
-  filter(rowSums(across(starts_with("X"))) != 0) %>%
-  pivot_longer(cols = `X104974.001.001_S1_L001`:`X104974.001.016_S1_L001`,
-               names_to = "sample",
-               values_to = "counts") %>%
-  mutate(sample = str_replace_all(sample, "\\.", replacement = "-")) %>%
-  mutate(sample = str_sub(sample, 2, -1)) %>%
-  left_join(mapping_stats_df, by = "sample") %>%
-  group_by(gene_id) %>%
-  mutate(total = sum(counts)) %>% 
-  ungroup() %>% 
-  arrange(species, gene_type, desc(total)) %>% 
-  mutate(gene_name = factor(gene_name, levels = unique(gene_name))) %>%
-  ggplot(aes(x = gene_name, y = counts, fill = sample)) +
-    geom_point(aes(colour = sample)) +
-    scale_colour_viridis(option = "viridis", discrete = T) +
-    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
-    coord_flip() +
-    scale_x_discrete(limits = rev) +
-    # labs(colour = "Sample") +
-    ylab(label = "TPM") + xlab(label = "Gene name") +
-    facet_wrap(~sample) 
+    scale_y_continuous(labels = scales::label_number(scale_cut = cut_short_scale()))
 
 # +
     # scale_y_continuous(trans = 'log1p')
 ```
 
+Human rRNA only:
+
 ```{r}
 gene_annotation %>%
   filter(gene_type == "human_rRNA") %>% 
-  left_join(gene_tpm, by = c("gene_id", "gene_name")) %>%
-  filter(rowSums(across(starts_with("X"))) != 0) %>%
-  pivot_longer(cols = `X104974.001.001_S1_L001`:`X104974.001.016_S1_L001`,
+  left_join(gene_tpm[1:18], by = c("gene_id", "gene_name")) %>%
+  filter(rowSums(across(.cols = `104974-001-001_S1_L001`:`104974-001-016_S1_L001`)) != 0) %>%
+  pivot_longer(cols = `104974-001-001_S1_L001`:`104974-001-016_S1_L001`,
                names_to = "sample",
                values_to = "counts") %>%
   mutate(sample = str_replace_all(sample, "\\.", replacement = "-")) %>%
   mutate(sample = str_sub(sample, 2, -1)) %>%
-  left_join(mapping_stats_df, by = "sample") %>%
+  left_join(samples, by = "sample") %>%
   group_by(gene_id) %>%
   mutate(total = sum(counts)) %>% 
   ungroup() %>% 
   arrange(species, gene_type, desc(total)) %>% 
   mutate(gene_name = factor(gene_name, levels = unique(gene_name))) %>%
-  ggplot(aes(x = gene_name, y = counts, fill = sample)) +
+  ggplot(aes(x = gene_name, y = counts, fill = sample_short)) +
     geom_point(aes(colour = sample)) +
     scale_colour_viridis(option = "viridis", discrete = T) +
     theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
@@ -1214,27 +1180,23 @@ Try to use https://nf-co.re/rnaseq/1.1/docs/output#featurecounts?
 # create binary matrices with presence/absence of genes
 # rename sample names to format in sample info df
 gene_tpm_binary <- gene_tpm %>%
-  mutate(across(.cols = starts_with("X"), .fns = ~ .x > 0)) %>%
-  select(!c(gene_name, gene_type, species)) %>%
-  rename_with(~ str_replace_all(string = ., pattern = "\\.", replacement = "-"), starts_with("X")) %>%
-  rename_with(~ str_sub(., 2, -1), starts_with("X"))
+  mutate(across(.cols =`104974-001-001_S1_L001`:`104974-001-016_S1_L001`, .fns = ~ .x > 0)) %>%
+  select(!c(gene_name, gene_type, species))
 
 gene_tpm_pk_binary <- gene_tpm %>%
-  mutate(across(.cols = starts_with("X"), .fns = ~ .x > 0)) %>%
+  mutate(across(.cols = `104974-001-001_S1_L001`:`104974-001-016_S1_L001`, .fns = ~ .x > 0)) %>%
   filter(species == "pk") %>%
-  select(!c(gene_name, gene_type, species)) %>%
-  rename_with(~ str_replace_all(string = ., pattern = "\\.", replacement = "-"), starts_with("X")) %>%
-  rename_with(~ str_sub(., 2, -1), starts_with("X"))
+  select(!c(gene_name, gene_type, species))
 
 gene_tpm_pk_filtered_binary <- gene_tpm_pk_binary %>% inner_join(gene_tpm_filtered %>% select(gene_id), by = "gene_id")
 
-gene_tpm_binary_list <- purrr::set_names(colnames(gene_tpm_binary %>% select(starts_with("104974")))) %>%
+gene_tpm_binary_list <- purrr::set_names(colnames(gene_tpm_binary %>% select(`104974-001-001_S1_L001`:`104974-001-016_S1_L001`))) %>%
   purrr::imap(~ gene_tpm_binary$gene_id[gene_tpm_binary[, .x, drop = T]])
 
-gene_tpm_pk_binary_list <- purrr::set_names(colnames(gene_tpm_pk_binary %>% select(starts_with("104974")))) %>%
+gene_tpm_pk_binary_list <- purrr::set_names(colnames(gene_tpm_pk_binary %>% select(`104974-001-001_S1_L001`:`104974-001-016_S1_L001`))) %>%
   purrr::imap(~ gene_tpm_pk_binary$gene_id[gene_tpm_pk_binary[, .x, drop = T]])
 
-gene_tpm_pk_filtered_binary_list <- purrr::set_names(colnames(gene_tpm_pk_filtered_binary %>% select(starts_with("104974")))) %>%
+gene_tpm_pk_filtered_binary_list <- purrr::set_names(colnames(gene_tpm_pk_filtered_binary %>% select(`104974-001-001_S1_L001`:`104974-001-016_S1_L001`))) %>%
   purrr::imap(~ gene_tpm_pk_filtered_binary$gene_id[gene_tpm_pk_filtered_binary[, .x, drop = T]])
 
 # gene_counts_vst_pk_filtered_binary_list <- gene_counts_vst_pk_filtered %>%
@@ -1725,7 +1687,13 @@ ggplot(pcaData, aes(PC1, PC2, color = kit, shape = WBC_depletion)) +
 ### VSD - Pk genes - filtered - protein coding only
 
 ```{r}
-protein_gene_filter <- intersect(rownames(rowData(vsd_pk_filtered)), gff %>% filter(gene_biotype == "protein_coding") %>% select(gene_id) %>% pull())
+protein_gene_filter <- intersect(rownames(rowData(vsd_pk_filtered)), gene_annotation %>% filter(gene_biotype == "protein_coding" & species == "pk") %>% select(gene_id) %>% pull())
+
+# protein_gene_filter <- gene_annotation %>% filter(gene_biotype == "protein_coding" & species == "pk") %>% select(gene_id) %>% pull()
+# gene annotation would need to be filtered on low counts too...
+
+# this works too:
+# vsd_pk_filtered[rowData(vsd_pk_filtered)$gene_biotype == "protein_coding"]
 
 pcaData <- plotPCA(vsd_pk_filtered[protein_gene_filter,], intgroup = c("kit", "WBC_depletion"), returnData = TRUE, ntop=500)
 percentVar <- round(100 * attr(pcaData, "percentVar"))
@@ -1743,7 +1711,7 @@ ggplot(pcaData, aes(PC1, PC2, color = kit, shape = WBC_depletion)) +
 ### VSD - Pk genes - filtered - protein coding only - top 1000 genes
 
 ```{r}
-protein_gene_filter <- intersect(rownames(rowData(vsd_pk_filtered)), gff %>% filter(gene_biotype == "protein_coding") %>% select(gene_id) %>% pull())
+protein_gene_filter <- intersect(rownames(rowData(vsd_pk_filtered)), gene_annotation %>% filter(gene_biotype == "protein_coding" & species == "pk") %>% select(gene_id) %>% pull())
 
 pcaData <- plotPCA(vsd_pk_filtered[protein_gene_filter,], intgroup = c("kit", "WBC_depletion"), returnData = TRUE, ntop=1000)
 percentVar <- round(100 * attr(pcaData, "percentVar"))
@@ -1761,7 +1729,7 @@ ggplot(pcaData, aes(PC1, PC2, color = kit, shape = WBC_depletion)) +
 ### VSD - Pk genes - filtered - protein coding only - top all genes
 
 ```{r}
-protein_gene_filter <- intersect(rownames(rowData(vsd_pk_filtered)), gff %>% filter(gene_biotype == "protein_coding") %>% select(gene_id) %>% pull())
+protein_gene_filter <- intersect(rownames(rowData(vsd_pk_filtered)), gene_annotation %>% filter(gene_biotype == "protein_coding" & species == "pk") %>% select(gene_id) %>% pull())
 
 pcaData <- plotPCA(vsd_pk_filtered[protein_gene_filter,], intgroup = c("kit", "WBC_depletion"), returnData = TRUE, ntop=5098)
 percentVar <- round(100 * attr(pcaData, "percentVar"))
