@@ -8,11 +8,11 @@ output:
     code_folding: hide
 ---
 
-```{r setup}
+```{r setup, include=FALSE}
 knitr::opts_knit$set(root.dir = here::here())
 ```
 
-```{r include=FALSE}
+```{r load-libraries, include=FALSE}
 # Since some of the required packages are only available in Bioconductor,
 # renv needs to be initialised as follows:
 # renv::init(bioconductor = "3.19")
@@ -45,7 +45,7 @@ ggplot2::theme_set(theme_bw())
 
 If the RDS objects have already been created in a previous run, the following cell can be uncommented and run, and the remaining cells in the data import section can be skipped. See [RDS object section](#rds-objects)).
 
-```{r message = FALSE}
+```{r data-import, message = FALSE}
 # data_list <- list.files(path = here("results-refseq/r_objects"),
 #                         pattern = ".RDS",
 #                         recursive = TRUE, full.names = TRUE) %>%
@@ -58,7 +58,7 @@ If the RDS objects have already been created in a previous run, the following ce
 
 ## Read in fastq-screen and mapping statistics
 
-```{r}
+```{r file-import-fastqscreen-mapping, message=FALSE}
 # read in fastq screen files
 fastq_screen <- list.files(
   path = here("results-refseq/fastq-screen"), pattern = "_screen.txt",
@@ -109,7 +109,7 @@ Background info on the different types of counts and how to import them:
 
 > The Salmon transcript-level quant files can be imported using tximport and then converted into a DESeq object (~SummarizedExperiment). This approach provides the same count matrix as the tximport gene counts csv file, but it enables the DESeq2 approach for visualisation, namely transforming the counts using `vst` (variance stabilizing transformation) or `rlog` in order to remove the dependence of the variance on the mean. See [DESeq2 vignette](https://bioconductor.org/packages/devel/bioc/vignettes/DESeq2/inst/doc/DESeq2.html#data-transformations-and-visualization).
 
-```{r include=FALSE}
+```{r file-import-counts, message=FALSE, cache=TRUE}
 # read in sample metadata
 samples <- read_csv(here("./data/samplesheet.csv"), 
                     col_select = c("sample", "condition", "RNA_type", "library_kit", "removal", "WBC_depletion", "kit"), 
@@ -166,7 +166,7 @@ rm(txi)
 - Add `gene_biotype` info for *P. knowlesi* genes (protein coding and r/t/nc/sn/snoRNA).
 - Add globin and rRNA gene annotation for both species.
 
-```{r}
+```{r gene-annotation, message=FALSE}
 # Note: not all Pk genes start with the prefix PKNH, so it is safer to read genes from GFF instead
 gff <- read_delim(here("data/ref-refseq-refseq/GCF_000006355.2_GCA_000006355.2_genomic.gff.gz"), comment = "#", col_names = c("seqname", "source", "feature", "start", "end", "score", "strand", "frame", "attribute")) %>%
   # only keep genes, since we use aggregated gene counts
@@ -263,7 +263,7 @@ if (file.exists(here("data/ref/gene_types.csv"))) {
 }
 ```
 
-```{r}
+```{r message=FALSE, fig.height=18, out.width="100%"}
 # gene_types_df %>%
 #   left_join(gene_tpm, by = c("gene_id", "gene_name")) %>% 
 #   filter(rowSums(across(starts_with("X"))) != 0) %>% 
@@ -308,7 +308,7 @@ gene_types_df %>%
     scale_y_continuous(labels = scales::label_number(scale_cut = cut_short_scale()))
 ```
 
-```{r}
+```{r fig.height=18, fig.width=10}
 gene_types_gencode_df %>%
   left_join(gene_tpm_gencode, by = c("gene_id", "gene_name")) %>%
   filter(rowSums(across(starts_with("X"))) != 0) %>%
@@ -339,7 +339,7 @@ gene_types_gencode_df %>%
 
 For human globins, the following genes were included: "HBB","HBD","HBBP1","HBG1","HBG2","HBE1","HBZ","HBM","HBA2","HBA1","HBQ1".
 
-```{r}
+```{r globins, message=FALSE}
 globin_names <- c("HBB", "HBD", "HBBP1", "HBG1", "HBG2", "HBE1", "HBZ", "HBM", "HBA2", "HBA1", "HBQ1")
 globin_df <- tibble(gene_name = globin_names, gene_type = "human_globin") %>% left_join(transcript_info$gene, by = "gene_name")
 
@@ -356,7 +356,7 @@ write_csv2(gene_types_df, here("data/ref-refseq-refseq/gene_types_R.csv"))
 
 Merge globin and rRNA annotations with gene annotation dataframe:
 
-```{r}
+```{r combine-annotations-1}
 gene_annotation <- gene_annotation %>% 
   left_join(gene_types_df, by = c("gene_id", "gene_name")) %>%
   mutate("gene_type" = coalesce(gene_type, species))
@@ -364,7 +364,7 @@ gene_annotation <- gene_annotation %>%
 
 ### Add annotations to counts
 
-```{r}
+```{r combine-annotations-2}
 # merge gene_type annotation and fill in missing types using species name
 annotate_gene_type <- function(data, gene_annotation) {
   data %>%
