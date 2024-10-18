@@ -854,23 +854,21 @@ gene_annotation %>%
   pivot_longer(cols = `104974-001-001_S1_L001`:`104974-001-016_S1_L001`,
                names_to = "sample",
                values_to = "counts") %>%
-  mutate(sample = str_replace_all(sample, "\\.", replacement = "-")) %>%
-  mutate(sample = str_sub(sample, 2, -1)) %>%
   left_join(samples, by = "sample") %>%
   group_by(gene_id) %>%
   mutate(total = sum(counts)) %>% 
   ungroup() %>% 
   arrange(species, gene_type, desc(total)) %>% 
   mutate(gene_name = factor(gene_name, levels = unique(gene_name))) %>%
-  ggplot(aes(x = gene_name, y = counts, fill = sample_short)) +
-    geom_point(aes(colour = sample)) +
+  ggplot(aes(x = gene_name, y = counts)) +
+    geom_point(aes(colour = sample_name)) +
     scale_colour_viridis(option = "viridis", discrete = T) +
     theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
     coord_flip() +
     scale_x_discrete(limits = rev) +
     # labs(colour = "Sample") +
-    ylab(label = "log(TPM+1)") + xlab(label = "Gene name") +
-    facet_wrap(~sample) +
+    labs(x = "Gene name", y = "log(TPM+1)", colour = "Sample") +
+    facet_wrap(~sample_name) +
     scale_y_continuous(trans = 'log1p')
 ```
 
@@ -884,27 +882,21 @@ gene_annotation %>%
   pivot_longer(cols = `104974-001-001_S1_L001`:`104974-001-016_S1_L001`,
                names_to = "sample",
                values_to = "counts") %>%
-  mutate(sample = str_replace_all(sample, "\\.", replacement = "-")) %>%
-  mutate(sample = str_sub(sample, 2, -1)) %>%
   left_join(samples, by = "sample") %>%
   group_by(gene_id) %>%
   mutate(total = sum(counts)) %>% 
   ungroup() %>% 
   arrange(species, gene_type, desc(total)) %>% 
   mutate(gene_name = factor(gene_name, levels = unique(gene_name))) %>%
-  ggplot(aes(x = gene_name, y = counts, fill = sample_short)) +
+  ggplot(aes(x = gene_name, y = counts)) +
     geom_point(aes(colour = sample)) +
     scale_colour_viridis(option = "viridis", discrete = T) +
     theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
     coord_flip() +
     scale_x_discrete(limits = rev) +
-    # labs(colour = "Sample") +
-    ylab(label = "TPM") + xlab(label = "Gene name") +
-    facet_wrap(~sample) +
+    labs(x = "Gene name", y = "TPM", colour = "Sample") +
+    facet_wrap(~sample_name) +
     scale_y_continuous(labels = scales::label_number(scale_cut = cut_short_scale()))
-
-# +
-    # scale_y_continuous(trans = 'log1p')
 ```
 
 Human rRNA only:
@@ -917,23 +909,20 @@ gene_annotation %>%
   pivot_longer(cols = `104974-001-001_S1_L001`:`104974-001-016_S1_L001`,
                names_to = "sample",
                values_to = "counts") %>%
-  mutate(sample = str_replace_all(sample, "\\.", replacement = "-")) %>%
-  mutate(sample = str_sub(sample, 2, -1)) %>%
   left_join(samples, by = "sample") %>%
   group_by(gene_id) %>%
   mutate(total = sum(counts)) %>% 
   ungroup() %>% 
   arrange(species, gene_type, desc(total)) %>% 
   mutate(gene_name = factor(gene_name, levels = unique(gene_name))) %>%
-  ggplot(aes(x = gene_name, y = counts, fill = sample_short)) +
+  ggplot(aes(x = gene_name, y = counts)) +
     geom_point(aes(colour = sample)) +
     scale_colour_viridis(option = "viridis", discrete = T) +
     theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
     coord_flip() +
     scale_x_discrete(limits = rev) +
-    # labs(colour = "Sample") +
-    ylab(label = "TPM") + xlab(label = "Gene name") +
-    facet_wrap(~sample) +
+    labs(x = "Gene name", y = "TPM", colour = "Sample") +
+    facet_wrap(~sample_name) +
     scale_y_continuous(trans = 'log1p')
 
 ```
