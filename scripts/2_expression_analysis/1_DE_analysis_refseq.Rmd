@@ -909,72 +909,34 @@ gene_annotation %>%
     labs(x = "Gene name", y = "TPM", colour = "Sample") +
     facet_wrap(~sample_name) +
     scale_y_continuous(trans = 'log1p')
-
 ```
 
 ## Plot percentage of reads for each gene type (rRNA/globin) and species {.tabset}
 
+<!-- TODO: change order of pk rRNA and pk or change color assignment, so that it matches in the human vs pk figure? -->
+<!-- TODO: figure out way to change labels without manually checking order -->
+
 **TPM values appear to be the most appropriate metric to use.**
 
-### Gene-level counts tximport
-
-These gene counts were aggregated across all samples (tximport of transcript counts).
-
-```{r}
-gene_counts_txi_by_sample_gene_type <- gene_counts_txi_long %>%
-  left_join(mapping_stats_df, by = "sample") %>%
-  group_by(condition, gene_type) %>%
-  summarise(sum_reads = sum(counts, na.rm = TRUE)) %>%
-  mutate(per = 100 * sum_reads / sum(sum_reads))
-
-p <- ggplot(gene_counts_txi_by_sample_gene_type, aes(y = sum_reads, x = condition, fill = gene_type))
-p + geom_bar(position = "fill", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
-
-p <- ggplot(gene_counts_txi_by_sample_gene_type, aes(y = sum_reads, x = condition, fill = gene_type))
-p + geom_bar(position = "dodge", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
-
-p <- ggplot(gene_counts_txi_by_sample_gene_type, aes(y = sum_reads, x = condition, fill = gene_type))
-p + geom_bar(stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
-```
-
-### Gene-level counts tximport - filtered
+### Gene-level counts
 
 These gene counts were aggregated across all samples (tximport of transcript counts) and filtered to only genes with a minimum count of 10 reads for at least 1 sample.
 
 ```{r}
-gene_counts_txi_filtered_by_sample_gene_type <- gene_counts_txi_filtered_long %>%
-  left_join(mapping_stats_df, by = "sample") %>%
-  group_by(condition, gene_type) %>%
+gene_counts_txi_filtered_long %>%
+  left_join(samples, by = "sample") %>% 
+  group_by(sample_name, gene_type) %>%
   summarise(sum_reads = sum(counts, na.rm = TRUE)) %>%
-  mutate(per = 100 * sum_reads / sum(sum_reads))
-
-p <- ggplot(gene_counts_txi_filtered_by_sample_gene_type, aes(y = sum_reads, x = condition, fill = gene_type))
-p + geom_bar(position = "fill", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
-
-p <- ggplot(gene_counts_txi_filtered_by_sample_gene_type, aes(y = sum_reads, x = condition, fill = gene_type))
-p + geom_bar(position = "dodge", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
-
-p <- ggplot(gene_counts_txi_filtered_by_sample_gene_type, aes(y = sum_reads, x = condition, fill = gene_type))
-p + geom_bar(stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
-```
-
-### Gene-level TPM
-
-```{r}
-gene_tpm_by_sample_gene_type <- gene_tpm_long %>%
-  left_join(mapping_stats_df, by = "sample") %>%
-  group_by(condition, gene_type) %>%
-  summarise(sum_reads = sum(counts, na.rm = TRUE)) %>%
-  mutate(per = 100 * sum_reads / sum(sum_reads))
-
-p <- ggplot(gene_tpm_by_sample_gene_type, aes(y = sum_reads, x = condition, fill = gene_type))
-p + geom_bar(position = "fill", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
-
-p <- ggplot(gene_tpm_by_sample_gene_type, aes(y = sum_reads, x = condition, fill = gene_type))
-p + geom_bar(position = "dodge", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
-
-p <- ggplot(gene_tpm_by_sample_gene_type, aes(y = sum_reads, x = condition, fill = gene_type))
-p + geom_bar(stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
+  mutate(per = 100 * sum_reads / sum(sum_reads)) %>% 
+  ggplot(aes(y = sum_reads, x = sample_name, fill = gene_type)) +
+    geom_bar(position = "stack", stat = "identity") + 
+    scale_fill_viridis(option = "viridis", discrete = T, 
+                       # limits = rev,
+                       labels = c("human", "human globin", "human rRNA", expression(italic("P. knowlesi")), expression(italic("P. knowlesi rRNA")))) +
+    coord_flip() +
+    scale_x_discrete(limits = rev) +
+    scale_y_continuous(labels = scales::label_number(scale_cut = cut_short_scale())) +
+    labs(x = "Sample", y = "Sum of gene counts", fill = "RNA type")
 ```
 
 ### Gene-level TPM - filtered
@@ -982,161 +944,109 @@ p + geom_bar(stat = "identity") + scale_fill_viridis(option = "viridis", discret
 Filtered to only genes with a minimum count of 10 reads for at least 1 sample.
 
 ```{r}
-gene_tpm_filtered_by_sample_gene_type <- gene_tpm_filtered_long %>%
-  left_join(mapping_stats_df, by = "sample") %>%
-  group_by(condition, gene_type) %>%
+gene_tpm_filtered_long %>%
+  left_join(samples, by = "sample") %>% 
+  group_by(sample_name, gene_type) %>%
   summarise(sum_reads = sum(counts, na.rm = TRUE)) %>%
-  mutate(per = 100 * sum_reads / sum(sum_reads))
-
-p <- ggplot(gene_tpm_filtered_by_sample_gene_type, aes(y = sum_reads, x = condition, fill = gene_type))
-p + geom_bar(position = "fill", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
-
-p <- ggplot(gene_tpm_filtered_by_sample_gene_type, aes(y = sum_reads, x = condition, fill = gene_type))
-p + geom_bar(position = "dodge", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
-
-p <- ggplot(gene_tpm_filtered_by_sample_gene_type, aes(y = sum_reads, x = condition, fill = gene_type))
-p + geom_bar(stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
+  mutate(per = 100 * sum_reads / sum(sum_reads)) %>% 
+  ggplot(aes(y = sum_reads, x = sample_name, fill = gene_type)) +
+    geom_bar(position = "stack", stat = "identity") + 
+    scale_fill_viridis(option = "viridis", discrete = T, 
+                       # limits = rev,
+                       labels = c("human", "human globin", "human rRNA", expression(italic("P. knowlesi")), expression(italic("P. knowlesi rRNA")))) +
+    coord_flip() +
+    scale_x_discrete(limits = rev) +
+    scale_y_continuous(labels = scales::label_number(scale_cut = cut_short_scale())) +
+    labs(x = "Sample", y = "Sum of TPM counts", fill = "RNA type")
 ```
+
+TODO: combined figure + change order of samples
 
 ## Plot percentage of reads for each species {.tabset}
 
-### Gene-level counts tximport {.tabset}
-
-These gene counts were aggregated across all samples (tximport of transcript counts).
-
-#### Samples
-
-```{r}
-gene_counts_txi_by_samples_species <- gene_counts_txi_long %>%
-  left_join(mapping_stats_df, by = "sample") %>%
-  left_join(samples) %>%
-  group_by(sample, species) %>%
-  summarise(sum_reads = sum(counts, na.rm = TRUE)) %>%
-  mutate(per = 100 * sum_reads / sum(sum_reads))
-
-p <- ggplot(gene_counts_txi_by_samples_species, aes(y = sum_reads, x = sample, fill = species))
-p + geom_bar(position = "fill", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
-
-p <- ggplot(gene_counts_txi_by_samples_species, aes(y = sum_reads, x = sample, fill = species))
-p + geom_bar(position = "dodge", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
-
-p <- ggplot(gene_counts_txi_by_samples_species, aes(y = sum_reads, x = sample, fill = species))
-p + geom_bar(stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
-```
-
-#### Conditions
-
-```{r}
-gene_counts_txi_by_samples_species <- gene_counts_txi_long %>%
-  left_join(mapping_stats_df, by = "sample") %>%
-  left_join(samples) %>%
-  group_by(condition, species) %>%
-  summarise(sum_reads = sum(counts, na.rm = TRUE)) %>%
-  mutate(per = 100 * sum_reads / sum(sum_reads))
-
-p <- ggplot(gene_counts_txi_by_samples_species, aes(y = sum_reads, x = condition, fill = species))
-p + geom_bar(position = "fill", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
-
-p <- ggplot(gene_counts_txi_by_samples_species, aes(y = sum_reads, x = condition, fill = species))
-p + geom_bar(position = "dodge", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
-
-p <- ggplot(gene_counts_txi_by_samples_species, aes(y = sum_reads, x = condition, fill = species))
-p + geom_bar(stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
-```
-
-### Gene-level counts tximport - filtered {.tabset}
+### Gene-level counts
 
 These gene counts were aggregated across all samples (tximport of transcript counts) and filtered to only genes with a minimum count of 10 reads for at least 1 sample.
 
-#### Samples
-
-```{r}
-gene_counts_txi_filtered_by_samples_species <- gene_counts_txi_filtered_long %>%
-  left_join(mapping_stats_df, by = "sample") %>%
-  left_join(samples) %>%
-  group_by(sample, species) %>%
+```{r, message=FALSE}
+# absolute numbers
+gene_counts_txi_filtered_long %>%
+  left_join(samples, by = "sample") %>% 
+  group_by(sample_name, species) %>%
   summarise(sum_reads = sum(counts, na.rm = TRUE)) %>%
-  mutate(per = 100 * sum_reads / sum(sum_reads))
+  mutate(per = 100 * sum_reads / sum(sum_reads)) %>% 
+  ggplot(aes(y = sum_reads, x = sample_name, fill = species)) +
+    geom_bar(position = "stack", stat = "identity") + 
+    scale_fill_viridis(option = "viridis", discrete = T, 
+                       # limits = rev
+                       ) +
+    coord_flip() +
+    scale_x_discrete(limits = rev) +
+    scale_y_continuous(labels = scales::label_number(scale_cut = cut_short_scale())) +
+    labs(x = "Sample", y = "Sum of gene counts", fill = "Species")
 
-p <- ggplot(gene_counts_txi_filtered_by_samples_species, aes(y = sum_reads, x = sample, fill = species))
-p + geom_bar(position = "fill", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
-
-p <- ggplot(gene_counts_txi_filtered_by_samples_species, aes(y = sum_reads, x = sample, fill = species))
-p + geom_bar(position = "dodge", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
-
-p <- ggplot(gene_counts_txi_filtered_by_samples_species, aes(y = sum_reads, x = sample, fill = species))
-p + geom_bar(stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
-```
-
-#### Conditions
-
-```{r}
-gene_counts_txi_filtered_by_samples_species <- gene_counts_txi_filtered_long %>%
-  left_join(mapping_stats_df, by = "sample") %>%
-  left_join(samples) %>%
-  group_by(condition, species) %>%
+# proportion
+gene_counts_txi_filtered_long %>%
+  left_join(samples, by = "sample") %>% 
+  group_by(sample_name, species) %>%
   summarise(sum_reads = sum(counts, na.rm = TRUE)) %>%
-  mutate(per = 100 * sum_reads / sum(sum_reads))
-
-p <- ggplot(gene_counts_txi_filtered_by_samples_species, aes(y = sum_reads, x = condition, fill = species))
-p + geom_bar(position = "fill", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
-
-p <- ggplot(gene_counts_txi_filtered_by_samples_species, aes(y = sum_reads, x = condition, fill = species))
-p + geom_bar(position = "dodge", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
-
-p <- ggplot(gene_counts_txi_filtered_by_samples_species, aes(y = sum_reads, x = condition, fill = species))
-p + geom_bar(stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
+  mutate(per = 100 * sum_reads / sum(sum_reads)) %>% 
+  ggplot(aes(y = sum_reads, x = sample_name, fill = species)) +
+    geom_bar(position = "fill", stat = "identity") + 
+    scale_fill_viridis(option = "viridis", discrete = T, 
+                       # limits = rev
+                       ) +
+    coord_flip() +
+    scale_x_discrete(limits = rev) +
+    scale_y_continuous(labels = scales::label_number(scale_cut = cut_short_scale())) +
+    labs(x = "Sample", y = "Proportion of gene counts", fill = "Species")
 ```
 
-### Gene-level TPM {.tabset}
+### Gene-level TPM
 
-#### Samples
+Note that since TPM is already scaled by library size, the absolute and proportion plots are identical.
 
-```{r}
-gene_tpm_by_samples_species <- gene_tpm_long %>%
-  left_join(mapping_stats_df, by = "sample") %>%
-  left_join(samples) %>%
-  group_by(sample, species) %>%
+```{r, message=FALSE}
+# absolute numbers
+gene_tpm_filtered_long %>%
+  left_join(samples, by = "sample") %>% 
+  group_by(sample_name, species) %>%
   summarise(sum_reads = sum(counts, na.rm = TRUE)) %>%
-  mutate(per = 100 * sum_reads / sum(sum_reads))
+  mutate(per = 100 * sum_reads / sum(sum_reads)) %>% 
+  ggplot(aes(y = sum_reads, x = sample_name, fill = species)) +
+    geom_bar(position = "stack", stat = "identity") + 
+    scale_fill_viridis(option = "viridis", discrete = T, 
+                       # limits = rev
+                       ) +
+    coord_flip() +
+    scale_x_discrete(limits = rev) +
+    scale_y_continuous(labels = scales::label_number(scale_cut = cut_short_scale())) +
+    labs(x = "Sample", y = "Sum of TPM counts", fill = "Species")
 
-p <- ggplot(gene_tpm_by_samples_species, aes(y = sum_reads, x = sample, fill = species))
-p + geom_bar(position = "fill", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
-
-p <- ggplot(gene_tpm_by_samples_species, aes(y = sum_reads, x = sample, fill = species))
-p + geom_bar(position = "dodge", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
-
-p <- ggplot(gene_tpm_by_samples_species, aes(y = sum_reads, x = sample, fill = species))
-p + geom_bar(stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
-```
-
-#### Conditions
-
-```{r}
-gene_tpm_by_samples_species <- gene_tpm_long %>%
-  left_join(mapping_stats_df, by = "sample") %>%
-  left_join(samples) %>%
-  group_by(condition, species) %>%
+# proportion
+gene_tpm_long %>%
+  left_join(samples, by = "sample") %>% 
+  group_by(sample_name, species) %>%
   summarise(sum_reads = sum(counts, na.rm = TRUE)) %>%
-  mutate(per = 100 * sum_reads / sum(sum_reads))
-
-p <- ggplot(gene_tpm_by_samples_species, aes(y = sum_reads, x = condition, fill = species))
-p + geom_bar(position = "fill", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
-
-p <- ggplot(gene_tpm_by_samples_species, aes(y = sum_reads, x = condition, fill = species))
-p + geom_bar(position = "dodge", stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
-
-p <- ggplot(gene_tpm_by_samples_species, aes(y = sum_reads, x = condition, fill = species))
-p + geom_bar(stat = "identity") + scale_fill_viridis(option = "viridis", discrete = T) + coord_flip()
+  mutate(per = 100 * sum_reads / sum(sum_reads)) %>% 
+  ggplot(aes(y = sum_reads, x = sample_name, fill = species)) +
+    geom_bar(position = "fill", stat = "identity") + 
+    scale_fill_viridis(option = "viridis", discrete = T, 
+                       # limits = rev
+                       ) +
+    coord_flip() +
+    scale_x_discrete(limits = rev) +
+    scale_y_continuous(labels = scales::label_number(scale_cut = cut_short_scale())) +
+    labs(x = "Sample", y = "Proportion of TPM counts", fill = "Species")
 ```
 
-## Pk specific gene type plots
+<!-- ## Pk specific gene type plots -->
 
-Try to use https://nf-co.re/rnaseq/1.1/docs/output#featurecounts?
+<!-- Try to use https://nf-co.re/rnaseq/1.1/docs/output#featurecounts? -->
 
-```
-└─▶ featureCounts -t "transcript" -g "gene_biotype" -B -C -p -s 1 -T 6 -a data/ref-refseq-refseq/GCF_000006355.2_GCA_000006355.2_genomic.gtf -o results-refseq/featureCounts-pk.txt results-refseq/star_salmon/104974-001-001_S1_L001.markdup.sorted.pk.bam
-```
+<!-- ``` -->
+<!-- └─▶ featureCounts -t "transcript" -g "gene_biotype" -B -C -p -s 1 -T 6 -a data/ref-refseq-refseq/GCF_000006355.2_GCA_000006355.2_genomic.gtf -o results-refseq/featureCounts-pk.txt results-refseq/star_salmon/104974-001-001_S1_L001.markdup.sorted.pk.bam -->
+<!-- ``` -->
 
 ## Gene recovery {.tabset}
 
