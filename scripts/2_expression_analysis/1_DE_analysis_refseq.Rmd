@@ -1363,12 +1363,14 @@ UpSetR::upset(as.data.frame(gene_tpm_pk_filtered_binary %>%
 
 ## Sample-to-sample distances {.tabset}
 
-### All genes
+Which samples are most similar to each other in terms of gene expression profile? Use Euclidean distance between samples on `rlog` transformed gene counts (filtered to genes with a minimum of 10 reads per sample).
+
+### All genes (rlog)
 
 ```{r}
-sampleDists <- dist(t(assay(vsd)))
+sampleDists <- dist(t(assay(rld_filtered)))
 sampleDistMatrix <- as.matrix(sampleDists)
-rownames(sampleDistMatrix) <- vsd$condition
+rownames(sampleDistMatrix) <- rld_filtered$sample_name
 colnames(sampleDistMatrix) <- NULL
 pheatmap(sampleDistMatrix,
   clustering_distance_rows = sampleDists,
@@ -1376,16 +1378,39 @@ pheatmap(sampleDistMatrix,
   color = viridis(
     n = 256, alpha = 1,
     begin = 0, end = 1, option = "viridis"
-  )
+  ),
+  main = "Sample-to-sample Euclidian distance based on all genes",
+  scale="none"
 )
 ```
 
-### *P. knowlesi* only
+<!-- TODO check scaling options https://adairama.wordpress.com/2022/09/10/beware-of-using-the-scale-parameter-in-pheatmap-or-scaled-data-in-complexheatmap/ -->
+
+<!-- ```{r} -->
+<!-- sampleDists <- dist(t(assay(rld_filtered))) -->
+<!-- sampleDistMatrix <- as.matrix(sampleDists) -->
+<!-- rownames(sampleDistMatrix) <- rld_filtered$sample_name -->
+<!-- colnames(sampleDistMatrix) <- NULL -->
+<!-- pheatmap(sampleDistMatrix, -->
+<!--   clustering_distance_rows = sampleDists, -->
+<!--   clustering_distance_cols = sampleDists, -->
+<!--   color = viridis( -->
+<!--     n = 256, alpha = 1, -->
+<!--     begin = 0, end = 1, option = "viridis" -->
+<!--   ), -->
+<!--   main = "Sample-to-sample Euclidian distance based on all genes", -->
+<!--   scale="row" -->
+<!-- ) -->
+<!-- ``` -->
+
+### All genes (vst)
+
+The VST transform leads to slightly different results: the two large blocks remains the same, but the positioning of samples 5, 11 and 16 differs. Overall, since the samples are so similar overall, slight deviations in the clustering of the distance matrix are not too surprising.
 
 ```{r}
-sampleDists <- dist(t(assay(vsd_pk)))
+sampleDists <- dist(t(assay(vsd_filtered)))
 sampleDistMatrix <- as.matrix(sampleDists)
-rownames(sampleDistMatrix) <- vsd$condition
+rownames(sampleDistMatrix) <- vsd_filtered$sample_name
 colnames(sampleDistMatrix) <- NULL
 pheatmap(sampleDistMatrix,
   clustering_distance_rows = sampleDists,
@@ -1393,15 +1418,83 @@ pheatmap(sampleDistMatrix,
   color = viridis(
     n = 256, alpha = 1,
     begin = 0, end = 1, option = "viridis"
-  )
+  ),
+  main = "Sample-to-sample Euclidian distance based on all genes"
 )
 ```
 
-## Coverage statistics
+### *P. knowlesi* only (rlog)
 
-```{r}
-mapping_stats_df
+```{r, warning=FALSE}
+sampleDists <- dist(t(assay(rld_filtered[rowData(rld_filtered)$species == "pk",])))
+sampleDistMatrix <- as.matrix(sampleDists)
+rownames(sampleDistMatrix) <- rld_filtered$sample_name
+colnames(sampleDistMatrix) <- NULL
+pheatmap(sampleDistMatrix,
+  clustering_distance_rows = sampleDists,
+  clustering_distance_cols = sampleDists,
+  color = viridis(
+    n = 256, alpha = 1,
+    begin = 0, end = 1, option = "viridis"
+  ),
+  main = expression(paste("Sample-to-sample Euclidian distance based on",italic("P. knowlesi"),"genes"))
+)
 ```
+
+### *P. knowlesi* only (vst)
+
+```{r, warning=FALSE}
+sampleDists <- dist(t(assay(vsd_filtered[rowData(vsd_filtered)$species == "pk",])))
+sampleDistMatrix <- as.matrix(sampleDists)
+rownames(sampleDistMatrix) <- vsd_filtered$sample_name
+colnames(sampleDistMatrix) <- NULL
+pheatmap(sampleDistMatrix,
+  clustering_distance_rows = sampleDists,
+  clustering_distance_cols = sampleDists,
+  color = viridis(
+    n = 256, alpha = 1,
+    begin = 0, end = 1, option = "viridis"
+  ),
+  main = expression(paste("Sample-to-sample Euclidian distance based on",italic("P. knowlesi"),"genes"))
+)
+```
+
+### *P. knowlesi* only (rlog) - transform after subset
+
+```{r, warning=FALSE}
+sampleDists <- dist(t(assay(rld_pk_filtered)))
+sampleDistMatrix <- as.matrix(sampleDists)
+rownames(sampleDistMatrix) <- rld_pk_filtered$sample_name
+colnames(sampleDistMatrix) <- NULL
+pheatmap(sampleDistMatrix,
+  clustering_distance_rows = sampleDists,
+  clustering_distance_cols = sampleDists,
+  color = viridis(
+    n = 256, alpha = 1,
+    begin = 0, end = 1, option = "viridis"
+  ),
+  main = expression(paste("Sample-to-sample Euclidian distance based on",italic("P. knowlesi"),"genes"))
+)
+```
+
+### *P. knowlesi* only (vst) - transform after subset
+
+```{r, warning=FALSE}
+sampleDists <- dist(t(assay(vsd_pk_filtered)))
+sampleDistMatrix <- as.matrix(sampleDists)
+rownames(sampleDistMatrix) <- vsd_pk_filtered$sample_name
+colnames(sampleDistMatrix) <- NULL
+pheatmap(sampleDistMatrix,
+  clustering_distance_rows = sampleDists,
+  clustering_distance_cols = sampleDists,
+  color = viridis(
+    n = 256, alpha = 1,
+    begin = 0, end = 1, option = "viridis"
+  ),
+  main = expression(paste("Sample-to-sample Euclidian distance based on",italic("P. knowlesi"),"genes"))
+)
+```
+<!-- TODO: combine heatmaps into single figure -->
 
 ## Heatmap of count matrix {.tabset}
 
@@ -1523,50 +1616,49 @@ pheatmap(assay(vsd_pk_filtered)[select, ],
 
 ## PCA plots {.tabset}
 
-TODO check impact of filtering transformed data vs filtering prior to transformation
+<!-- TODO check impact of filtering transformed data vs filtering prior to transformation -->
+<!-- TODO: check effect of modelling more than top 500 genes (balance between overall epxression and any biases in top genes) -->
 
-All PCA plots use the top 500 most variable genes, unless otherwise stated.
+All PCA plots use the top 500 most variable genes and are filtered to only genes with a minimum count of 10 reads for at least one sample, unless otherwise stated.
 
-### VSD - all genes
+### All genes (rlog)
 
 ```{r}
-pcaData <- plotPCA(vsd, intgroup = c("kit", "WBC_depletion"), returnData = TRUE)
+pcaData <- plotPCA(rld_filtered, intgroup = c("kit_name", "filter_name"), returnData = TRUE)
 percentVar <- round(100 * attr(pcaData, "percentVar"))
-ggplot(pcaData, aes(PC1, PC2, color = kit, shape = WBC_depletion)) +
+ggplot(pcaData, aes(PC1, PC2, color = kit_name, shape = filter_name)) +
   geom_point(size = 4) +
   xlab(paste0("PC1: ", percentVar[1], "% variance")) +
   ylab(paste0("PC2: ", percentVar[2], "% variance")) +
   labs(title = expression(paste("PCA of VST counts of human and ", italic("P. knowlesi"), " genes")),
-       color = "Library preparation kit", shape = "Depletion method") +
+       color = "Library preparation kit", shape = "Filter method") +
   coord_fixed() +
   scale_color_viridis(discrete = TRUE) +
   theme_bw()
 ```
 
-### VSD - all genes - filtered
-
-Filtered on minimum count of 10 reads for at least 1 sample.
+### All genes (vst)
 
 ```{r}
-pcaData <- plotPCA(vsd_filtered, intgroup = c("kit", "WBC_depletion"), returnData = TRUE)
+pcaData <- plotPCA(vsd_filtered, intgroup = c("kit_name", "filter_name"), returnData = TRUE)
 percentVar <- round(100 * attr(pcaData, "percentVar"))
-ggplot(pcaData, aes(PC1, PC2, color = kit, shape = WBC_depletion)) +
+ggplot(pcaData, aes(PC1, PC2, color = kit_name, shape = filter_name)) +
   geom_point(size = 4) +
   xlab(paste0("PC1: ", percentVar[1], "% variance")) +
   ylab(paste0("PC2: ", percentVar[2], "% variance")) +
   labs(title = expression(paste("PCA of VST counts of human and ", italic("P. knowlesi"), " genes")),
-       color = "Library preparation kit", shape = "Depletion method") +
+       color = "Library preparation kit", shape = "Filter method") +
   coord_fixed() +
   scale_color_viridis(discrete = TRUE) +
   theme_bw()
 ```
 
-### VSD - Pk genes
+### Pk genes (rlog)
 
 ```{r}
-pcaData <- plotPCA(vsd_pk, intgroup = c("kit", "WBC_depletion"), returnData = TRUE)
+pcaData <- plotPCA(rld_filtered[rowData(rld_filtered)$species == "pk",], intgroup = c("kit_name", "filter_name"), returnData = TRUE)
 percentVar <- round(100 * attr(pcaData, "percentVar"))
-ggplot(pcaData, aes(PC1, PC2, color = kit, shape = WBC_depletion)) +
+ggplot(pcaData, aes(PC1, PC2, color = kit_name, shape = filter_name)) +
   geom_point(size = 4) +
   xlab(paste0("PC1: ", percentVar[1], "% variance")) +
   ylab(paste0("PC2: ", percentVar[2], "% variance")) +
@@ -1577,14 +1669,12 @@ ggplot(pcaData, aes(PC1, PC2, color = kit, shape = WBC_depletion)) +
   theme_bw()
 ```
 
-### VSD - Pk genes - filtered
-
-Filtered on minimum count of 10 reads for at least 1 sample.
+### Pk genes (vst)
 
 ```{r}
-pcaData <- plotPCA(vsd_pk_filtered, intgroup = c("kit", "WBC_depletion"), returnData = TRUE)
+pcaData <- plotPCA(vsd_filtered[rowData(vsd_filtered)$species == "pk",], intgroup = c("kit_name", "filter_name"), returnData = TRUE)
 percentVar <- round(100 * attr(pcaData, "percentVar"))
-ggplot(pcaData, aes(PC1, PC2, color = kit, shape = WBC_depletion)) +
+ggplot(pcaData, aes(PC1, PC2, color = kit_name, shape = filter_name)) +
   geom_point(size = 4) +
   xlab(paste0("PC1: ", percentVar[1], "% variance")) +
   ylab(paste0("PC2: ", percentVar[2], "% variance")) +
@@ -1595,7 +1685,73 @@ ggplot(pcaData, aes(PC1, PC2, color = kit, shape = WBC_depletion)) +
   theme_bw()
 ```
 
-### VSD - Pk genes - filtered - protein coding only
+### Pk genes (rlog) - transform after subset
+
+```{r}
+pcaData <- plotPCA(rld_pk_filtered, intgroup = c("kit_name", "filter_name"), returnData = TRUE)
+percentVar <- round(100 * attr(pcaData, "percentVar"))
+ggplot(pcaData, aes(PC1, PC2, color = kit_name, shape = filter_name)) +
+  geom_point(size = 4) +
+  xlab(paste0("PC1: ", percentVar[1], "% variance")) +
+  ylab(paste0("PC2: ", percentVar[2], "% variance")) +
+  labs(title = expression(paste("PCA of VST counts of ", italic("P. knowlesi"), " genes")),
+       color = "Library preparation kit", shape = "Depletion method") +
+  coord_fixed() +
+  scale_color_viridis(discrete = TRUE) +
+  theme_bw()
+```
+
+### Pk genes (vst) - transform after subset
+
+```{r}
+pcaData <- plotPCA(vsd_pk_filtered, intgroup = c("kit_name", "filter_name"), returnData = TRUE)
+percentVar <- round(100 * attr(pcaData, "percentVar"))
+ggplot(pcaData, aes(PC1, PC2, color = kit_name, shape = filter_name)) +
+  geom_point(size = 4) +
+  xlab(paste0("PC1: ", percentVar[1], "% variance")) +
+  ylab(paste0("PC2: ", percentVar[2], "% variance")) +
+  labs(title = expression(paste("PCA of VST counts of ", italic("P. knowlesi"), " genes")),
+       color = "Library preparation kit", shape = "Depletion method") +
+  coord_fixed() +
+  scale_color_viridis(discrete = TRUE) +
+  theme_bw()
+```
+
+### Pk genes protein-coding (rlog)
+
+```{r}
+protein_gene_filter <- intersect(rownames(rowData(rld_filtered)), gene_annotation %>% filter(gene_biotype == "protein_coding" & species == "pk") %>% select(gene_id) %>% pull())
+pcaData <- plotPCA(rld_filtered[protein_gene_filter,], intgroup = c("kit_name", "filter_name"), returnData = TRUE, ntop=500)
+percentVar <- round(100 * attr(pcaData, "percentVar"))
+ggplot(pcaData, aes(PC1, PC2, color = kit_name, shape = filter_name)) +
+  geom_point(size = 4) +
+  xlab(paste0("PC1: ", percentVar[1], "% variance")) +
+  ylab(paste0("PC2: ", percentVar[2], "% variance")) +
+  labs(title = expression(paste("PCA of VST counts of ", italic("P. knowlesi"), " genes")),
+       color = "Library preparation kit", shape = "Depletion method") +
+  coord_fixed() +
+  scale_color_viridis(discrete = TRUE) +
+  theme_bw()
+```
+
+### Pk genes protein-coding (vst)
+
+```{r}
+protein_gene_filter <- intersect(rownames(rowData(vsd_filtered)), gene_annotation %>% filter(gene_biotype == "protein_coding" & species == "pk") %>% select(gene_id) %>% pull())
+pcaData <- plotPCA(vsd_filtered[protein_gene_filter,], intgroup = c("kit_name", "filter_name"), returnData = TRUE, ntop=500)
+percentVar <- round(100 * attr(pcaData, "percentVar"))
+ggplot(pcaData, aes(PC1, PC2, color = kit_name, shape = filter_name)) +
+  geom_point(size = 4) +
+  xlab(paste0("PC1: ", percentVar[1], "% variance")) +
+  ylab(paste0("PC2: ", percentVar[2], "% variance")) +
+  labs(title = expression(paste("PCA of VST counts of ", italic("P. knowlesi"), " genes")),
+       color = "Library preparation kit", shape = "Depletion method") +
+  coord_fixed() +
+  scale_color_viridis(discrete = TRUE) +
+  theme_bw()
+```
+
+### Pk genes protein-coding (vst) - transform after subset
 
 ```{r}
 protein_gene_filter <- intersect(rownames(rowData(vsd_pk_filtered)), gene_annotation %>% filter(gene_biotype == "protein_coding" & species == "pk") %>% select(gene_id) %>% pull())
@@ -1606,69 +1762,9 @@ protein_gene_filter <- intersect(rownames(rowData(vsd_pk_filtered)), gene_annota
 # this works too:
 # vsd_pk_filtered[rowData(vsd_pk_filtered)$gene_biotype == "protein_coding"]
 
-pcaData <- plotPCA(vsd_pk_filtered[protein_gene_filter,], intgroup = c("kit", "WBC_depletion"), returnData = TRUE, ntop=500)
+pcaData <- plotPCA(vsd_pk_filtered[protein_gene_filter,], intgroup = c("kit_name", "filter_name"), returnData = TRUE, ntop=500)
 percentVar <- round(100 * attr(pcaData, "percentVar"))
-ggplot(pcaData, aes(PC1, PC2, color = kit, shape = WBC_depletion)) +
-  geom_point(size = 4) +
-  xlab(paste0("PC1: ", percentVar[1], "% variance")) +
-  ylab(paste0("PC2: ", percentVar[2], "% variance")) +
-  labs(title = expression(paste("PCA of VST counts of ", italic("P. knowlesi"), " protein coding genes")),
-       color = "Library preparation kit", shape = "Depletion method") +
-  coord_fixed() +
-  scale_color_viridis(discrete = TRUE) +
-  theme_bw()
-```
-
-### VSD - Pk genes - filtered - protein coding only - top 1000 genes
-
-```{r}
-protein_gene_filter <- intersect(rownames(rowData(vsd_pk_filtered)), gene_annotation %>% filter(gene_biotype == "protein_coding" & species == "pk") %>% select(gene_id) %>% pull())
-
-pcaData <- plotPCA(vsd_pk_filtered[protein_gene_filter,], intgroup = c("kit", "WBC_depletion"), returnData = TRUE, ntop=1000)
-percentVar <- round(100 * attr(pcaData, "percentVar"))
-ggplot(pcaData, aes(PC1, PC2, color = kit, shape = WBC_depletion)) +
-  geom_point(size = 4) +
-  xlab(paste0("PC1: ", percentVar[1], "% variance")) +
-  ylab(paste0("PC2: ", percentVar[2], "% variance")) +
-  labs(title = expression(paste("PCA of VST counts of ", italic("P. knowlesi"), " protein coding genes")),
-       color = "Library preparation kit", shape = "Depletion method") +
-  coord_fixed() +
-  scale_color_viridis(discrete = TRUE) +
-  theme_bw()
-```
-
-### VSD - Pk genes - filtered - protein coding only - top all genes
-
-```{r}
-protein_gene_filter <- intersect(rownames(rowData(vsd_pk_filtered)), gene_annotation %>% filter(gene_biotype == "protein_coding" & species == "pk") %>% select(gene_id) %>% pull())
-
-pcaData <- plotPCA(vsd_pk_filtered[protein_gene_filter,], intgroup = c("kit", "WBC_depletion"), returnData = TRUE, ntop=5098)
-percentVar <- round(100 * attr(pcaData, "percentVar"))
-ggplot(pcaData, aes(PC1, PC2, color = kit, shape = WBC_depletion)) +
-  geom_point(size = 4) +
-  xlab(paste0("PC1: ", percentVar[1], "% variance")) +
-  ylab(paste0("PC2: ", percentVar[2], "% variance")) +
-  labs(title = expression(paste("PCA of VST counts of ", italic("P. knowlesi"), " protein coding genes")),
-       color = "Library preparation kit", shape = "Depletion method") +
-  coord_fixed() +
-  scale_color_viridis(discrete = TRUE) +
-  theme_bw()
-```
-
-<!-- TODO: try vst on pre-filtered (pk genes + low counts + protein coding) directly -->
-
-
-
-
-```{r}
-
-
-meanSdPlot(assay(vsd_prefiltered))
-
-
-pcaData <- plotPCA(vsd_prefiltered, intgroup = c("kit", "WBC_depletion"), returnData = TRUE, ntop=5098)
-percentVar <- round(100 * attr(pcaData, "percentVar"))
-ggplot(pcaData, aes(PC1, PC2, color = kit, shape = WBC_depletion)) +
+ggplot(pcaData, aes(PC1, PC2, color = kit_name, shape = filter_name)) +
   geom_point(size = 4) +
   xlab(paste0("PC1: ", percentVar[1], "% variance")) +
   ylab(paste0("PC2: ", percentVar[2], "% variance")) +
