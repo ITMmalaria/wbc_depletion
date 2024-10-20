@@ -1056,7 +1056,7 @@ gene_tpm_long %>%
 
 <!-- ``` -->
 
-```{r}
+```{r, message=FALSE}
 # create binary matrices with presence/absence of genes
 gene_tpm_filtered_binary <- gene_tpm_filtered %>%
   mutate(across(.cols =`104974-001-001_S1_L001`:`104974-001-016_S1_L001`, .fns = ~ .x > 0)) %>%
@@ -1153,7 +1153,7 @@ draw_venn <- function(set_list, names, title, output) {
 
 Gene counts were filtered on a minimum (raw) count of 10 for at least 1 sample before checking for presence/absence. 
 
-```{r}
+```{r, message=FALSE}
 v <- draw_venn(
   gene_tpm_filtered_binary_list[comparison_centpip$sample],
   c("mRNA Qiagen FS globin", "tRNA Qiagen FS globin/rRNA", "mRNA Illumina"),
@@ -1209,7 +1209,7 @@ grid.draw(v)
 
 Gene counts were filtered on a minimum (raw) count of 10 for at least 1 sample before checking for presence/absence. 
 
-```{r}
+```{r, message=FALSE}
 v <- draw_venn(
   gene_tpm_pk_filtered_binary_list[comparison_centpip$sample],
     c("mRNA Qiagen FS globin", "tRNA Qiagen FS globin/rRNA", "mRNA Illumina"),
