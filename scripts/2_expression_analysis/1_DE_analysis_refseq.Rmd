@@ -491,9 +491,9 @@ p$gg + labs(title = "Rlog on filtered counts after subsetting Pk genes")
 
 Save all output to rds object for easier loading.
 
-TODO: update list
+<!-- TODO: remove unnecessary vsd/rld objects -->
 
-```{r message = FALSE}
+```{r export-rds, message = FALSE}
 # dir.create(here("results-refseq/r_objects/"), showWarnings = FALSE)
 # 
 # purrr::iwalk(
@@ -501,8 +501,6 @@ TODO: update list
 #     fastq_screen,
 #     fastq_screen_mapping_stats_df,
 #     gene_annotation,
-#     gene_counts_salmon,
-#     gene_counts_salmon_filtered,
 #     gene_counts_txi,
 #     gene_counts_txi_long,
 #     gene_counts_txi_filtered,
@@ -515,14 +513,18 @@ TODO: update list
 #     gse_filtered,
 #     gse_pk,
 #     gse_pk_filtered,
-#     gse_pk_filtered_protein,
 #     mapping_stats_df,
+#     pcr_dups,
 #     samples,
+#     star_stats,
+#     # trancsript_info,
+#     rld_filtered,
+#     rld_pk_filtered,
 #     vsd,
 #     vsd_filtered,
 #     vsd_pk,
 #     vsd_pk_filtered,
-#     vsd_pk_filtered_protein
+#     to_long,
 #   ),
 #   ~ saveRDS(.x, file = here(paste0("results-refseq/r_objects/", .y, ".RDS")))
 # )
@@ -532,13 +534,15 @@ Data clean up
 
 ```{r}
 # clean up
-# rm(gene_types_df)
+rm(gene_types_df)
+# rm(transcript_info)
 rm(globin_df)
 rm(gene_tpm_gencode)
 rm(gene_types_gencode_df)
 rm(transcript_info_gencode)
-# rm(transcript_info)
 rm(gff)
+rm(p)
+rm(filter_all_genes)
 ```
 
 # Analyses and figures
