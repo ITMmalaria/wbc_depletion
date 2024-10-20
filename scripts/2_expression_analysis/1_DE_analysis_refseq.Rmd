@@ -1155,8 +1155,6 @@ Try to use https://nf-co.re/rnaseq/1.1/docs/output#featurecounts?
 
 ## Gene recovery {.tabset}
 
-### All genes
-
 <!-- ```{r} -->
 <!-- gene_counts_vst_pk_filtered %>%  -->
 <!--   mutate(across(.cols = starts_with("104974"), .fns = ~ as.integer(.x > 0))) -->
@@ -1165,39 +1163,20 @@ Try to use https://nf-co.re/rnaseq/1.1/docs/output#featurecounts?
 
 ```{r}
 # create binary matrices with presence/absence of genes
-# rename sample names to format in sample info df
-gene_tpm_binary <- gene_tpm %>%
+gene_tpm_filtered_binary <- gene_tpm_filtered %>%
   mutate(across(.cols =`104974-001-001_S1_L001`:`104974-001-016_S1_L001`, .fns = ~ .x > 0)) %>%
   select(!c(gene_name, gene_type, species))
 
-gene_tpm_pk_binary <- gene_tpm %>%
+gene_tpm_pk_filtered_binary <- gene_tpm_filtered %>%
   mutate(across(.cols = `104974-001-001_S1_L001`:`104974-001-016_S1_L001`, .fns = ~ .x > 0)) %>%
   filter(species == "pk") %>%
   select(!c(gene_name, gene_type, species))
 
-gene_tpm_pk_filtered_binary <- gene_tpm_pk_binary %>% inner_join(gene_tpm_filtered %>% select(gene_id), by = "gene_id")
-
-gene_tpm_binary_list <- purrr::set_names(colnames(gene_tpm_binary %>% select(`104974-001-001_S1_L001`:`104974-001-016_S1_L001`))) %>%
-  purrr::imap(~ gene_tpm_binary$gene_id[gene_tpm_binary[, .x, drop = T]])
-
-gene_tpm_pk_binary_list <- purrr::set_names(colnames(gene_tpm_pk_binary %>% select(`104974-001-001_S1_L001`:`104974-001-016_S1_L001`))) %>%
-  purrr::imap(~ gene_tpm_pk_binary$gene_id[gene_tpm_pk_binary[, .x, drop = T]])
+gene_tpm_filtered_binary_list <- purrr::set_names(colnames(gene_tpm_filtered_binary %>% select(`104974-001-001_S1_L001`:`104974-001-016_S1_L001`))) %>%
+  purrr::imap(~ gene_tpm_filtered_binary$gene_id[gene_tpm_filtered_binary[, .x, drop = T]])
 
 gene_tpm_pk_filtered_binary_list <- purrr::set_names(colnames(gene_tpm_pk_filtered_binary %>% select(`104974-001-001_S1_L001`:`104974-001-016_S1_L001`))) %>%
   purrr::imap(~ gene_tpm_pk_filtered_binary$gene_id[gene_tpm_pk_filtered_binary[, .x, drop = T]])
-
-# gene_counts_vst_pk_filtered_binary_list <- gene_counts_vst_pk_filtered %>%
-  # mutate(across(.cols = starts_with("104974"), .fns = ~ .x > 0))
-
-# gene_tpm_binary_list <- lapply(colnames(gene_tpm_binary %>%
-#   select(starts_with("x"))), function(x) {
-#   gene_tpm_binary$gene_id[gene_tpm_binary[, x, drop = T]]
-# })
-#
-# gene_tpm_pk_binary_list <- lapply(colnames(gene_tpm_pk_binary %>%
-#   select(starts_with("x"))), function(x) {
-#   gene_tpm_pk_binary$gene_id[gene_tpm_pk_binary[, x, drop = T]]
-# })
 
 comparison_centpip <- samples %>%
   filter(WBC_depletion == "centpip") %>%
@@ -1218,6 +1197,15 @@ comparison_cellulose <- samples %>%
 comparison_nofilter <- samples %>%
   filter(WBC_depletion == "nofilter") %>%
   filter(!sample == "104974-001-006_S1_L001")
+
+comparison_mrna_qiagen <- samples %>%
+  filter(kit == "mRNA_qiagen_FSglob")
+
+comparison_trna_qiagen <- samples %>%
+  filter(kit == "tRNA_qiagen_FSglobH")
+
+comparison_mrna_illumina <- samples %>%
+  filter(kit == "mRNA_illumina")
 
 draw_venn <- function(set_list, names, title, output) {
   VennDiagram::venn.diagram(
@@ -1259,182 +1247,223 @@ draw_venn <- function(set_list, names, title, output) {
     resolution = 300,
     compression = "lzw",
     filename = output,
-    output = TRUE
+    output = TRUE,
+    
+    disable.logging = TRUE
   )
 }
-
-v <- draw_venn(
-  gene_tpm_binary_list[comparison_centpip$sample],
-  c("mRNA Qiagen - FSglob", "tRNA Qiagen - FSglobH", "mRNA Illumina"),
-  "Centpip",
-  here("results-refseq/figures/venn-centpip.png")
-)
-v
-
-v <- draw_venn(
-  gene_tpm_binary_list[comparison_plasmo$sample],
-  c("mRNA Qiagen - Fsglob", "tRNA Qiagen - FSglobH", "mRNA Illumina"),
-  "Plasmo",
-  here("results-refseq/figures/venn-plasmo.png")
-)
-v
-
-v <- draw_venn(
-  gene_tpm_binary_list[comparison_pmacs$sample],
-  c("mRNA Qiagen - FSglob", "tRNA Qiagen - FSglobH", "mRNA Illumina"),
-  "Pmacs",
-  here("results-refseq/figures/venn-pmacs.png")
-)
-v
-
-v <- draw_venn(
-  gene_tpm_binary_list[comparison_cellulose$sample],
-  c("mRNA Qiagen - FSglob", "tRNA Qiagen - FSglobH", "mRNA Illumina"),
-  "Cellulose",
-  here("results-refseq/figures/venn-cellulose.png")
-)
-v
-
-v <- draw_venn(
-  gene_tpm_binary_list[comparison_nofilter$sample],
-  c("mRNA Qiagen - FSglob", "tRNA Qiagen - FSglobH", "mRNA Illumina"),
-  "Cellulose",
-  here("results-refseq/figures/venn-nofilter.png")
-)
-v
 ```
 
-### *P. knowlesi* genes only
+### All genes - kits per filter
+
+Gene counts were filtered on a minimum (raw) count of 10 for at least 1 sample before checking for presence/absence. 
 
 ```{r}
 v <- draw_venn(
-  gene_tpm_pk_binary_list[comparison_centpip$sample],
-  c("mRNA Qiagen - FSglob", "tRNA Qiagen - FSglobH", "mRNA Illumina"),
+  gene_tpm_filtered_binary_list[comparison_centpip$sample],
+  c("mRNA Qiagen FS globin", "tRNA Qiagen FS globin/rRNA", "mRNA Illumina"),
   "Centpip",
-  here("results-refseq/figures/venn-centpip_pk.png")
+  NULL
+  # here("results-refseq/figures/venn-centpip.png")
 )
-v
+grid.newpage()
+grid.draw(v)
 
 v <- draw_venn(
-  gene_tpm_pk_binary_list[comparison_plasmo$sample],
-  c("mRNA Qiagen - Fsglob", "tRNA Qiagen - FSglobH", "mRNA Illumina"),
+  gene_tpm_filtered_binary_list[comparison_plasmo$sample],
+    c("mRNA Qiagen FS globin", "tRNA Qiagen FS globin/rRNA", "mRNA Illumina"),
   "Plasmo",
-  here("results-refseq/figures/venn-plasmo_pk.png")
+  NULL
+  # here("results-refseq/figures/venn-plasmo.png")
 )
-v
+grid.newpage()
+grid.draw(v)
 
 v <- draw_venn(
-  gene_tpm_pk_binary_list[comparison_pmacs$sample],
-  c("mRNA Qiagen - FSglob", "tRNA Qiagen - FSglobH", "mRNA Illumina"),
-  "Pmacs",
-  here("results-refseq/figures/venn-pmacs_pk.png")
+  gene_tpm_filtered_binary_list[comparison_pmacs$sample],
+    c("mRNA Qiagen FS globin", "tRNA Qiagen FS globin/rRNA", "mRNA Illumina"),
+  "PMACS",
+  NULL
+  # here("results-refseq/figures/venn-pmacs.png")
 )
-v
+grid.newpage()
+grid.draw(v)
 
 v <- draw_venn(
-  gene_tpm_pk_binary_list[comparison_cellulose$sample],
-  c("mRNA Qiagen - FSglob", "tRNA Qiagen - FSglobH", "mRNA Illumina"),
+  gene_tpm_filtered_binary_list[comparison_cellulose$sample],
+    c("mRNA Qiagen FS globin", "tRNA Qiagen FS globin/rRNA", "mRNA Illumina"),
   "Cellulose",
-  here("results-refseq/figures/venn-cellulose_pk.png")
+  NULL
+  # here("results-refseq/figures/venn-cellulose.png")
 )
-v
+grid.newpage()
+grid.draw(v)
 
 v <- draw_venn(
-  gene_tpm_pk_binary_list[comparison_nofilter$sample],
-  c("mRNA Qiagen - FSglob", "tRNA Qiagen - FSglobH", "mRNA Illumina"),
-  "No filter",
-  here("results-refseq/figures/venn-nofilter_pk.png")
+  gene_tpm_filtered_binary_list[comparison_nofilter$sample],
+    c("mRNA Qiagen FS globin", "tRNA Qiagen FS globin/rRNA", "mRNA Illumina"),
+  "Cellulose",
+  NULL
+  # here("results-refseq/figures/venn-nofilter.png")
 )
-v
+grid.newpage()
+grid.draw(v)
 ```
 
-### *P. knowlesi* genes only - filtered
+### *P. knowlesi* genes - kits per filter
 
 Gene counts were filtered on a minimum (raw) count of 10 for at least 1 sample before checking for presence/absence. 
 
 ```{r}
 v <- draw_venn(
   gene_tpm_pk_filtered_binary_list[comparison_centpip$sample],
-  c("mRNA Qiagen - FSglob", "tRNA Qiagen - FSglobH", "mRNA Illumina"),
+    c("mRNA Qiagen FS globin", "tRNA Qiagen FS globin/rRNA", "mRNA Illumina"),
   "Centpip",
-  here("results-refseq/figures/venn-centpip_pk_filtered.png")
+  NULL
+  # here("results-refseq/figures/venn-centpip_pk.png")
 )
-v
+grid.newpage()
+grid.draw(v)
 
 v <- draw_venn(
   gene_tpm_pk_filtered_binary_list[comparison_plasmo$sample],
-  c("mRNA Qiagen - Fsglob", "tRNA Qiagen - FSglobH", "mRNA Illumina"),
+    c("mRNA Qiagen FS globin", "tRNA Qiagen FS globin/rRNA", "mRNA Illumina"),
   "Plasmo",
-  here("results-refseq/figures/venn-plasmo_pk_filtered.png")
+  NULL
+  # here("results-refseq/figures/venn-plasmo_pk.png")
 )
-v
+grid.newpage()
+grid.draw(v)
 
 v <- draw_venn(
   gene_tpm_pk_filtered_binary_list[comparison_pmacs$sample],
-  c("mRNA Qiagen - FSglob", "tRNA Qiagen - FSglobH", "mRNA Illumina"),
-  "Pmacs",
-  here("results-refseq/figures/venn-pmacs_pk_filtered.png")
+    c("mRNA Qiagen FS globin", "tRNA Qiagen FS globin/rRNA", "mRNA Illumina"),
+  "PMACS",
+  NULL
+  # here("results-refseq/figures/venn-pmacs_pk.png")
 )
-v
+grid.newpage()
+grid.draw(v)
 
 v <- draw_venn(
   gene_tpm_pk_filtered_binary_list[comparison_cellulose$sample],
-  c("mRNA Qiagen - FSglob", "tRNA Qiagen - FSglobH", "mRNA Illumina"),
+    c("mRNA Qiagen FS globin", "tRNA Qiagen FS globin/rRNA", "mRNA Illumina"),
   "Cellulose",
-  here("results-refseq/figures/venn-cellulose_pk_filtered.png")
+  NULL
+  # here("results-refseq/figures/venn-cellulose_pk.png")
 )
-v
+grid.newpage()
+grid.draw(v)
 
 v <- draw_venn(
   gene_tpm_pk_filtered_binary_list[comparison_nofilter$sample],
-  c("mRNA Qiagen - FSglob", "tRNA Qiagen - FSglobH", "mRNA Illumina"),
+    c("mRNA Qiagen FS globin", "tRNA Qiagen FS globin/rRNA", "mRNA Illumina"),
   "No filter",
-  here("results-refseq/figures/venn-nofilter_pk_filtered.png")
+  NULL
+  # here("results-refseq/figures/venn-nofilter_pk.png")
 )
-v
+grid.newpage()
+grid.draw(v)
 ```
 
-### Upset plot - Pk genes filtered on low counts
-
-**TODO: change labels, order them logically and add additional metadata using bars or rectangles in inkscape. Also choose how many sets/intersets to plot.**
+### All genes - filters per kit
 
 ```{r}
-UpSetR::upset(as.data.frame(gene_tpm_pk_filtered_binary %>% select(!gene_id) %>% mutate_all(as.integer)))
-UpSetR::upset(as.data.frame(gene_tpm_pk_filtered_binary %>% select(!gene_id) %>% mutate_all(as.integer)), nsets = 16, nintersects = NA)
+# Use upset plots instead of five-way venn diagram (alternatively check out proportional area venn)
+
+# mRNA Qiagen
+UpSetR::upset(as.data.frame(gene_tpm_filtered_binary %>% 
+                              select((comparison_mrna_qiagen %>% select(sample) %>% pull())) %>%
+                              rename(all_of(c(
+                                "no filter" = "104974-001-001_S1_L001",
+                                "cent/pip" = "104974-001-002_S1_L001", 
+                                "plasmodipur" = "104974-001-003_S1_L001", 
+                                "PMACS" = "104974-001-004_S1_L001", 
+                                "cellulose" = "104974-001-005_S1_L001"))) %>% 
+                              mutate_all(as.integer)),
+              keep.order = TRUE,
+              sets.x.label = "Genes per filter",
+              mainbar.y.label = "Intersections for mRNA Qiagen",
+              order.by = "freq")
+
+# tRNA Qiagen
+UpSetR::upset(as.data.frame(gene_tpm_filtered_binary %>% 
+                              select((comparison_trna_qiagen %>% select(sample) %>% pull())) %>%
+                              rename(all_of(c(
+                                "no filter" = "104974-001-007_S1_L001",
+                                "cent/pip" = "104974-001-008_S1_L001", 
+                                "plasmodipur" = "104974-001-009_S1_L001", 
+                                "PMACS" = "104974-001-010_S1_L001", 
+                                "cellulose" = "104974-001-011_S1_L001"))) %>% 
+                              mutate_all(as.integer)),
+              keep.order = TRUE,
+              sets.x.label = "Genes per filter",
+              mainbar.y.label = "Intersections for tRNA Qiagen",
+              order.by = "freq")
+
+# mRNA Illumina
+UpSetR::upset(as.data.frame(gene_tpm_filtered_binary %>% 
+                              select((comparison_mrna_illumina %>% select(sample) %>% pull())) %>%
+                              rename(all_of(c(
+                                "no filter" = "104974-001-012_S1_L001",
+                                "cent/pip" = "104974-001-013_S1_L001", 
+                                "plasmodipur" = "104974-001-014_S1_L001", 
+                                "PMACS" = "104974-001-015_S1_L001", 
+                                "cellulose" = "104974-001-016_S1_L001"))) %>% 
+                              mutate_all(as.integer)),
+              keep.order = TRUE,
+              sets.x.label = "Genes per filter",
+              mainbar.y.label = "Intersections for mRNA Illumina",
+              order.by = "freq")
 ```
 
+### Pk genes - filters per kit
+
 ```{r}
-#
-# gene_tpm_overlap <- gene_tpm_overlap %>% mutate(across(.cols = starts_with("X"), ~ +as.logical(.x)))
-#
-# # UpSetR::upset(gene_tpm_overlap[,2:4])
-#
-#
-#
-#
-#
-# purrr::map(
-#   gene_tpm_overlap %>% select(starts_with("x")),
-#   ~ gene_tpm_overlap$gene_id[.x, ]
-# )
-#
-# l <- lapply(gene_tpm_overlap %>% select(starts_with("x")), set)
-#
-#
-# length(gene_tpm_overlap$gene_id[gene_tpm_overlap$X104974.001.001_S1_L001])
-#
-#
-#
-#
-# ggplot(gene_tpm_long %>% filter(sample == "104974-001-001_S1_L001"), aes(x = sample, y = counts)) +
-#   geom_boxplot()
-#
-# ggplot(gene_tpm_long %>% filter(sample == "104974-001-001_S1_L001"), aes(x = log(counts))) +
-#   geom_histogram()
-#
-#
-# # gene_tpm_long %>% filter(sample == "104974-001-001_S1_L001") %>% filter(counts > 0)
-# gene_tpm_long %>% filter(counts > 0)
+# mRNA Qiagen
+UpSetR::upset(as.data.frame(gene_tpm_pk_filtered_binary %>% 
+                              select((comparison_mrna_qiagen %>% select(sample) %>% pull())) %>%
+                              rename(all_of(c(
+                                "no filter" = "104974-001-001_S1_L001",
+                                "cent/pip" = "104974-001-002_S1_L001", 
+                                "plasmodipur" = "104974-001-003_S1_L001", 
+                                "PMACS" = "104974-001-004_S1_L001", 
+                                "cellulose" = "104974-001-005_S1_L001"))) %>% 
+                              mutate_all(as.integer)),
+              keep.order = TRUE,
+              sets.x.label = "Genes per filter",
+              mainbar.y.label = "Intersections for mRNA Qiagen",
+              order.by = "freq")
+
+# tRNA Qiagen
+UpSetR::upset(as.data.frame(gene_tpm_pk_filtered_binary %>% 
+                              select((comparison_trna_qiagen %>% select(sample) %>% pull())) %>%
+                              rename(all_of(c(
+                                "no filter" = "104974-001-007_S1_L001",
+                                "cent/pip" = "104974-001-008_S1_L001", 
+                                "plasmodipur" = "104974-001-009_S1_L001", 
+                                "PMACS" = "104974-001-010_S1_L001", 
+                                "cellulose" = "104974-001-011_S1_L001"))) %>% 
+                              mutate_all(as.integer)),
+              keep.order = TRUE,
+              sets.x.label = "Genes per filter",
+              mainbar.y.label = "Intersections for tRNA Qiagen",
+              order.by = "freq")
+
+# mRNA Illumina
+UpSetR::upset(as.data.frame(gene_tpm_pk_filtered_binary %>% 
+                              select((comparison_mrna_illumina %>% select(sample) %>% pull())) %>%
+                              rename(all_of(c(
+                                "no filter" = "104974-001-012_S1_L001",
+                                "cent/pip" = "104974-001-013_S1_L001", 
+                                "plasmodipur" = "104974-001-014_S1_L001", 
+                                "PMACS" = "104974-001-015_S1_L001", 
+                                "cellulose" = "104974-001-016_S1_L001"))) %>% 
+                              mutate_all(as.integer)),
+              keep.order = TRUE,
+              sets.x.label = "Genes per filter",
+              mainbar.y.label = "Intersections for mRNA Illumina",
+              order.by = "freq")
 ```
 
 ## Sample-to-sample distances {.tabset}
