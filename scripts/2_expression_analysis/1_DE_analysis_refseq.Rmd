@@ -922,7 +922,7 @@ gene_annotation %>%
 
 These gene counts were aggregated across all samples (tximport of transcript counts) and filtered to only genes with a minimum count of 10 reads for at least 1 sample.
 
-```{r}
+```{r, message=FALSE}
 gene_counts_txi_filtered_long %>%
   left_join(samples, by = "sample") %>% 
   group_by(sample_name, gene_type) %>%
@@ -943,7 +943,7 @@ gene_counts_txi_filtered_long %>%
 
 Filtered to only genes with a minimum count of 10 reads for at least 1 sample.
 
-```{r}
+```{r, message=FALSE}
 gene_tpm_filtered_long %>%
   left_join(samples, by = "sample") %>% 
   group_by(sample_name, gene_type) %>%
