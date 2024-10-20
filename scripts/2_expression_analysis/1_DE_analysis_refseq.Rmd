@@ -224,6 +224,9 @@ gene_types_df <- read_csv2(here("data/ref-refseq-refseq/gene_types.csv")) %>% le
 
 See tables below for a full breakdown:
 
+<details>
+  <summary>(click to expand)</summary>
+
 <!-- (Checked using `awk -F';' '$1 ~ /human_rRNA/ {print $2}' data/ref-refseq-refseq/gene_types.csv | while read -r line; do echo "$line"; grep "${line}" results-refseq/star_salmon/tx2gene.tsv; grep "$line" results-refseq/star_salmon/**/quant.gene*; done`) -->
 
 ```{r message=FALSE}
@@ -261,27 +264,9 @@ if (file.exists(here("data/ref/gene_types.csv"))) {
 }
 ```
 
-```{r message=FALSE, fig.height=18, out.width="100%"}
-# gene_types_df %>%
-#   left_join(gene_tpm, by = c("gene_id", "gene_name")) %>% 
-#   filter(rowSums(across(starts_with("X"))) != 0) %>% 
-#   pivot_longer(cols = `X104974.001.001_S1_L001`:`X104974.001.016_S1_L001`,
-#                names_to = "sample", 
-#                values_to = "counts") %>%
-#   group_by(gene_id) %>%
-#   mutate(total = sum(counts)) %>%
-#   ungroup() %>% 
-#   arrange(desc(total)) %>%
-#   mutate(gene_name = factor(gene_name, levels = unique(gene_name))) %>%
-#   ggplot(aes(x = gene_name, y = counts, fill = `sample`)) +
-#     geom_bar(position = "stack", stat = "identity") +
-#     scale_fill_viridis(option = "viridis", discrete = T) +
-#     theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
-#     coord_flip() +
-#     scale_x_discrete(limits = rev) +
-#     labs(fill = "Sample") +
-#     ylab(label = "TPM") + xlab(label = "Gene name")
+</details>
 
+```{r message=FALSE, fig.height=18, out.width="100%"}
 gene_types_df %>%
   left_join(gene_tpm, by = c("gene_id", "gene_name")) %>%
   filter(rowSums(across(.cols = `104974-001-001_S1_L001`:`104974-001-016_S1_L001`)) != 0) %>%
@@ -302,11 +287,11 @@ gene_types_df %>%
     scale_x_discrete(limits = rev) +
     labs(fill = "Sample", title = "RefSeq annotated rRNA - TPM") +
     ylab(label = "TPM") + xlab(label = "Gene name") +
-    facet_wrap(~kit) +
+    facet_wrap(~kit_name) +
     scale_y_continuous(labels = scales::label_number(scale_cut = cut_short_scale()))
 ```
 
-```{r fig.height=18, fig.width=10}
+```{r message=FALSE, fig.height=18, out.width="100%"}
 gene_types_gencode_df %>%
   left_join(gene_tpm_gencode, by = c("gene_id", "gene_name")) %>%
   filter(rowSums(across(starts_with("X"))) != 0) %>%
@@ -329,7 +314,7 @@ gene_types_gencode_df %>%
     scale_x_discrete(limits = rev) +
     labs(fill = "Sample", title = "GENCODE annotated rRNA - TPM") +
     ylab(label = "TPM") + xlab(label = "Gene name") +
-    facet_wrap(~kit) +
+    facet_wrap(~kit_name) +
     scale_y_continuous(labels = scales::label_number(scale_cut = cut_short_scale()))
 ```
 
@@ -473,7 +458,7 @@ Also note that attempting to transform unfiltered counts can also lead to strang
 
 Lastly, the transformation should ideally be performed once on the entire set of gene counts (after filtering out low counts), and only then subset on different gene groups of interest (e.g., species, protein-coding genes only, etc.), rather than re-applying the transformation to a subset of counts.
 
-```{r}
+```{r, message=FALSE}
 # variance stabilizing transformation without filtering
 vsd <- vst(gse, blind = TRUE)
 p <- meanSdPlot(assay(vsd))
@@ -649,7 +634,7 @@ gene_counts_txi_filtered %>% summarise(across(`104974-001-001_S1_L001`:`104974-0
   labs(x = "Sample", y = "Number of reads", fill = "Kit")
 ```
 
-```{r}
+```{r, fig.width=10, out.width="100%"}
 pcr_dups %>% 
   left_join(samples, by = join_by(Sample == sample)) %>% 
   mutate(READS_IN_DUPLICATE_PAIRS = 2*READ_PAIR_DUPLICATES) %>% 
@@ -671,15 +656,17 @@ pcr_dups %>%
       labs(x = "Sample", y = "Number of reads", fill = "Picard deduplication stats")
 ```
 
-## Alignment statistics
+## Alignment statistics {.tabset}
 
-The output reported by `samtool flagstats` and STAR's `Log.final.out` files cannot be compared directly: the latter reports counts of read-pairs as opposed to individual reads, and the former does not contain unmapped reads (these are not added to the `.bam` outputs by default) while also counting multi-mapped reads.
+The output reported by `samtool flagstats` and STAR's `Log.final.out` files cannot be compared directly: the latter reports counts of read-pairs as opposed to individual reads, and the former does not contain unmapped reads (these are not added to the `.bam` outputs by default) while also counting multi-mapped reads. We opted to report the STAR statistics, but the flagstat output is included for completion's sake. 
+
+### STAR alignment statistics
 
 ```{r}
 star_stats
 ```
 
-```{r}
+```{r, fig.height=6, out.width="100%"}
 star_stats  %>% 
   pivot_longer(cols = 2:6, names_to = "type", values_to = "counts") %>% 
   left_join(samples, by = join_by(Sample == sample)) %>% 
@@ -693,11 +680,13 @@ star_stats  %>%
       labs(x = "Sample", y = "Number of read pairs", fill = "Mapping stats")
 ```
 
+### samtools flagstat
+
 ```{r}
 mapping_stats_df
 ```
 
-```{r}
+```{r, fig.height=6, out.width="100%"}
 mapping_stats_df %>% 
   left_join(samples, by = "sample") %>% 
   pivot_longer(cols = primary_mapped_pk:primary_mapped_human, names_to = "type", values_to = "counts") %>% 
@@ -735,7 +724,7 @@ for (i in unique(gene_tpm_long$sample)) {
 }
 ```
 
-## FastQ Screen {.tabset}
+## FastQ Screen statistics {.tabset}
 
 Also see figure in [results-refseq/fastq-screen/](results-refseq/fastq-screen/) and [results-refseq/multiqc-fastq-screen-samtools-pk/multiqc_report.html](results-refseq/multiqc-fastq-screen-samtools-pk/multiqc_report.html).
 
@@ -764,12 +753,15 @@ fastq_screen_transformed <- bind_rows(
     distinct(sample, .keep_all = TRUE) %>%
     mutate("Mapped reads" = "Multiple genomes")
 ) %>%
-  mutate(`Mapped reads` = factor(`Mapped reads`, levels = c("Human", "PknowlesiH", "Multiple genomes", "No hits"))) %>% 
+  # change order of levels here to adjust colours
+  mutate(`Mapped reads` = factor(`Mapped reads`,
+                                 levels = c("PknowlesiH", "Human", "Multiple genomes", "No hits"),
+                                 labels = c("P. knowlesi", "Human", "Multiple hits", "No hits"))) %>%
   left_join(samples, by = "sample")
 
 ggplot(fastq_screen_transformed, aes(x = sample_short, y = pct, fill = `Mapped reads`)) +
   geom_bar(position = "stack", stat = "identity") +
-  scale_fill_viridis(option = "viridis", discrete = T) +
+  scale_fill_viridis(option = "viridis", discrete = T, limits = rev) +
   coord_flip() +
   scale_x_discrete(limits = rev) +
   labs(fill = expression("FastQ Screen mapped reads"), x = "Sample") +
@@ -813,11 +805,11 @@ fastq_screen %>% pivot_longer(
     labs(fill = expression("FastQ screen statistics for" ~ italic("P. knowlesi") ~ "reads"),  x = "Sample", y = "% of mapped reads")
 ```
 
-## rRNA and globin levels
+## rRNA and globin levels {.tabset}
 
-```{r}
-# switched to gene_annotation df
+### Barplot of TPM for rRNA genes per condition
 
+```{r, fig.height=14, out.width="100%"}
 gene_annotation %>%
   # select rRNA and globins
   filter(! gene_type %in% c("human","pk")) %>% 
@@ -840,13 +832,15 @@ gene_annotation %>%
     scale_x_discrete(limits = rev) +
     labs(fill = "Sample") +
     ylab(label = "TPM") + xlab(label = "Gene name") +
-    facet_wrap(~kit) +
+    facet_wrap(~kit_name) +
     scale_y_continuous(labels = scales::label_number(scale_cut = cut_short_scale()))
 ```
 
-TODO: log TPM is often plotted instead of raw values, but can be misleading on barplot...
+### Dot plot of log(TPM+1) for rRNA genes per condition
 
-```{r}
+Log TPM is often plotted instead of raw values, but can be misleading on barplot...
+
+```{r, fig.height=12, out.width="100%"}
 gene_annotation %>%
   filter(! gene_type %in% c("human","pk")) %>% 
   left_join(gene_tpm[1:18], by = c("gene_id", "gene_name")) %>%
@@ -872,9 +866,9 @@ gene_annotation %>%
     scale_y_continuous(trans = 'log1p')
 ```
 
-Globin-only:
+### Globin only
 
-```{r}
+```{r, out.height="130%"}
 gene_annotation %>%
   filter(gene_type == "human_globin") %>% 
   left_join(gene_tpm[1:18], by = c("gene_id", "gene_name")) %>%
@@ -899,9 +893,9 @@ gene_annotation %>%
     scale_y_continuous(labels = scales::label_number(scale_cut = cut_short_scale()))
 ```
 
-Human rRNA only:
+### Human rRNA only
 
-```{r}
+```{r, fig.height=12, out.width="100%"}
 gene_annotation %>%
   filter(gene_type == "human_rRNA") %>% 
   left_join(gene_tpm[1:18], by = c("gene_id", "gene_name")) %>%
