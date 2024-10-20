@@ -702,17 +702,8 @@ mapping_stats_df %>%
 
 ## Top expressed reads in TPM {.tabset}
 
-TODO: for filtered data
-
-```{r}
-gene_tpm_long %>%
-  group_by(sample) %>%
-  top_n(25, counts) %>%
-  arrange(sample, desc(counts), .by_group = T)
-```
-
 ```{r,results='asis', echo=FALSE}
-for (i in unique(gene_tpm_long$sample)) {
+for (i in unique(gene_tpm_filtered_long$sample)) {
   cat("### Sample ", i, " \n")
   print(knitr::kable(
     gene_tpm_long %>%
