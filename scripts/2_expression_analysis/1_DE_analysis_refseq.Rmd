@@ -784,7 +784,7 @@ fastq_screen %>% pivot_longer(
 gene_annotation %>%
   # select rRNA and globins
   filter(! gene_type %in% c("human","pk")) %>% 
-  left_join(gene_tpm[1:18], by = c("gene_id", "gene_name")) %>%
+  left_join(gene_tpm_filtered[1:18], by = c("gene_id", "gene_name")) %>%
   filter(rowSums(across(.cols = `104974-001-001_S1_L001`:`104974-001-016_S1_L001`)) != 0) %>%
   pivot_longer(cols = `104974-001-001_S1_L001`:`104974-001-016_S1_L001`,
                names_to = "sample",
@@ -814,7 +814,7 @@ Log TPM is often plotted instead of raw values, but can be misleading on barplot
 ```{r, fig.height=12, out.width="100%"}
 gene_annotation %>%
   filter(! gene_type %in% c("human","pk")) %>% 
-  left_join(gene_tpm[1:18], by = c("gene_id", "gene_name")) %>%
+  left_join(gene_tpm_filtered[1:18], by = c("gene_id", "gene_name")) %>%
   filter(rowSums(across(.cols = `104974-001-001_S1_L001`:`104974-001-016_S1_L001`)) != 0) %>%
   pivot_longer(cols = `104974-001-001_S1_L001`:`104974-001-016_S1_L001`,
                names_to = "sample",
@@ -842,7 +842,7 @@ gene_annotation %>%
 ```{r, out.height="130%"}
 gene_annotation %>%
   filter(gene_type == "human_globin") %>% 
-  left_join(gene_tpm[1:18], by = c("gene_id", "gene_name")) %>%
+  left_join(gene_tpm_filtered[1:18], by = c("gene_id", "gene_name")) %>%
   filter(rowSums(across(.cols = `104974-001-001_S1_L001`:`104974-001-016_S1_L001`)) != 0) %>%
   pivot_longer(cols = `104974-001-001_S1_L001`:`104974-001-016_S1_L001`,
                names_to = "sample",
@@ -869,7 +869,7 @@ gene_annotation %>%
 ```{r, fig.height=12, out.width="100%"}
 gene_annotation %>%
   filter(gene_type == "human_rRNA") %>% 
-  left_join(gene_tpm[1:18], by = c("gene_id", "gene_name")) %>%
+  left_join(gene_tpm_filtered[1:18], by = c("gene_id", "gene_name")) %>%
   filter(rowSums(across(.cols = `104974-001-001_S1_L001`:`104974-001-016_S1_L001`)) != 0) %>%
   pivot_longer(cols = `104974-001-001_S1_L001`:`104974-001-016_S1_L001`,
                names_to = "sample",
