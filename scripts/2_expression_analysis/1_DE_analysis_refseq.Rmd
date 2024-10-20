@@ -210,7 +210,7 @@ NC_011902.2	RefSeq	exon	825471	825594	.	+	.	ID=exon-XR_002461722.1-1;Parent=rna-
 
 The bash script in [`scripts/2_expression_analysis/0_gene_annotations-refseq.sh`](./scripts/2_expression_analysis/0_gene_annotations-refseq.sh) was used to retrieve the rRNA genes from both annotation files.
 
-```{bash}
+```
 # zcat "${ref_human}" | awk '$3 ~ /gene/' | cut -f9 | grep -E "gene_biotype=rRNA" | grep -v "rRNA_pseudo" | grep -o "ID=[^;]*" | sed 's/ID=/human_rRNA;/' >> "${output_file}"
 # zcat "${ref_pk}" | cut -f9 | grep -E "gene_biotype=rRNA" | grep -o "ID=[^;]*" | sed 's/ID=/pk_rRNA;/' >> "${output_file}"
 ```
@@ -365,21 +365,13 @@ rowData(gse) <- gene_annotation
 stopifnot(all(rownames(gse) == gene_annotation$gene_id))
 ```
 
-### Create gene subset filters for species and gene types
-
-TODO: after count filtering
-
-```{r}
-pk_genes <- gene_annotation %>% filter(species == "pk") %>% select(gene_id)
-
-```
-
 ### Subset DESeq object on Pk genes
 
 ```{r}
 gse_pk <- gse[rowData(gse)$species == "pk",]
-
-gene_annotation %>% filter(species == "pk") %>% select(gene_id)
+# or 
+# pk_genes <- gene_annotation %>% filter(species == "pk") %>% select(gene_id) %>% pull()
+# gse_pk <- gse[pk_genes]
 ```
 
 ## Filtering out low count genes
@@ -392,7 +384,7 @@ filter_all_genes <- rowSums(counts(gse) >= 10) >= 1
 # should be the same as filtering on tximport raw gene counts from nf-core pipeline
 stopifnot(all( filter_all_genes == (rowSums(gene_counts_txi[,3:18] >= 10) >= 1)))
 
-# create filtered versions of full deseq2 objects
+# create filtered versions of deseq2 object
 gse_filtered <- gse[filter_all_genes, ]
 gse_pk_filtered <- gse_filtered[rowData(gse_filtered)$species == "pk",]
 
@@ -423,13 +415,6 @@ hist(log10(mean.tpm))
 dim(gene_tpm_filtered)
 mean.tpm <- apply(gene_tpm_filtered[, 3:18], 1, mean)
 hist(log10(mean.tpm))
-```
-
-Lastly, we also perform filtering on protein coding Pk genes only:
-
-```{r}
-gse_pk_filtered_protein <- gse_pk_filtered[rowData(gse_pk_filtered)$gene_biotype == "protein_coding",]
-vsd_pk_filtered_protein <- vst(gse_pk_filtered_protein, blind = TRUE)
 ```
 
 ## Transform dataframes to long format
@@ -490,8 +475,8 @@ vsd_pk_filtered <- vst(gse_pk_filtered, blind = TRUE)
 p <- meanSdPlot(assay(vsd_pk_filtered))
 p$gg + labs(title = "VST on filtered counts after subsetting Pk genes")
 
-rld_pk <- rlog(gse_pk, blind = TRUE)
-p <- meanSdPlot(assay(rld_pk))
+rld_pk_filtered <- rlog(gse_pk, blind = TRUE)
+p <- meanSdPlot(assay(rld_pk_filtered))
 p$gg + labs(title = "Rlog on filtered counts after subsetting Pk genes")
 
 # extract transformed gene counts
@@ -505,6 +490,8 @@ p$gg + labs(title = "Rlog on filtered counts after subsetting Pk genes")
 ## Export RDS objects {#rds-objects}
 
 Save all output to rds object for easier loading.
+
+TODO: update list
 
 ```{r message = FALSE}
 # dir.create(here("results-refseq/r_objects/"), showWarnings = FALSE)
@@ -545,12 +532,12 @@ Data clean up
 
 ```{r}
 # clean up
-rm(gene_types_df)
+# rm(gene_types_df)
 rm(globin_df)
 rm(gene_tpm_gencode)
 rm(gene_types_gencode_df)
 rm(transcript_info_gencode)
-rm(transcript_info)
+# rm(transcript_info)
 rm(gff)
 ```
 
@@ -588,7 +575,7 @@ gene_counts_txi_filtered %>% group_by(species, gene_type) %>% summarise(n=n()) %
 
 ```{r}
 n_genes <- dim(gene_counts_txi)[1]
-stopifnot(dim(gene_counts_txi)[1] == (gene_counts_salmon %>% group_by(sample) %>% summarise(n = n()) %>% select(n) %>% unique()))
+# stopifnot(dim(gene_counts_txi)[1] == (gene_counts_salmon %>% group_by(sample) %>% summarise(n = n()) %>% select(n) %>% unique()))
 n_genes_filtered <- dim(gse_filtered)[1]
 
 n_human_genes <- gene_counts_txi %>% filter(species == "human") %>% count() %>% pull()
@@ -598,13 +585,6 @@ n_pk_genes <- dim(gse_pk)[1]
 stopifnot( dim(gse_pk)[1] == (gene_counts_txi %>% filter(species == "pk") %>% count()))
 n_pk_genes_filtered <- dim(gse_pk_filtered)[1]
 stopifnot( dim(gse_pk_filtered)[1] == (gene_counts_txi_filtered %>% filter(species == "pk") %>% count()))
-
-# intersect(rownames(counts(gse_pk)), gff %>%
-#   filter(gene_biotype == "protein_coding") %>%
-#   pull(gene_id))
-
-# n_pk_protein_coding <- dim(gse_pk)[1]
-
 ```
 
 ## Comparison of total RNA levels
@@ -960,7 +940,7 @@ gene_tpm_filtered_long %>%
     labs(x = "Sample", y = "Sum of TPM counts", fill = "RNA type")
 ```
 
-TODO: combined figure + change order of samples
+<!-- TODO: combined figure + change order of samples -->
 
 ## Plot percentage of reads for each species {.tabset}
 
@@ -1587,6 +1567,10 @@ pheatmap(assay(vsd_pk)[select, ],
 ```
 
 ```{r}
+
+gse_pk_filtered_protein <- gse_pk_filtered[rowData(gse_pk_filtered)$gene_biotype == "protein_coding",]
+vsd_pk_filtered_protein <- vst(gse_pk_filtered_protein, blind = TRUE)
+
 select <- order(rowMeans(counts(gse_pk_filtered_protein, normalized = FALSE)),
                 decreasing = TRUE
                 )[1:20]
@@ -1775,7 +1759,7 @@ ggplot(pcaData, aes(PC1, PC2, color = kit_name, shape = filter_name)) +
   theme_bw()
 ```
 
-### Transformations and filtering considerations 
+## Transformations and filtering considerations - TODO
 
 Quick check to see if applying VST to pre-filtered set of counts differs from filtering a pre-transformed list of counts. It appears not to for the Pk genes and subsetting on protein coding genes only, but it does for bigger filters. 
 
