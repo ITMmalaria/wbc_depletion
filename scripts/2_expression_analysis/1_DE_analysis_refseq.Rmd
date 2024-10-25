@@ -1895,6 +1895,49 @@ pheatmap(mat,
 <!--   color = viridis(10) -->
 <!-- ) -->
 <!-- ``` -->
+
+## Correlation plots
+
+### TPM {.tabset}
+
+#### Protein-coding Pk genes - TPM
+
+```{r, message=FALSE, cache=TRUE, fig.height=18, out.width="100%"}
+co_genes <- ggpairs(
+  gene_tpm_filtered %>%
+    filter(species == "pk") %>%
+    filter(gene_biotype == "protein_coding"),
+  columns = 3:18, #`104974-001-001_S1_L001`:`104974-001-002_S1_L001`, 
+  lower = list(continuous = "smooth"),
+  upper = list(continuous = wrap("cor", size = 2)),
+  columnLabels = samples$sample_name
+  )
+
+co_genes + 
+  theme_bw() + 
+  scale_x_continuous(trans = "log1p") + 
+  scale_y_continuous(trans = "log1p")
+
+# ggsave(here("results-refseq/figures/correlation_protein_coding_genes.png"))
+```
+
+<!-- #### Pk VST genes -->
+
+<!-- ```{r message=FALSE} -->
+<!-- co_genes <- ggpairs( -->
+<!--   gene_counts_vst_pk %>% -->
+<!--     filter(species == "pk") %>% -->
+<!--     left_join(gff, by = "gene_id") %>% -->
+<!--     filter(gene_biotype == "protein_coding_gene"), -->
+<!--   columns = 1:16, lower = list(continuous = "smooth"), -->
+<!--   upper = list(continuous = wrap("cor", size = 2)) -->
+<!-- ) -->
+<!-- co_genes + theme_bw() + scale_x_continuous(trans = "log1p") + scale_y_continuous(trans = "log1p") -->
+
+<!-- ggsave(here("results-refseq/figures/correlation_protein_coding_genes_pk.png")) -->
+<!-- ``` -->
+
+
 ## PCA plots {.tabset}
 
 <!-- TODO check impact of filtering transformed data vs filtering prior to transformation -->
@@ -2148,62 +2191,6 @@ ggplot(pcaData, aes(PC1, PC2, color = kit, shape = WBC_depletion)) +
   scale_color_viridis(discrete = TRUE) +
   theme_bw()
 ```
-
-## Correlation plots
-
-### TPM {.tabset}
-
-#### All genes
-
-```{r message=FALSE, cache=TRUE}
-# subset of samples for quick visualisation tests
-# co_genes <- ggpairs(gene_tpm %>% filter(species == "pk"), columns = 3:5, lower = list(
-#   continuous = "smooth"
-# ), upper = list(continuous = wrap("cor", size = 2)))
-# co_genes + theme_bw() + scale_x_continuous(trans = "log1p") + scale_y_continuous(trans = "log1p")
-
-
-# all samples
-co_genes <- ggpairs(gene_tpm %>% filter(species == "pk"), columns = 3:18, lower = list(
-  continuous = "smooth"
-), upper = list(continuous = wrap("cor", size = 2)))
-co_genes + theme_bw() + scale_x_continuous(trans = "log1p") + scale_y_continuous(trans = "log1p")
-
-# ggsave(here("results-refseq/figures/correlation_all_genes.png"))
-```
-
-#### Protein-coding genes
-
-```{r message=FALSE}
-co_genes <- ggpairs(
-  gene_tpm %>%
-    filter(species == "pk") %>%
-    left_join(gff, by = "gene_id") %>%
-    filter(gene_biotype == "protein_coding"),
-  columns = 3:18, lower = list(continuous = "smooth"),
-  upper = list(continuous = wrap("cor", size = 2))
-)
-co_genes + theme_bw() + scale_x_continuous(trans = "log1p") + scale_y_continuous(trans = "log1p")
-
-# ggsave(here("results-refseq/figures/correlation_protein_coding_genes.png"))
-```
-
-<!-- #### Pk VST genes -->
-
-<!-- ```{r message=FALSE} -->
-<!-- co_genes <- ggpairs( -->
-<!--   gene_counts_vst_pk %>% -->
-<!--     filter(species == "pk") %>% -->
-<!--     left_join(gff, by = "gene_id") %>% -->
-<!--     filter(gene_biotype == "protein_coding_gene"), -->
-<!--   columns = 1:16, lower = list(continuous = "smooth"), -->
-<!--   upper = list(continuous = wrap("cor", size = 2)) -->
-<!-- ) -->
-<!-- co_genes + theme_bw() + scale_x_continuous(trans = "log1p") + scale_y_continuous(trans = "log1p") -->
-
-<!-- ggsave(here("results-refseq/figures/correlation_protein_coding_genes_pk.png")) -->
-<!-- ``` -->
-
 
 ----
 
