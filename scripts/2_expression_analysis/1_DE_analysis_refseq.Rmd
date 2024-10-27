@@ -36,7 +36,7 @@ library(GGally)
 library(VennDiagram)
 library(UpSetR)
 library(scales)
-# library(GenomicFeatures)
+library(ggpubr)
 
 ggplot2::theme_set(theme_bw())
 ```
@@ -2219,6 +2219,81 @@ ggplot(pcaData, aes(PC1, PC2, color = kit_name, shape = filter_name)) +
   coord_fixed() +
   scale_color_viridis(discrete = TRUE) +
   theme_bw()
+```
+
+## Figures for publication
+
+```{r combined-figure-2}
+p2_a <- gene_counts_txi_filtered_long %>%
+  left_join(samples, by = "sample") %>%
+  group_by(sample_name, gene_type) %>%
+  summarise(sum_reads = sum(counts, na.rm = TRUE)) %>%
+  mutate(per = 100 * sum_reads / sum(sum_reads)) %>%
+  ggplot(aes(y = sum_reads, x = sample_name, fill = gene_type)) +
+  geom_bar(position = "stack", stat = "identity") +
+  scale_fill_viridis(
+    option = "viridis", discrete = T,
+    # limits = rev,
+    labels = c("human", "human globin", "human rRNA", expression(italic("P. knowlesi")), expression(italic("P. knowlesi rRNA")))
+  ) +
+  coord_flip() +
+  scale_x_discrete(limits = rev) +
+  scale_y_continuous(labels = scales::label_number(scale_cut = cut_short_scale())) +
+  labs(x = "Sample", y = "Sum of gene counts", fill = "RNA type") +
+  theme_classic() +
+  theme(axis.title.y = element_blank(), axis.text.y = element_blank()) +
+  ggtitle("A")
+
+p2_b <- gene_tpm_filtered_long %>%
+  left_join(samples, by = "sample") %>%
+  group_by(sample_name, gene_type) %>%
+  summarise(sum_reads = sum(counts, na.rm = TRUE)) %>%
+  mutate(per = 100 * sum_reads / sum(sum_reads)) %>%
+  ggplot(aes(y = sum_reads, x = sample_name, fill = gene_type)) +
+  geom_bar(position = "stack", stat = "identity") +
+  scale_fill_viridis(
+    option = "viridis", discrete = T,
+    # limits = rev,
+    labels = c("human", "human globin", "human rRNA", expression(italic("P. knowlesi")), expression(italic("P. knowlesi rRNA")))
+  ) +
+  coord_flip() +
+  scale_x_discrete(limits = rev) +
+  scale_y_continuous(labels = scales::label_number(scale_cut = cut_short_scale())) +
+  labs(x = "Sample", y = "Sum of TPM counts", fill = "RNA type") +
+  theme_classic() +
+  theme(axis.title.y = element_blank(), axis.text.y = element_blank()) +
+  ggtitle("B")
+
+p2_c <- gene_counts_txi_filtered_long %>%
+  left_join(samples, by = "sample") %>%
+  filter(species == "pk") %>%
+  group_by(sample_name, gene_type) %>%
+  summarise(sum_reads = sum(counts, na.rm = TRUE)) %>%
+  mutate(per = 100 * sum_reads / sum(sum_reads)) %>%
+  ggplot(aes(y = sum_reads, x = sample_name, fill = gene_type)) +
+  geom_bar(position = "stack", stat = "identity") +
+  # scale_fill_manual(viridis::viridis(5)[4:5]) +
+  scale_fill_manual(
+    values = c(pk = "#5DC863FF", pk_rRNA = "#FDE725FF"),
+    # scale_fill_viridis(
+    #   option = "viridis", discrete = T,
+    #   # limits = rev,
+    labels = c(expression(italic("P. knowlesi")), expression(italic("P. knowlesi rRNA")))
+  ) +
+  coord_flip() +
+  scale_x_discrete(limits = rev) +
+  scale_y_continuous(labels = scales::label_number(scale_cut = cut_short_scale())) +
+  labs(x = "Sample", y = expression(paste("Sum of", italic("P. knowlesi"), " gene counts")), fill = "RNA type") +
+  theme_classic() +
+  theme(axis.title.y = element_blank(), axis.text.y = element_blank()) +
+  ggtitle("C")
+
+fig2 <- ggarrange(
+  p2_a, p2_b, p2_c,
+  ncol = 3,
+  common.legend = TRUE, legend = "bottom"
+)
+fig2
 ```
 
 ## Transformations and filtering considerations - TODO
