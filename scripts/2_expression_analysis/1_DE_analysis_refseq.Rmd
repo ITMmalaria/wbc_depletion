@@ -1825,6 +1825,8 @@ mat_colors <- list(
 names(mat_colors$`Kit Name`) <- unique(anno$`Kit Name`)
 names(mat_colors$`Filter Name`) <- unique(anno$`Filter Name`)
 pheatmap(mat,
+  cluster_rows = FALSE,
+  cluster_cols = FALSE,
   annotation_col = anno,
   annotation_colors = mat_colors,
   color = viridis(n = 256, alpha = 1, begin = 0, end = 1, option = "viridis"),
