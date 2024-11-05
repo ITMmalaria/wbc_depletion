@@ -2061,7 +2061,7 @@ ggplot(pcaData, aes(PC1, PC2, color = kit_name, shape = filter_name)) +
   xlab(paste0("PC1: ", percentVar[1], "% variance")) +
   ylab(paste0("PC2: ", percentVar[2], "% variance")) +
   labs(
-    title = expression(paste("PCA of VST counts of human and ", italic("P. knowlesi"), " genes")),
+    title = expression(paste("PCA of rlog-transformed counts of human and ", italic("P. knowlesi"), " genes")),
     color = "Library preparation kit", shape = "Filter method"
   ) +
   coord_fixed() +
@@ -2097,7 +2097,7 @@ ggplot(pcaData, aes(PC1, PC2, color = kit_name, shape = filter_name)) +
   xlab(paste0("PC1: ", percentVar[1], "% variance")) +
   ylab(paste0("PC2: ", percentVar[2], "% variance")) +
   labs(
-    title = expression(paste("PCA of VST counts of ", italic("P. knowlesi"), " genes")),
+    title = expression(paste("PCA of rlog-transformed counts of ", italic("P. knowlesi"), " genes")),
     color = "Library preparation kit", shape = "Depletion method"
   ) +
   coord_fixed() +
@@ -2133,7 +2133,7 @@ ggplot(pcaData, aes(PC1, PC2, color = kit_name, shape = filter_name)) +
   xlab(paste0("PC1: ", percentVar[1], "% variance")) +
   ylab(paste0("PC2: ", percentVar[2], "% variance")) +
   labs(
-    title = expression(paste("PCA of VST counts of ", italic("P. knowlesi"), " genes")),
+    title = expression(paste("PCA of rlog-transformed counts of ", italic("P. knowlesi"), " genes")),
     color = "Library preparation kit", shape = "Depletion method"
   ) +
   coord_fixed() +
@@ -2170,7 +2170,7 @@ ggplot(pcaData, aes(PC1, PC2, color = kit_name, shape = filter_name)) +
   xlab(paste0("PC1: ", percentVar[1], "% variance")) +
   ylab(paste0("PC2: ", percentVar[2], "% variance")) +
   labs(
-    title = expression(paste("PCA of VST counts of ", italic("P. knowlesi"), " genes")),
+    title = expression(paste("PCA of rlog-transformed counts of ", italic("P. knowlesi"), " genes")),
     color = "Library preparation kit", shape = "Depletion method"
   ) +
   coord_fixed() +
