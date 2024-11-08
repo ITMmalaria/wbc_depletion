@@ -1428,24 +1428,56 @@ UpSetR::upset(
 
 Which samples are most similar to each other in terms of gene expression profile? Use Euclidean distance between samples on `rlog` transformed gene counts (filtered to genes with a minimum of 10 reads per sample).
 
+```{r}
+heatmap_of_distances <- function(transformed_data, title) {
+  
+  sampleDists <- dist(t(assay(transformed_data)))
+  sampleDistMatrix <- as.matrix(sampleDists)
+  rownames(sampleDistMatrix) <- transformed_data$sample_short
+  colnames(sampleDistMatrix) <- NULL
+  
+    
+  # add grouping columns
+  anno <- as.data.frame(colData(transformed_data)[, c("kit_name", "filter_name")]) %>%
+    mutate(kit_name = as.factor(kit_name)) %>%
+    mutate(filter_name = as.factor(filter_name)) %>%
+    rename_with(~ str_to_title(str_replace(.x, "_", " ")))
+  
+  # set names of samples
+  colnames(sampleDistMatrix) <- (transformed_data)$sample_short
+  rownames(anno) <- (transformed_data)$sample_short
+  
+  # Adapted from: https://slowkow.com/notes/pheatmap-tutorial/
+  mat_colors <- list(
+    `Kit Name` = hcl.colors(length(unique(anno$`Kit Name`)), palette = "plasma", alpha = 1),
+    `Filter Name` = palette.colors(length(unique(anno$`Filter Name`)), palette = "Okabe-Ito", alpha = 1)
+  )
+  names(mat_colors$`Kit Name`) <- unique(anno$`Kit Name`)
+  names(mat_colors$`Filter Name`) <- unique(anno$`Filter Name`)
+  
+  # create heatmap
+  pheatmap(sampleDistMatrix,
+    annotation_col = anno,
+    annotation_colors = mat_colors,
+    clustering_distance_rows = sampleDists,
+    clustering_distance_cols = sampleDists,
+    color = viridis(
+      n = 256, alpha = 1,
+      begin = 0, end = 1, option = "viridis"
+    ),
+    # main = "Sample-to-sample Euclidian distance based on all genes",
+    main = title,
+    scale = "none",
+    show_rownames = TRUE,
+    show_colnames=FALSE
+  )
+}
+```
+
 ### All genes (rlog)
 
 ```{r sample-distance-rlog}
-sampleDists <- dist(t(assay(rld_filtered)))
-sampleDistMatrix <- as.matrix(sampleDists)
-rownames(sampleDistMatrix) <- rld_filtered$sample_name
-colnames(sampleDistMatrix) <- NULL
-pheatmap(sampleDistMatrix,
-  clustering_distance_rows = sampleDists,
-  clustering_distance_cols = sampleDists,
-  color = viridis(
-    n = 256, alpha = 1,
-    begin = 0, end = 1, option = "viridis"
-  ),
-  # main = "Sample-to-sample Euclidian distance based on all genes",
-  main = str_wrap("Sample-to-sample Euclidian distance based on all genes - rlog", 40),
-  scale = "none"
-)
+heatmap_of_distances(rld_filtered, str_wrap("Sample-to-sample Euclidian distance based on all genes - rlog", 40))
 ```
 
 <!-- TODO check scaling options https://adairama.wordpress.com/2022/09/10/beware-of-using-the-scale-parameter-in-pheatmap-or-scaled-data-in-complexheatmap/ -->
@@ -1472,99 +1504,57 @@ pheatmap(sampleDistMatrix,
 The VST transform leads to slightly different results: the two large blocks remains the same, but the positioning of samples 5, 11 and 16 differs. Overall, since the samples are so similar overall, slight deviations in the clustering of the distance matrix are not too surprising.
 
 ```{r sample-distance-vst}
-sampleDists <- dist(t(assay(vsd_filtered)))
-sampleDistMatrix <- as.matrix(sampleDists)
-rownames(sampleDistMatrix) <- vsd_filtered$sample_name
-colnames(sampleDistMatrix) <- NULL
-pheatmap(sampleDistMatrix,
-  clustering_distance_rows = sampleDists,
-  clustering_distance_cols = sampleDists,
-  color = viridis(
-    n = 256, alpha = 1,
-    begin = 0, end = 1, option = "viridis"
-  ),
-  main = str_wrap("Sample-to-sample Euclidian distance based on all genes - vst", 40)
-)
+heatmap_of_distances(vsd_filtered, str_wrap("Sample-to-sample Euclidian distance based on all genes - vst", 40))
 ```
 
 ### *P. knowlesi* only (rlog)
 
 ```{r sample-distance-pk-rlog, warning=FALSE}
-sampleDists <- dist(t(assay(rld_filtered[rowData(rld_filtered)$species == "pk", ])))
-sampleDistMatrix <- as.matrix(sampleDists)
-rownames(sampleDistMatrix) <- rld_filtered$sample_name
-colnames(sampleDistMatrix) <- NULL
-pheatmap(sampleDistMatrix,
-  clustering_distance_rows = sampleDists,
-  clustering_distance_cols = sampleDists,
-  color = viridis(
-    n = 256, alpha = 1,
-    begin = 0, end = 1, option = "viridis"
-  ),
-  # main = expression(paste("Sample-to-sample Euclidian distance based on", italic("P. knowlesi"), "genes"))
-  main = str_wrap("Sample-to-sample Euclidian distance based on P. knowlesi genes - rlog before subset", 40)
-)
+heatmap_of_distances(rld_filtered[rowData(rld_filtered)$species == "pk", ], str_wrap("Sample-to-sample Euclidian distance based on P. knowlesi genes - rlog before subset", 40))
 ```
 
 ### *P. knowlesi* only (vst)
 
 ```{r sample-distance-pk-vst, warning=FALSE}
-sampleDists <- dist(t(assay(vsd_filtered[rowData(vsd_filtered)$species == "pk", ])))
-sampleDistMatrix <- as.matrix(sampleDists)
-rownames(sampleDistMatrix) <- vsd_filtered$sample_name
-colnames(sampleDistMatrix) <- NULL
-pheatmap(sampleDistMatrix,
-  clustering_distance_rows = sampleDists,
-  clustering_distance_cols = sampleDists,
-  color = viridis(
-    n = 256, alpha = 1,
-    begin = 0, end = 1, option = "viridis"
-  ),
-  # main = expression(paste("Sample-to-sample Euclidian distance based on", italic("P. knowlesi"), "genes"))
-  main = str_wrap("Sample-to-sample Euclidian distance based on P. knowlesi genes - vst before subset", 40)
-)
+heatmap_of_distances(vsd_filtered[rowData(vsd_filtered)$species == "pk", ], str_wrap("Sample-to-sample Euclidian distance based on P. knowlesi genes - vst before subset", 40))
 ```
 
 ### *P. knowlesi* only (rlog) - transform after subset
 
-This is not the recommended approach.
-
 ```{r sample-distance-pk-rlog-transform, warning=FALSE}
-sampleDists <- dist(t(assay(rld_pk_filtered)))
-sampleDistMatrix <- as.matrix(sampleDists)
-rownames(sampleDistMatrix) <- rld_pk_filtered$sample_name
-colnames(sampleDistMatrix) <- NULL
-pheatmap(sampleDistMatrix,
-  clustering_distance_rows = sampleDists,
-  clustering_distance_cols = sampleDists,
-  color = viridis(
-    n = 256, alpha = 1,
-    begin = 0, end = 1, option = "viridis"
-  ),
-  # main = str_wrap(expression(paste("Sample-to-sample Euclidian distance based on ", italic("P. knowlesi"), " genes")))
-  main = str_wrap("Sample-to-sample Euclidian distance based on P. knowlesi genes - rlog after subset", 40)
-  )
+heatmap_of_distances(rld_pk_filtered, str_wrap("Sample-to-sample Euclidian distance based on P. knowlesi genes - rlog after subset", 40))
 ```
 
 ### *P. knowlesi* only (vst) - transform after subset
 
-This is not the recommended approach.
-
 ```{r sample-distance-pk-vst-transform, warning=FALSE}
-sampleDists <- dist(t(assay(vsd_pk_filtered)))
-sampleDistMatrix <- as.matrix(sampleDists)
-rownames(sampleDistMatrix) <- vsd_pk_filtered$sample_name
-colnames(sampleDistMatrix) <- NULL
-pheatmap(sampleDistMatrix,
-  clustering_distance_rows = sampleDists,
-  clustering_distance_cols = sampleDists,
-  color = viridis(
-    n = 256, alpha = 1,
-    begin = 0, end = 1, option = "viridis"
-  ),
-  # main = expression(paste("Sample-to-sample Euclidian distance based on ", italic("P. knowlesi"), " genes")),
-  main = str_wrap("Sample-to-sample Euclidian distance based on P. knowlesi genes - vst after subset", 40)
-)
+heatmap_of_distances(vsd_pk_filtered, str_wrap("Sample-to-sample Euclidian distance based on P. knowlesi genes - vst after subset", 40))
+```
+
+### *P. knowlesi* protein-coding only (rlog)
+
+```{r sample-distance-pk-coding-rlog-transform, warning=FALSE}
+heatmap_of_distances(rld_pk_filtered_coding, str_wrap("Sample-to-sample Euclidian distance based on P. knowlesi protein-coding genes - rlog after subset", 40))
+```
+
+### *P. knowlesi* protein-coding only (vst)
+
+```{r sample-distance-pk-coding-vst-transform, warning=FALSE}
+heatmap_of_distances(vsd_pk_filtered_coding, str_wrap("Sample-to-sample Euclidian distance based on P. knowlesi protein-coding genes - vst after subset", 40))
+```
+
+### *P. knowlesi* protein-coding only (rlog)
+
+```{r sample-distance-pk-coding-rlog, warning=FALSE}
+heatmap_of_distances(rld_filtered[rowData(rld_filtered)$species == "pk" & rowData(rld_filtered)$gene_biotype == "protein_coding", ],
+                     str_wrap("Sample-to-sample Euclidian distance based on P. knowlesi protein-coding genes", 40))
+```
+
+### *P. knowlesi* protein-coding only (vst)
+
+```{r sample-distance-pk-coding-vst, warning=FALSE}
+heatmap_of_distances(vsd_filtered[rowData(vsd_filtered)$species == "pk" & rowData(vsd_filtered)$gene_biotype == "protein_coding", ],
+                     str_wrap("Sample-to-sample Euclidian distance based on P. knowlesi protein-coding genes", 40))
 ```
 
 <!-- TODO: combine heatmaps into single figure -->
