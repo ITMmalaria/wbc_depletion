@@ -1968,6 +1968,42 @@ ggplot(pcaData, aes(PC1, PC2, color = kit_name, shape = filter_name)) +
   theme_bw()
 ```
 
+### Pk genes protein-coding (rlog)
+
+```{r}
+pcaData <- plotPCA(rld_filtered[rowData(rld_filtered)$species == "pk" & rowData(rld_filtered)$gene_biotype == "protein_coding"], intgroup = c("kit_name", "filter_name"), returnData = TRUE)
+percentVar <- round(100 * attr(pcaData, "percentVar"))
+ggplot(pcaData, aes(PC1, PC2, color = kit_name, shape = filter_name)) +
+  geom_point(size = 4) +
+  xlab(paste0("PC1: ", percentVar[1], "% variance")) +
+  ylab(paste0("PC2: ", percentVar[2], "% variance")) +
+  labs(
+    title = expression(paste("PCA of rlog-transformed counts of ", italic("P. knowlesi"), " genes")),
+    color = "Library preparation kit", shape = "Depletion method"
+  ) +
+  coord_fixed() +
+  scale_color_viridis(discrete = TRUE) +
+  theme_bw()
+```
+
+### Pk genes protein-coding (vst)
+
+```{r}
+pcaData <- plotPCA(vsd_filtered[rowData(vsd_filtered)$species == "pk" & rowData(vsd_filtered)$gene_biotype == "protein_coding"], intgroup = c("kit_name", "filter_name"), returnData = TRUE)
+percentVar <- round(100 * attr(pcaData, "percentVar"))
+ggplot(pcaData, aes(PC1, PC2, color = kit_name, shape = filter_name)) +
+  geom_point(size = 4) +
+  xlab(paste0("PC1: ", percentVar[1], "% variance")) +
+  ylab(paste0("PC2: ", percentVar[2], "% variance")) +
+  labs(
+    title = expression(paste("PCA of VST counts of ", italic("P. knowlesi"), " genes")),
+    color = "Library preparation kit", shape = "Depletion method"
+  ) +
+  coord_fixed() +
+  scale_color_viridis(discrete = TRUE) +
+  theme_bw()
+```
+
 ### Pk genes (rlog) - transform after subset
 
 ```{r}
@@ -2042,18 +2078,29 @@ ggplot(pcaData, aes(PC1, PC2, color = kit_name, shape = filter_name)) +
   theme_bw()
 ```
 
+### Pk genes protein-coding (rlog) - transform after subset
+
+```{r}
+
+pcaData <- plotPCA(rld_pk_filtered_coding, intgroup = c("kit_name", "filter_name"), returnData = TRUE, ntop = 500)
+percentVar <- round(100 * attr(pcaData, "percentVar"))
+ggplot(pcaData, aes(PC1, PC2, color = kit_name, shape = filter_name)) +
+  geom_point(size = 4) +
+  xlab(paste0("PC1: ", percentVar[1], "% variance")) +
+  ylab(paste0("PC2: ", percentVar[2], "% variance")) +
+  labs(
+    title = expression(paste("PCA of rlog counts of ", italic("P. knowlesi"), " protein coding genes")),
+    color = "Library preparation kit", shape = "Depletion method"
+  ) +
+  coord_fixed() +
+  scale_color_viridis(discrete = TRUE) +
+  theme_bw()
+```
+
 ### Pk genes protein-coding (vst) - transform after subset
 
 ```{r}
-protein_gene_filter <- intersect(rownames(rowData(vsd_pk_filtered)), gene_annotation %>% filter(gene_biotype == "protein_coding" & species == "pk") %>% select(gene_id) %>% pull())
-
-# protein_gene_filter <- gene_annotation %>% filter(gene_biotype == "protein_coding" & species == "pk") %>% select(gene_id) %>% pull()
-# gene annotation would need to be filtered on low counts too...
-
-# this works too:
-# vsd_pk_filtered[rowData(vsd_pk_filtered)$gene_biotype == "protein_coding"]
-
-pcaData <- plotPCA(vsd_pk_filtered[protein_gene_filter, ], intgroup = c("kit_name", "filter_name"), returnData = TRUE, ntop = 500)
+pcaData <- plotPCA(vsd_pk_filtered_coding, intgroup = c("kit_name", "filter_name"), returnData = TRUE, ntop = 500)
 percentVar <- round(100 * attr(pcaData, "percentVar"))
 ggplot(pcaData, aes(PC1, PC2, color = kit_name, shape = filter_name)) +
   geom_point(size = 4) +
