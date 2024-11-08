@@ -1709,8 +1709,6 @@ This plot clusters the top n=20 most variable genes centred on the gene's mean e
 
 The choice of transformation only has a minor effect on this subset of top-variable genes.
 
-None of the top variable genes are rRNA genes.
-
 ```{r heatmap-counts-pk-coding-vst-top-var}
 heatmap_of_counts(gse_filtered[rowData(gse_filtered)$species == "pk" & rowData(gse_filtered)$gene_biotype == "protein_coding"],
                   vsd_filtered[rowData(vsd_filtered)$species == "pk" & rowData(vsd_filtered)$gene_biotype == "protein_coding"], 
@@ -1722,8 +1720,6 @@ heatmap_of_counts(gse_filtered[rowData(gse_filtered)$species == "pk" & rowData(g
 This plot cluster the top n=20 most variable genes centred on the gene's mean expression level across all samples using the rlog transformed data.
 
 The choice of transformation only has a minor effect on this subset of top-variable genes.
-
-None of the top variable genes are rRNA genes.
 
 ```{r heatmap-counts-pk-coding-rlog-top-var}
 heatmap_of_counts(gse_filtered[rowData(gse_filtered)$species == "pk" & rowData(gse_filtered)$gene_biotype == "protein_coding"],
@@ -1744,8 +1740,6 @@ heatmap_of_counts(gse_pk_filtered_coding,
 ### Pk genes protein coding - rlog - top expressed genes - transform after subsetting
 
 This plot cluster the top n=20 most highly expressed Pk protein coding genes (centred on the gene's mean expression level) across all samples using the rlog transformed data, without clustering. The data was transformed after subsetting.
-
-None of the top expressed genes in the previous plot are rRNA genes.
 
 ```{r heatmap-counts-pk-coding-rlog-top-mean-transform}
 heatmap_of_counts(gse_pk_filtered_coding,
