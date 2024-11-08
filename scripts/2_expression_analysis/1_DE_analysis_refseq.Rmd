@@ -2183,7 +2183,7 @@ p2_c <- gene_counts_txi_filtered_long %>%
   coord_flip() +
   scale_x_discrete(limits = rev) +
   scale_y_continuous(labels = scales::label_number(scale_cut = cut_short_scale())) +
-  labs(x = "Sample", y = expression(paste("Sum of", italic("P. knowlesi"), " gene counts")), fill = "RNA type") +
+  labs(x = "Sample", y = expression(paste("Sum of ", italic("P. knowlesi"), " gene counts")), fill = "RNA type") +
   theme_classic() +
   theme(axis.title.y = element_blank(), axis.text.y = element_blank()) +
   ggtitle("C")
@@ -2267,7 +2267,7 @@ p2_c <- gene_counts_txi_filtered_long %>%
   ) +
   scale_y_discrete(limits = rev) +
   scale_x_continuous(labels = scales::label_number(scale_cut = cut_short_scale())) +
-  labs(y = "Sample", x = expression(paste("Sum of", italic("P. knowlesi"), " gene counts")), fill = "RNA type") +
+  labs(y = "Sample", x = expression(paste("Sum of ", italic("P. knowlesi"), " gene counts")), fill = "RNA type") +
   theme_classic() +
   theme(axis.title.y = element_blank(), axis.text.y = element_blank()) +
   ggtitle("C")
@@ -2280,24 +2280,100 @@ fig <- ggarrange(
 fig
 ```
 
-## Transformations and filtering considerations - TODO
+### Alternative ordered by library - depletion - filter 
 
-Quick check to see if applying VST to pre-filtered set of counts differs from filtering a pre-transformed list of counts. It appears not to for the Pk genes and subsetting on protein coding genes only, but it does for bigger filters. 
+```{r combined-figure-ordered-alternative, message = FALSE}
+samples_order <- samples %>% 
+  arrange(factor(samples$kit, levels = c("mRNA_illumina", "mRNA_qiagen_FSglobH", "mRNA_qiagen_FSglob", "tRNA_qiagen_FSglobH")),
+          factor(samples$WBC_depletion, levels = c("nofilter", "centpip", "plasmo", "pmacs", "cellulose"))) %>% 
+  select(sample_name)
 
-```{r}
-vsd_prefiltered <- vst(gse_pk_filtered[protein_gene_filter])
-vsd_prefiltered
-vsd_pk_filtered[protein_gene_filter]
-vsd[protein_gene_filter]
+p2_a <- gene_counts_txi_filtered_long %>%
+  left_join(samples, by = "sample") %>%
+  group_by(sample_name, species) %>%
+  summarise(sum_reads = sum(counts, na.rm = TRUE)) %>%
+  mutate(per = 100 * sum_reads / sum(sum_reads)) %>% 
+  # arrange(factor(sample_name, levels = samples_order %>% pull())) %>% 
+  mutate(sample_name = factor(sample_name, levels = samples_order %>% pull())) %>% 
+  ggplot(aes(x = sum_reads, y = sample_name, fill = species)) +
+  geom_bar(position = "stack", stat = "identity") +
+  scale_fill_viridis(
+    option = "viridis", discrete = T,
+    # limits = rev,
+    # labels = c("human", "human globin", "human rRNA", expression(italic("P. knowlesi")), expression(italic("P. knowlesi rRNA")))
+  ) +
+  scale_y_discrete(limits = rev) +
+  scale_x_continuous(labels = scales::label_number(scale_cut = cut_short_scale())) +
+  labs(y = "Sample", x = "Sum of gene counts", fill = "RNA type") +
+  theme_classic() +
+  ggtitle("A")
 
+# print p2a to show y labels
+p2_a
+p2_a <- p2_a + theme(axis.title.y = element_blank(), axis.text.y = element_blank())
 
-rowData(vsd_prefiltered)
-rowData(vsd_pk_filtered[protein_gene_filter])
-rowData(vsd[protein_gene_filter])
+p2_b <- gene_tpm_filtered_long %>%
+  left_join(samples, by = "sample") %>%
+  group_by(sample_name, gene_type) %>%
+  summarise(sum_reads = sum(counts, na.rm = TRUE)) %>%
+  mutate(per = 100 * sum_reads / sum(sum_reads)) %>%
+  mutate(sample_name = factor(sample_name, levels = samples_order %>% pull())) %>% 
+  ggplot(aes(x = sum_reads, y = sample_name, fill = gene_type)) +
+  geom_bar(position = "stack", stat = "identity") +
+  scale_fill_manual(
+    values = c(`human` = "#440154FF", 
+               `human_globin` = "#3B528BFF", 
+               `human_rRNA` = "#21908CFF",
+               `pk_rRNA` = "#5DC863FF",
+               `pk` = "#FDE725FF"),
+      labels = c("human", "human globin", "human rRNA", expression(italic("P. knowlesi")),
+                 expression(italic("P. knowlesi rRNA")))
+    ) +
+  # scale_fill_viridis(
+  #   option = "viridis", discrete = T,
+  #   # limits = rev,
+  #   labels = c("human", "human globin", "human rRNA", expression(italic("P. knowlesi")),
+  #              expression(italic("P. knowlesi rRNA")))
+  # ) +
+  scale_y_discrete(limits = rev) +
+  scale_x_continuous(labels = scales::label_number(scale_cut = cut_short_scale())) +
+  labs(y = "Sample", x = "Sum of TPM counts", fill = "RNA type") +
+  theme_classic() +
+  theme(axis.title.y = element_blank(), axis.text.y = element_blank()) +
+  ggtitle("B")
 
-all.equal(vsd_prefiltered, vsd_pk_filtered[protein_gene_filter])
+p2_c <- gene_counts_txi_filtered_long %>%
+  left_join(samples, by = "sample") %>%
+  filter(species == "pk") %>%
+  group_by(sample_name,) %>%
+  summarise(sum_reads = sum(counts, na.rm = TRUE)) %>%
+  mutate(per = 100 * sum_reads / sum(sum_reads)) %>%
+  mutate(sample_name = factor(sample_name, levels = samples_order %>% pull())) %>% 
+  ggplot(aes(x = sum_reads, y = sample_name)) +
+  geom_bar(position = "stack", stat = "identity", fill = "#FDE725FF") +
+  # scale_fill_manual(viridis::viridis(5)[4:5]) +
+  # scale_fill_manual(
+  #   values = c(pk = "#5DC863FF", pk_rRNA = "#FDE725FF"),
+  #   # scale_fill_viridis(
+  #   #   option = "viridis", discrete = T,
+  #   #   # limits = rev,
+  #   labels = c(expression(italic("P. knowlesi")), expression(italic("P. knowlesi rRNA")))
+  # ) +
+  scale_y_discrete(limits = rev) +
+  scale_x_continuous(labels = scales::label_number(scale_cut = cut_short_scale())) +
+  labs(y = "Sample", x = expression(paste("Sum of ", italic("P. knowlesi"), " protein-coding gene counts")), fill = "RNA type") +
+  theme_classic() +
+  theme(axis.title.y = element_blank(), axis.text.y = element_blank()) +
+  ggtitle("C")
 
-all.equal(vsd_prefiltered, rowData(vsd[protein_gene_filter]))
+fig <- ggarrange(
+  p2_a, p2_b, p2_c,
+  ncol = 3,
+  legend = "bottom",
+  common.legend = TRUE,
+  legend.grob = get_legend(p2_b)
+)
+fig
 ```
 
 ---
