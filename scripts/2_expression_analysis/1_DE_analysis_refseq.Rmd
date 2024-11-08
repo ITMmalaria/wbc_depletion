@@ -393,9 +393,10 @@ filter_all_genes <- rowSums(counts(gse) >= 10) >= 1
 # should be the same as filtering on tximport raw gene counts from nf-core pipeline
 stopifnot(all(filter_all_genes == (rowSums(gene_counts_txi[, 3:18] >= 10) >= 1)))
 
-# create filtered versions of deseq2 object
+# create filtered versions of deseq2 objects: all genes, pk genes, pk protein-coding
 gse_filtered <- gse[filter_all_genes, ]
 gse_pk_filtered <- gse_filtered[rowData(gse_filtered)$species == "pk", ]
+gse_pk_filtered_coding <- gse_filtered[rowData(gse_filtered)$species == "pk" & rowData(gse_filtered)$gene_biotype == "protein_coding", ]
 
 # create filtered versions of other count matrices
 gene_tpm_filtered <- gene_tpm[filter_all_genes, ]
@@ -418,12 +419,12 @@ It is difficult to determine an appropriate threshold for filtering on the TPM l
 ```{r}
 dim(gene_tpm)
 mean.tpm <- apply(gene_tpm[, 3:18], 1, mean)
-hist(log10(mean.tpm))
+hist(log10(mean.tpm), main = "TPM before filtering")
 # hist(log10(mean.tpm+1e-5))
 
 dim(gene_tpm_filtered)
 mean.tpm <- apply(gene_tpm_filtered[, 3:18], 1, mean)
-hist(log10(mean.tpm))
+hist(log10(mean.tpm), main = "TPM after filtering")
 ```
 
 ## Transform dataframes to long format
@@ -448,15 +449,15 @@ For visualisation purposes (e.g., PCA or heatmaps), gene counts should be transf
 
 We use `blind=TRUE` to obtain a fully unsupervised transformation (independent of the design, although we are using an intercept-only model anyway), generally intended to observe batch effects. However, since we can have large differences in counts between samples due to our experimental design (e.g., zero counts for rRNA or globins in some samples), the transformation might not work as well as intended and shrink values too much ([DESeq2 vignette](https://bioconductor.org/packages/devel/bioc/vignettes/DESeq2/inst/doc/DESeq2.html#blind-dispersion-estimation)).
 
-Also note that attempting to transform unfiltered counts can also lead to strange outcomes.
+Also note that attempting to transform unfiltered counts can lead to strange outcomes.
 
-Lastly, the transformation should ideally be performed once on the entire set of gene counts (after filtering out low counts), and only then subset on different gene groups of interest (e.g., species, protein-coding genes only, etc.), rather than re-applying the transformation to a subset of counts.
+Lastly, the transformation should ideally be performed once on the entire set of gene counts (after filtering out low counts), and only then subset on different gene groups of interest (e.g., species, protein-coding genes only, etc.), rather than re-applying the transformation to a subset of counts. However, in actual experiments focused on *P. knowlesi*, researchers will also throw out human gene counts (e.g., by not even mapping to the human reference or simply discarding those reads). In that sense, evaluating the results by transforming only the genes of interest can be considered the better approach.
 
 ```{r, message=FALSE}
-# variance stabilizing transformation without filtering
-vsd <- vst(gse, blind = TRUE)
-p <- meanSdPlot(assay(vsd))
-p$gg + labs(title = "VST on unfiltered counts")
+# # variance stabilizing transformation without filtering
+# vsd <- vst(gse, blind = TRUE)
+# p <- meanSdPlot(assay(vsd))
+# p$gg + labs(title = "VST on unfiltered counts")
 
 # extract transformed gene counts
 # gene_counts_vst <- data.frame(assays(vsd)[[1]])
@@ -465,28 +466,36 @@ p$gg + labs(title = "VST on unfiltered counts")
 #   mutate(gene_id = rownames(gene_counts_vst)) %>%
 #   left_join(transcript_info$gene, by = "gene_id")
 
-# repeat for filtered object
+# variance stabilizing transform on filtered object
 vsd_filtered <- vst(gse_filtered, blind = TRUE)
 p <- meanSdPlot(assay(vsd_filtered))
 p$gg + labs(title = "VST on filtered counts")
 
-# compare with rlog transform
+# compare with rlog transform on filtered object
 rld_filtered <- rlog(gse_filtered, blind = TRUE)
 p <- meanSdPlot(assay(rld_filtered))
 p$gg + labs(title = "Rlog on filtered counts")
 
-# transform after subsetting - not recommended
-vsd_pk <- vst(gse_pk, blind = TRUE)
-p <- meanSdPlot(assay(vsd_pk))
-p$gg + labs(title = "VST on unfiltered counts after subsetting Pk genes")
+# transform after subsetting on species/protein-coding genes
+# vsd_pk <- vst(gse_pk, blind = TRUE)
+# p <- meanSdPlot(assay(vsd_pk))
+# p$gg + labs(title = "VST on unfiltered counts after subsetting Pk genes")
 
 vsd_pk_filtered <- vst(gse_pk_filtered, blind = TRUE)
 p <- meanSdPlot(assay(vsd_pk_filtered))
 p$gg + labs(title = "VST on filtered counts after subsetting Pk genes")
 
-rld_pk_filtered <- rlog(gse_pk, blind = TRUE)
+rld_pk_filtered <- rlog(gse_pk_filtered, blind = TRUE)
 p <- meanSdPlot(assay(rld_pk_filtered))
 p$gg + labs(title = "Rlog on filtered counts after subsetting Pk genes")
+
+vsd_pk_filtered_coding <- vst(gse_pk_filtered_coding, blind = TRUE)
+p <- meanSdPlot(assay(vsd_pk_filtered))
+p$gg + labs(title = "VST on filtered counts after subsetting Pk protein-coding genes")
+
+rld_pk_filtered_coding <- rlog(gse_pk_filtered_coding, blind = TRUE)
+p <- meanSdPlot(assay(rld_pk_filtered))
+p$gg + labs(title = "Rlog on filtered counts after subsetting Pk protein-coding genes")
 
 # extract transformed gene counts
 # gene_counts_vst_pk <- data.frame(assays(vsd_pk)[[1]])
@@ -504,7 +513,7 @@ Save all output to rds object for easier loading.
 
 ```{r export-rds, message = FALSE}
 # dir.create(here("results-refseq/r_objects/"), showWarnings = FALSE)
-#
+# 
 # purrr::iwalk(
 #   tibble:::lst(
 #     fastq_screen,
@@ -529,10 +538,10 @@ Save all output to rds object for easier loading.
 #     # trancsript_info,
 #     rld_filtered,
 #     rld_pk_filtered,
-#     vsd,
+#     rld_pk_filtered_coding,
 #     vsd_filtered,
-#     vsd_pk,
 #     vsd_pk_filtered,
+#     vsd_pk_filtered_coding,
 #     to_long,
 #   ),
 #   ~ saveRDS(.x, file = here(paste0("results-refseq/r_objects/", .y, ".RDS")))
@@ -970,7 +979,7 @@ gene_counts_txi_filtered_long %>%
   labs(x = "Sample", y = "Sum of gene counts", fill = "RNA type")
 ```
 
-### Gene-level TPM - filtered
+### Gene-level TPM
 
 Filtered to only genes with a minimum count of 10 reads for at least 1 sample.
 
@@ -1421,7 +1430,7 @@ Which samples are most similar to each other in terms of gene expression profile
 
 ### All genes (rlog)
 
-```{r}
+```{r sample-distance-rlog}
 sampleDists <- dist(t(assay(rld_filtered)))
 sampleDistMatrix <- as.matrix(sampleDists)
 rownames(sampleDistMatrix) <- rld_filtered$sample_name
@@ -1433,7 +1442,8 @@ pheatmap(sampleDistMatrix,
     n = 256, alpha = 1,
     begin = 0, end = 1, option = "viridis"
   ),
-  main = "Sample-to-sample Euclidian distance based on all genes",
+  # main = "Sample-to-sample Euclidian distance based on all genes",
+  main = str_wrap("Sample-to-sample Euclidian distance based on all genes - rlog", 40),
   scale = "none"
 )
 ```
@@ -1461,7 +1471,7 @@ pheatmap(sampleDistMatrix,
 
 The VST transform leads to slightly different results: the two large blocks remains the same, but the positioning of samples 5, 11 and 16 differs. Overall, since the samples are so similar overall, slight deviations in the clustering of the distance matrix are not too surprising.
 
-```{r}
+```{r sample-distance-vst}
 sampleDists <- dist(t(assay(vsd_filtered)))
 sampleDistMatrix <- as.matrix(sampleDists)
 rownames(sampleDistMatrix) <- vsd_filtered$sample_name
@@ -1473,13 +1483,13 @@ pheatmap(sampleDistMatrix,
     n = 256, alpha = 1,
     begin = 0, end = 1, option = "viridis"
   ),
-  main = "Sample-to-sample Euclidian distance based on all genes"
+  main = str_wrap("Sample-to-sample Euclidian distance based on all genes - vst", 40)
 )
 ```
 
 ### *P. knowlesi* only (rlog)
 
-```{r, warning=FALSE}
+```{r sample-distance-pk-rlog, warning=FALSE}
 sampleDists <- dist(t(assay(rld_filtered[rowData(rld_filtered)$species == "pk", ])))
 sampleDistMatrix <- as.matrix(sampleDists)
 rownames(sampleDistMatrix) <- rld_filtered$sample_name
@@ -1491,13 +1501,14 @@ pheatmap(sampleDistMatrix,
     n = 256, alpha = 1,
     begin = 0, end = 1, option = "viridis"
   ),
-  main = expression(paste("Sample-to-sample Euclidian distance based on", italic("P. knowlesi"), "genes"))
+  # main = expression(paste("Sample-to-sample Euclidian distance based on", italic("P. knowlesi"), "genes"))
+  main = str_wrap("Sample-to-sample Euclidian distance based on P. knowlesi genes - rlog before subset", 40)
 )
 ```
 
 ### *P. knowlesi* only (vst)
 
-```{r, warning=FALSE}
+```{r sample-distance-pk-vst, warning=FALSE}
 sampleDists <- dist(t(assay(vsd_filtered[rowData(vsd_filtered)$species == "pk", ])))
 sampleDistMatrix <- as.matrix(sampleDists)
 rownames(sampleDistMatrix) <- vsd_filtered$sample_name
@@ -1509,7 +1520,8 @@ pheatmap(sampleDistMatrix,
     n = 256, alpha = 1,
     begin = 0, end = 1, option = "viridis"
   ),
-  main = expression(paste("Sample-to-sample Euclidian distance based on", italic("P. knowlesi"), "genes"))
+  # main = expression(paste("Sample-to-sample Euclidian distance based on", italic("P. knowlesi"), "genes"))
+  main = str_wrap("Sample-to-sample Euclidian distance based on P. knowlesi genes - vst before subset", 40)
 )
 ```
 
@@ -1517,7 +1529,7 @@ pheatmap(sampleDistMatrix,
 
 This is not the recommended approach.
 
-```{r, warning=FALSE}
+```{r sample-distance-pk-rlog-transform, warning=FALSE}
 sampleDists <- dist(t(assay(rld_pk_filtered)))
 sampleDistMatrix <- as.matrix(sampleDists)
 rownames(sampleDistMatrix) <- rld_pk_filtered$sample_name
@@ -1529,15 +1541,16 @@ pheatmap(sampleDistMatrix,
     n = 256, alpha = 1,
     begin = 0, end = 1, option = "viridis"
   ),
-  main = expression(paste("Sample-to-sample Euclidian distance based on", italic("P. knowlesi"), "genes"))
-)
+  # main = str_wrap(expression(paste("Sample-to-sample Euclidian distance based on ", italic("P. knowlesi"), " genes")))
+  main = str_wrap("Sample-to-sample Euclidian distance based on P. knowlesi genes - rlog after subset", 40)
+  )
 ```
 
 ### *P. knowlesi* only (vst) - transform after subset
 
 This is not the recommended approach.
 
-```{r, warning=FALSE}
+```{r sample-distance-pk-vst-transform, warning=FALSE}
 sampleDists <- dist(t(assay(vsd_pk_filtered)))
 sampleDistMatrix <- as.matrix(sampleDists)
 rownames(sampleDistMatrix) <- vsd_pk_filtered$sample_name
@@ -1549,374 +1562,216 @@ pheatmap(sampleDistMatrix,
     n = 256, alpha = 1,
     begin = 0, end = 1, option = "viridis"
   ),
-  main = expression(paste("Sample-to-sample Euclidian distance based on", italic("P. knowlesi"), "genes"))
+  # main = expression(paste("Sample-to-sample Euclidian distance based on ", italic("P. knowlesi"), " genes")),
+  main = str_wrap("Sample-to-sample Euclidian distance based on P. knowlesi genes - vst after subset", 40)
 )
 ```
+
 <!-- TODO: combine heatmaps into single figure -->
 
 ## Heatmap of count matrix {.tabset}
 
-**TODO: try quantile breaks for better separation between values instead, see https://slowkow.com/notes/pheatmap-tutorial/** 
+<!-- **TODO: try quantile breaks for better separation between values instead, see https://slowkow.com/notes/pheatmap-tutorial/**  -->
 
-<!-- TODO: check if heatmaps should be made using transformed or raw counts -->
-
-### All genes - vst
-
-This plot clusters the top n=20 most variable genes centred on the gene's average expression level across all samples using the VST data.
-
-```{r}
-# select 20 most variable genes
-topVarGenes <- head(order(rowVars(assay(vsd_filtered)), decreasing = TRUE), 20)
-# select vst transformed data and center
-mat <- assay(vsd_filtered)[topVarGenes, ]
-mat <- mat - rowMeans(mat)
-# add grouping columns
-anno <- as.data.frame(colData(vsd_filtered)[, c("kit_name", "filter_name")]) %>%
+```{r heatmap-count-function}
+heatmap_of_counts <- function(raw_data, transformed_data, top_type = "mean", top_n = 20, center = TRUE) {
+  # select n most highly expressed/variable genes
+  if (top_type == "mean") {
+    select <- order(rowMeans(counts(raw_data, normalized = FALSE)),
+                    decreasing = TRUE
+                    )[1:top_n]
+  } else if (top_type == "median") {
+    select <- order(rowMedians(counts(raw_data, normalized = FALSE)),
+                    decreasing = TRUE
+                    )[1:top_n]
+  } else if (top_type == "var") {
+    select <- head(order(rowVars(assay(transformed_data)), decreasing = TRUE), top_n)
+  }
+  
+  # select transformed data and center if requested
+  mat <- assay(transformed_data)[select, ]
+  
+  if (center == TRUE){
+    mat <- mat - rowMeans(mat)
+  }
+  
+  # add grouping columns
+  anno <- as.data.frame(colData(transformed_data)[, c("kit_name", "filter_name")]) %>%
   mutate(kit_name = as.factor(kit_name)) %>%
   mutate(filter_name = as.factor(filter_name)) %>%
   rename_with(~ str_to_title(str_replace(.x, "_", " ")))
-# set names of samples
-colnames(mat) <- (vsd_filtered)$sample_short
-rownames(anno) <- (vsd_filtered)$sample_short
-# Adapted from: https://slowkow.com/notes/pheatmap-tutorial/
-mat_colors <- list(
-  `Kit Name` = palette.colors(length(unique(anno$`Kit Name`)), palette = "Set 2", alpha = 0.9),
-  `Filter Name` = palette.colors(length(unique(anno$`Filter Name`)), palette = "Okabe-Ito", alpha = 0.9)
-)
-names(mat_colors$`Kit Name`) <- unique(anno$`Kit Name`)
-names(mat_colors$`Filter Name`) <- unique(anno$`Filter Name`)
-pheatmap(mat,
-  annotation_col = anno,
-  annotation_colors = mat_colors,
-  color = viridis(n = 256, alpha = 1, begin = 0, end = 1, option = "viridis"),
-)
+  
+  # set names of samples
+  colnames(mat) <- (transformed_data)$sample_short
+  rownames(anno) <- (transformed_data)$sample_short
+  
+  # Adapted from: https://slowkow.com/notes/pheatmap-tutorial/
+  mat_colors <- list(
+    `Kit Name` = hcl.colors(length(unique(anno$`Kit Name`)), palette = "plasma", alpha = 1),
+    `Filter Name` = palette.colors(length(unique(anno$`Filter Name`)), palette = "Okabe-Ito", alpha = 1)
+  )
+  names(mat_colors$`Kit Name`) <- unique(anno$`Kit Name`)
+  names(mat_colors$`Filter Name`) <- unique(anno$`Filter Name`)
+
+  # create heatmap
+  pheatmap(mat,
+    annotation_col = anno,
+    annotation_colors = mat_colors,
+    color = viridis(n = 256, alpha = 1, begin = 0, end = 1, option = "viridis"),
+    # cluster_rows = FALSE,
+    # cluster_cols = FALSE,
+    show_rownames = FALSE,
+  )
+  
+  # create table of genes
+  gene_annotation %>% filter(gene_id %in% rownames(mat))
+}
 ```
 
-### All genes - rlog
+### All genes - vst - top expressed (mean)
 
-This plot cluster the top n=20 most variable genes centred on the gene's average expression level across all samples using the rlog transformed data.
+This plot clusters the top n=20 most highly expressed genes (mean) centred on the gene's mean expression level across all samples using the VST data.
 
-```{r}
-# select 20 most variable genes
-topVarGenes <- head(order(rowVars(assay(rld_filtered)), decreasing = TRUE), 20)
-# select rlog transformed data and center
-mat <- assay(rld_filtered)[topVarGenes, ]
-mat <- mat - rowMeans(mat)
-# add grouping columns
-anno <- as.data.frame(colData(rld_filtered)[, c("kit_name", "filter_name")]) %>%
-  mutate(kit_name = as.factor(kit_name)) %>%
-  mutate(filter_name = as.factor(filter_name)) %>%
-  rename_with(~ str_to_title(str_replace(.x, "_", " ")))
-# set names of samples
-colnames(mat) <- rld_filtered$sample_short
-rownames(anno) <- rld_filtered$sample_short
-# Adapted from: https://slowkow.com/notes/pheatmap-tutorial/
-mat_colors <- list(
-  `Kit Name` = palette.colors(length(unique(anno$`Kit Name`)), palette = "Set 2", alpha = 0.9),
-  `Filter Name` = palette.colors(length(unique(anno$`Filter Name`)), palette = "Okabe-Ito", alpha = 0.9)
-)
-names(mat_colors$`Kit Name`) <- unique(anno$`Kit Name`)
-names(mat_colors$`Filter Name`) <- unique(anno$`Filter Name`)
-pheatmap(mat,
-  annotation_col = anno,
-  annotation_colors = mat_colors,
-  color = viridis(n = 256, alpha = 1, begin = 0, end = 1, option = "viridis"),
-)
+Several of the top expressed genes are globin and rRNA genes (and most reads are human).
+
+```{r heatmap-counts-all-genes-vst-top-mean}
+heatmap_of_counts(gse_filtered, vsd_filtered, "mean", 20, TRUE)
 ```
 
-### Pk genes protein coding - vst
+### All genes - rlog - top expressed (mean)
 
-This plot clusters the top n=20 most variable genes centred on the gene's average expression level across all samples using the VST data.
+This plot cluster the top n=20 most highly expressed genes (mean) centred on the gene's mean expression level across all samples using the rlog transformed data.
 
-```{r}
-# select 20 most variable genes Pk protein coding genes
-topVarGenes <- head(
-  order(
-    rowVars(
-      assay(vsd_filtered[rowData(vsd_filtered)$species == "pk" & rowData(vsd_filtered)$gene_biotype == "protein_coding"])
-    ),
-    decreasing = TRUE
-  ),
-  20
-)
-# select vst transformed data and center
-mat <- assay(vsd_filtered[rowData(vsd_filtered)$species == "pk" & rowData(vsd_filtered)$gene_biotype == "protein_coding"])[topVarGenes, ]
-mat <- mat - rowMeans(mat)
-# add grouping columns
-anno <- as.data.frame(colData(vsd_filtered)[, c("kit_name", "filter_name")]) %>%
-  mutate(kit_name = as.factor(kit_name)) %>%
-  mutate(filter_name = as.factor(filter_name)) %>%
-  rename_with(~ str_to_title(str_replace(.x, "_", " ")))
-# set names of samples
-colnames(mat) <- vsd_filtered$sample_short
-rownames(anno) <- vsd_filtered$sample_short
-# Adapted from: https://slowkow.com/notes/pheatmap-tutorial/
-mat_colors <- list(
-  `Kit Name` = palette.colors(length(unique(anno$`Kit Name`)), palette = "Set 2", alpha = 0.9),
-  `Filter Name` = palette.colors(length(unique(anno$`Filter Name`)), palette = "Okabe-Ito", alpha = 0.9)
-)
-names(mat_colors$`Kit Name`) <- unique(anno$`Kit Name`)
-names(mat_colors$`Filter Name`) <- unique(anno$`Filter Name`)
-pheatmap(mat,
-  annotation_col = anno,
-  annotation_colors = mat_colors,
-  color = viridis(n = 256, alpha = 1, begin = 0, end = 1, option = "viridis"),
-)
+Several of the top expressed genes are globin and rRNA genes (and most reads are human).
+
+```{r heatmap-counts-all-genes-rlog-top-mean}
+heatmap_of_counts(gse_filtered, rld_filtered, "mean", 20, TRUE)
 ```
 
-### Pk genes protein coding - rlog
+### All genes - vst - top expressed (median)
 
-This plot cluster the top n=20 most variable genes centred on the gene's average expression level across all samples using the rlog transformed data.
+This plot clusters the top n=20 most highly expressed genes (median) centred on the gene's mean expression level across all samples using the VST data.
 
-```{r}
-# select 20 most variable genes Pk protein coding genes
-topVarGenes <- head(
-  order(
-    rowVars(
-      assay(rld_filtered[rowData(rld_filtered)$species == "pk" & rowData(rld_filtered)$gene_biotype == "protein_coding"])
-    ),
-    decreasing = TRUE
-  ),
-  20
-)
-# select vst transformed data and center
-mat <- assay(rld_filtered[rowData(rld_filtered)$species == "pk" & rowData(rld_filtered)$gene_biotype == "protein_coding"])[topVarGenes, ]
-mat <- mat - rowMeans(mat)
-# add grouping columns
-anno <- as.data.frame(colData(rld_filtered)[, c("kit_name", "filter_name")]) %>%
-  mutate(kit_name = as.factor(kit_name)) %>%
-  mutate(filter_name = as.factor(filter_name)) %>%
-  rename_with(~ str_to_title(str_replace(.x, "_", " ")))
-# set names of samples
-colnames(mat) <- rld_filtered$sample_short
-rownames(anno) <- rld_filtered$sample_short
-# Adapted from: https://slowkow.com/notes/pheatmap-tutorial/
-mat_colors <- list(
-  `Kit Name` = palette.colors(length(unique(anno$`Kit Name`)), palette = "Set 2", alpha = 0.9),
-  `Filter Name` = palette.colors(length(unique(anno$`Filter Name`)), palette = "Okabe-Ito", alpha = 0.9)
-)
-names(mat_colors$`Kit Name`) <- unique(anno$`Kit Name`)
-names(mat_colors$`Filter Name`) <- unique(anno$`Filter Name`)
-pheatmap(mat,
-  annotation_col = anno,
-  annotation_colors = mat_colors,
-  color = viridis(n = 256, alpha = 1, begin = 0, end = 1, option = "viridis"),
-)
+Several of the top expressed genes are globin and rRNA genes (and most reads are human).
+
+```{r heatmap-counts-all-genes-vst-top-median}
+heatmap_of_counts(gse_filtered, vsd_filtered, "median", 20, TRUE)
 ```
 
-<!-- TODO - compare with transform after subsetting -->
+### All genes - rlog - top expressed (median)
 
-<!-- TODO - compare with plotting means (needs size factors to be estimated) -->
+This plot cluster the top n=20 most highly expressed genes (median) centred on the gene's mean expression level across all samples using the rlog transformed data.
 
-<!-- ```{r} -->
-<!-- select <- order(rowMeans(counts(estimateSizeFactors(gse_filtered), normalized = FALSE)), -->
-<!--   decreasing = TRUE -->
-<!-- )[1:20] -->
-<!-- df <- as.data.frame(colData(gse_filtered)[, c("RNA_type", "removal", "WBC_depletion")]) -->
-<!-- pheatmap(assay(vsd_filtered)[select, ], -->
-<!--   cluster_rows = FALSE, show_rownames = FALSE, -->
-<!--   cluster_cols = FALSE, annotation_col = df -->
-<!-- ) -->
-<!-- ``` -->
+Several of the top expressed genes are globin and rRNA genes (and most reads are human).
 
-### Pk genes - protein coding - vst - top expressed genes
-
-This plot cluster the top n=20 most highly expressed Pk protein coding genes (not centred on the gene's average expression level) across all samples using the vst transformed data.
-
-```{r}
-# select 20 highest expressed Pk protein coding genes
-select <- order(
-  rowMeans(counts(
-    gse_filtered[rowData(gse_filtered)$species == "pk" & rowData(gse_filtered)$gene_biotype == "protein_coding"],
-    normalized = FALSE
-  )),
-  decreasing = TRUE
-)[1:20]
-# select vst transformed data without centering
-mat <- assay(vsd_filtered[rowData(vsd_filtered)$species == "pk" & rowData(vsd_filtered)$gene_biotype == "protein_coding"])[select, ]
-# mat  <- mat - rowMeans(mat)
-# add grouping columns
-anno <- as.data.frame(colData(vsd_filtered)[, c("kit_name", "filter_name")]) %>%
-  mutate(kit_name = as.factor(kit_name)) %>%
-  mutate(filter_name = as.factor(filter_name)) %>%
-  rename_with(~ str_to_title(str_replace(.x, "_", " ")))
-# set names of samples
-colnames(mat) <- vsd_filtered$sample_short
-rownames(anno) <- vsd_filtered$sample_short
-# Adapted from: https://slowkow.com/notes/pheatmap-tutorial/
-mat_colors <- list(
-  `Kit Name` = palette.colors(length(unique(anno$`Kit Name`)), palette = "Set 2", alpha = 0.9),
-  `Filter Name` = palette.colors(length(unique(anno$`Filter Name`)), palette = "Okabe-Ito", alpha = 0.9)
-)
-names(mat_colors$`Kit Name`) <- unique(anno$`Kit Name`)
-names(mat_colors$`Filter Name`) <- unique(anno$`Filter Name`)
-pheatmap(mat,
-  annotation_col = anno,
-  annotation_colors = mat_colors,
-  color = viridis(n = 256, alpha = 1, begin = 0, end = 1, option = "viridis"),
-)
+```{r heatmap-counts-all-genes-rld-top-median}
+heatmap_of_counts(gse_filtered, rld_filtered, "median", 20, TRUE)
 ```
 
-### Pk genes - protein coding - rlog - top expressed genes
+### All genes - vst - top variable
 
-This plot cluster the top n=20 most highly expressed Pk protein coding genes (not centred on the gene's average expression level) across all samples using the rlog transformed data.
+This plot clusters the top n=20 most variable genes centred on the gene's mean expression level across all samples using the VST data.
 
-```{r}
-# select 20 highest expressed Pk protein coding genes
-select <- order(
-  rowMeans(counts(
-    gse_filtered[rowData(gse_filtered)$species == "pk" & rowData(gse_filtered)$gene_biotype == "protein_coding"],
-    normalized = FALSE
-  )),
-  decreasing = TRUE
-)[1:20]
-# select vst transformed data without centering
-mat <- assay(rld_filtered[rowData(rld_filtered)$species == "pk" & rowData(rld_filtered)$gene_biotype == "protein_coding"])[select, ]
-# mat  <- mat - rowMeans(mat)
-# add grouping columns
-anno <- as.data.frame(colData(rld_filtered)[, c("kit_name", "filter_name")]) %>%
-  mutate(kit_name = as.factor(kit_name)) %>%
-  mutate(filter_name = as.factor(filter_name)) %>%
-  rename_with(~ str_to_title(str_replace(.x, "_", " ")))
-# set names of samples
-colnames(mat) <- rld_filtered$sample_short
-rownames(anno) <- rld_filtered$sample_short
-# Adapted from: https://slowkow.com/notes/pheatmap-tutorial/
-mat_colors <- list(
-  `Kit Name` = palette.colors(length(unique(anno$`Kit Name`)), palette = "Set 2", alpha = 0.9),
-  `Filter Name` = palette.colors(length(unique(anno$`Filter Name`)), palette = "Okabe-Ito", alpha = 0.9)
-)
-names(mat_colors$`Kit Name`) <- unique(anno$`Kit Name`)
-names(mat_colors$`Filter Name`) <- unique(anno$`Filter Name`)
-pheatmap(mat,
-  annotation_col = anno,
-  annotation_colors = mat_colors,
-  color = viridis(n = 256, alpha = 1, begin = 0, end = 1, option = "viridis"),
-)
+Several of the top variable genes are human/Pk rRNA genes (and most reads are human).
+
+```{r heatmap-counts-all-genes-vst-top-var}
+heatmap_of_counts(gse_filtered, vsd_filtered, "var", 20, TRUE)
 ```
 
-Repeat without clustering:
+### All genes - rlog - top variable
 
-```{r}
-# select 20 highest expressed Pk protein coding genes
-select <- order(
-  rowMeans(counts(
-    gse_filtered[rowData(gse_filtered)$species == "pk" & rowData(gse_filtered)$gene_biotype == "protein_coding"],
-    normalized = FALSE
-  )),
-  decreasing = TRUE
-)[1:20]
-# select vst transformed data without centering
-mat <- assay(rld_filtered[rowData(rld_filtered)$species == "pk" & rowData(rld_filtered)$gene_biotype == "protein_coding"])[select, ]
-# mat  <- mat - rowMeans(mat)
-# add grouping columns
-anno <- as.data.frame(colData(rld_filtered)[, c("kit_name", "filter_name")]) %>%
-  mutate(kit_name = as.factor(kit_name)) %>%
-  mutate(filter_name = as.factor(filter_name)) %>%
-  rename_with(~ str_to_title(str_replace(.x, "_", " ")))
-# set names of samples
-colnames(mat) <- rld_filtered$sample_short
-rownames(anno) <- rld_filtered$sample_short
-# Adapted from: https://slowkow.com/notes/pheatmap-tutorial/
-mat_colors <- list(
-  `Kit Name` = palette.colors(length(unique(anno$`Kit Name`)), palette = "Set 2", alpha = 0.9),
-  `Filter Name` = palette.colors(length(unique(anno$`Filter Name`)), palette = "Okabe-Ito", alpha = 0.9)
-)
-names(mat_colors$`Kit Name`) <- unique(anno$`Kit Name`)
-names(mat_colors$`Filter Name`) <- unique(anno$`Filter Name`)
-pheatmap(mat,
-  cluster_rows = FALSE,
-  cluster_cols = FALSE,
-  annotation_col = anno,
-  annotation_colors = mat_colors,
-  color = viridis(n = 256, alpha = 1, begin = 0, end = 1, option = "viridis"),
-)
+This plot cluster the top n=20 most variable genes centred on the gene's mean expression level across all samples using the rlog transformed data.
+
+Several of the top variable genes are human genes (but globin and rRNA are rare).
+
+```{r heatmap-counts-all-genes-rld-top-var}
+heatmap_of_counts(gse_filtered, rld_filtered, "var", 20, TRUE)
 ```
 
-### Pk genes - vst - top expressed genes - transform after subsetting
+### Pk genes protein coding - vst - top expressed (mean)
 
-This plot cluster the top n=20 most highly expressed Pk genes (not centred on the gene's average expression level) across all samples using the vst transformed data, without clustering.
+This plot clusters the top n=20 most highly expressed genes centred on the gene's mean expression level across all samples using the VST data.
 
-The data was transformed after subsetting, which is not the recommended approach.
+The choice of transformation only has a minor effect on this subset of top-expressed genes.
 
-```{r}
-# select 20 highest expressed Pk genes
-select <- order(
-  rowMeans(counts(
-    gse_pk_filtered,
-    normalized = FALSE
-  )),
-  decreasing = TRUE
-)[1:20]
-# select vst transformed data without centering
-mat <- assay(vsd_pk_filtered)[select, ]
-# mat  <- mat - rowMeans(mat)
-# add grouping columns
-anno <- as.data.frame(colData(vsd_pk_filtered)[, c("kit_name", "filter_name")]) %>%
-  mutate(kit_name = as.factor(kit_name)) %>%
-  mutate(filter_name = as.factor(filter_name)) %>%
-  rename_with(~ str_to_title(str_replace(.x, "_", " ")))
-# set names of samples
-colnames(mat) <- vsd_pk_filtered$sample_short
-rownames(anno) <- vsd_pk_filtered$sample_short
-# Adapted from: https://slowkow.com/notes/pheatmap-tutorial/
-mat_colors <- list(
-  `Kit Name` = palette.colors(length(unique(anno$`Kit Name`)), palette = "Set 2", alpha = 0.9),
-  `Filter Name` = palette.colors(length(unique(anno$`Filter Name`)), palette = "Okabe-Ito", alpha = 0.9)
-)
-names(mat_colors$`Kit Name`) <- unique(anno$`Kit Name`)
-names(mat_colors$`Filter Name`) <- unique(anno$`Filter Name`)
-pheatmap(mat,
-  cluster_rows = FALSE,
-  cluster_cols = FALSE,
-  show_rownames = FALSE,
-  annotation_col = anno,
-  annotation_colors = mat_colors,
-  color = viridis(n = 256, alpha = 1, begin = 0, end = 1, option = "viridis"),
-)
+```{r heatmap-counts-pk-coding-vst-top-mean}
+heatmap_of_counts(gse_filtered[rowData(gse_filtered)$species == "pk" & rowData(gse_filtered)$gene_biotype == "protein_coding"],
+                  vsd_filtered[rowData(vsd_filtered)$species == "pk" & rowData(vsd_filtered)$gene_biotype == "protein_coding"], 
+                  "mean", 20, TRUE)
+```
+
+### Pk genes protein coding - rlog - top expressed
+
+This plot cluster the top n=20 most highly expressed genes centred on the gene's mean expression level across all samples using the rlog transformed data.
+
+The choice of transformation only has a minor effect on this subset of top-expressed genes.
+
+```{r heatmap-counts-pk-coding-rlog-top-mean}
+heatmap_of_counts(gse_filtered[rowData(gse_filtered)$species == "pk" & rowData(gse_filtered)$gene_biotype == "protein_coding"],
+                  rld_filtered[rowData(rld_filtered)$species == "pk" & rowData(rld_filtered)$gene_biotype == "protein_coding"], 
+                  "mean", 20, TRUE)
+```
+
+### Pk genes protein coding - vst - top variable
+
+This plot clusters the top n=20 most variable genes centred on the gene's mean expression level across all samples using the VST data.
+
+The choice of transformation only has a minor effect on this subset of top-variable genes.
+
+None of the top variable genes are rRNA genes.
+
+```{r heatmap-counts-pk-coding-vst-top-var}
+heatmap_of_counts(gse_filtered[rowData(gse_filtered)$species == "pk" & rowData(gse_filtered)$gene_biotype == "protein_coding"],
+                  vsd_filtered[rowData(vsd_filtered)$species == "pk" & rowData(vsd_filtered)$gene_biotype == "protein_coding"], 
+                  "var", 20, TRUE)
+```
+
+### Pk genes protein coding - rlog - top variable
+
+This plot cluster the top n=20 most variable genes centred on the gene's mean expression level across all samples using the rlog transformed data.
+
+The choice of transformation only has a minor effect on this subset of top-variable genes.
+
+None of the top variable genes are rRNA genes.
+
+```{r heatmap-counts-pk-coding-rlog-top-var}
+heatmap_of_counts(gse_filtered[rowData(gse_filtered)$species == "pk" & rowData(gse_filtered)$gene_biotype == "protein_coding"],
+                  rld_filtered[rowData(rld_filtered)$species == "pk" & rowData(rld_filtered)$gene_biotype == "protein_coding"], 
+                  "var", 20, TRUE)
+```
+
+### Pk genes protein coding - vst - top expressed genes (mean) - transform after subsetting
+
+This plot cluster the top n=20 most highly expressed Pk protein coding genes (centred on the gene's mean expression level) across all samples using the vst transformed data, without clustering. The data was transformed after subsetting.
+
+```{r heatmap-counts-pk-coding-vst-top-mean-transform}
+heatmap_of_counts(gse_pk_filtered_coding,
+                  vsd_pk_filtered_coding, 
+                  "mean", 20, TRUE)
+```
+
+### Pk genes protein coding - rlog - top expressed genes - transform after subsetting
+
+This plot cluster the top n=20 most highly expressed Pk protein coding genes (centred on the gene's mean expression level) across all samples using the rlog transformed data, without clustering. The data was transformed after subsetting.
+
+None of the top expressed genes in the previous plot are rRNA genes.
+
+```{r heatmap-counts-pk-coding-rlog-top-mean-transform}
+heatmap_of_counts(gse_pk_filtered_coding,
+                  rld_pk_filtered_coding, 
+                  "mean", 20, TRUE)
 ```
 
 ### Pk genes - rlog - top expressed genes - transform after subsetting
 
-This plot cluster the top n=20 most highly expressed Pk genes (not centred on the gene's average expression level) across all samples using the rlog transformed data, without clustering.
+This plot cluster the top n=20 most highly expressed Pk genes (centred on the gene's mean expression level) across all samples using the rlog transformed data, without clustering. The data was transformed after subsetting.
 
-The data was transformed after subsetting, which is not the recommended approach.
+Several of the top expressed genes in the previous plot are rRNA genes, but not all of them.
 
-```{r}
-# select 20 highest expressed Pk genes
-select <- order(
-  rowMeans(counts(
-    gse_pk_filtered,
-    normalized = FALSE
-  )),
-  decreasing = TRUE
-)[1:20]
-# select vst transformed data without centering
-mat <- assay(rld_pk_filtered)[select, ]
-# mat  <- mat - rowMeans(mat)
-# add grouping columns
-anno <- as.data.frame(colData(rld_pk_filtered)[, c("kit_name", "filter_name")]) %>%
-  mutate(kit_name = as.factor(kit_name)) %>%
-  mutate(filter_name = as.factor(filter_name)) %>%
-  rename_with(~ str_to_title(str_replace(.x, "_", " ")))
-# set names of samples
-colnames(mat) <- rld_pk_filtered$sample_short
-rownames(anno) <- rld_pk_filtered$sample_short
-# Adapted from: https://slowkow.com/notes/pheatmap-tutorial/
-mat_colors <- list(
-  `Kit Name` = palette.colors(length(unique(anno$`Kit Name`)), palette = "Set 2", alpha = 0.9),
-  `Filter Name` = palette.colors(length(unique(anno$`Filter Name`)), palette = "Okabe-Ito", alpha = 0.9)
-)
-names(mat_colors$`Kit Name`) <- unique(anno$`Kit Name`)
-names(mat_colors$`Filter Name`) <- unique(anno$`Filter Name`)
-pheatmap(mat,
-  cluster_rows = FALSE,
-  cluster_cols = FALSE,
-  show_rownames = FALSE,
-  annotation_col = anno,
-  annotation_colors = mat_colors,
-  color = viridis(n = 256, alpha = 1, begin = 0, end = 1, option = "viridis"),
-)
+```{r heatmap-counts-pk-all-rlog-top-mean-transform}
+heatmap_of_counts(gse_pk_filtered,
+                  rld_pk_filtered, 
+                  "mean", 20, TRUE)
 ```
 
 <!-- Protein-coding only + filtered on low counts: -->
