@@ -38,6 +38,8 @@ library(UpSetR)
 library(scales)
 library(ggpubr)
 library(ggcorrplot)
+library(ggtext)
+library(svglite)
 
 ggplot2::theme_set(theme_bw())
 ```
@@ -1457,7 +1459,7 @@ heatmap_of_distances <- function(transformed_data, title) {
   names(mat_colors$`Filter Name`) <- unique(anno$`Filter Name`)
   
   # create heatmap
-  pheatmap(sampleDistMatrix,
+  p <- pheatmap(sampleDistMatrix,
     annotation_col = anno,
     annotation_colors = mat_colors,
     clustering_distance_rows = sampleDists,
@@ -1471,7 +1473,10 @@ heatmap_of_distances <- function(transformed_data, title) {
     scale = "none",
     show_rownames = TRUE,
     show_colnames=FALSE
-  )
+  ) +
+    theme(plot.title = element_markdown())
+  
+  return(p)
 }
 ```
 
@@ -1511,7 +1516,7 @@ heatmap_of_distances(vsd_filtered, str_wrap("Sample-to-sample Euclidian distance
 ### *P. knowlesi* only (rlog)
 
 ```{r sample-distance-pk-rlog, warning=FALSE}
-heatmap_of_distances(rld_filtered[rowData(rld_filtered)$species == "pk", ], str_wrap("Sample-to-sample Euclidian distance based on P. knowlesi genes - rlog before subset", 40))
+heatmap_of_distances(rld_filtered[rowData(rld_filtered)$species == "pk", ], str_wrap("Sample-to-sample Euclidian distance based on *P. knowlesi* genes - rlog before subset", 40))
 ```
 
 ### *P. knowlesi* only (vst)
@@ -1523,42 +1528,38 @@ heatmap_of_distances(vsd_filtered[rowData(vsd_filtered)$species == "pk", ], str_
 ### *P. knowlesi* only (rlog) - transform after subset
 
 ```{r sample-distance-pk-rlog-transform, warning=FALSE}
-heatmap_of_distances(rld_pk_filtered, str_wrap("Sample-to-sample Euclidian distance based on P. knowlesi genes - rlog after subset", 40))
+heatmap_of_distances(rld_pk_filtered, str_wrap("Sample-to-sample Euclidian distance based on *P. knowlesi* genes - rlog after subset", 40))
 ```
 
 ### *P. knowlesi* only (vst) - transform after subset
 
 ```{r sample-distance-pk-vst-transform, warning=FALSE}
-heatmap_of_distances(vsd_pk_filtered, str_wrap("Sample-to-sample Euclidian distance based on P. knowlesi genes - vst after subset", 40))
-```
-
-### *P. knowlesi* protein-coding only (rlog)
-
-```{r sample-distance-pk-coding-rlog-transform, warning=FALSE}
-heatmap_of_distances(rld_pk_filtered_coding, str_wrap("Sample-to-sample Euclidian distance based on P. knowlesi protein-coding genes - rlog after subset", 40))
-```
-
-### *P. knowlesi* protein-coding only (vst)
-
-```{r sample-distance-pk-coding-vst-transform, warning=FALSE}
-heatmap_of_distances(vsd_pk_filtered_coding, str_wrap("Sample-to-sample Euclidian distance based on P. knowlesi protein-coding genes - vst after subset", 40))
+heatmap_of_distances(vsd_pk_filtered, str_wrap("Sample-to-sample Euclidian distance based on *P. knowlesi* genes - vst after subset", 40))
 ```
 
 ### *P. knowlesi* protein-coding only (rlog)
 
 ```{r sample-distance-pk-coding-rlog, warning=FALSE}
-heatmap_of_distances(rld_filtered[rowData(rld_filtered)$species == "pk" & rowData(rld_filtered)$gene_biotype == "protein_coding", ],
-                     str_wrap("Sample-to-sample Euclidian distance based on P. knowlesi protein-coding genes", 40))
+heatmap_of_distances(rld_filtered[rowData(rld_filtered)$species == "pk" & rowData(rld_filtered)$gene_biotype == "protein_coding", ], str_wrap("Sample-to-sample Euclidian distance based on *P. knowlesi** protein-coding genes", 40))
 ```
 
 ### *P. knowlesi* protein-coding only (vst)
 
 ```{r sample-distance-pk-coding-vst, warning=FALSE}
-heatmap_of_distances(vsd_filtered[rowData(vsd_filtered)$species == "pk" & rowData(vsd_filtered)$gene_biotype == "protein_coding", ],
-                     str_wrap("Sample-to-sample Euclidian distance based on P. knowlesi protein-coding genes", 40))
+heatmap_of_distances(vsd_filtered[rowData(vsd_filtered)$species == "pk" & rowData(vsd_filtered)$gene_biotype == "protein_coding", ], str_wrap("Sample-to-sample Euclidian distance based on *P. knowlesi* protein-coding genes", 40))
 ```
 
-<!-- TODO: combine heatmaps into single figure -->
+### *P. knowlesi* protein-coding only (rlog) - transform after subset
+
+```{r sample-distance-pk-coding-rlog-transform, warning=FALSE}
+heatmap_of_distances(rld_pk_filtered_coding, str_wrap("Sample-to-sample Euclidian distance based on *P. knowlesi* protein-coding genes - rlog after subset", 40))
+```
+
+### *P. knowlesi* protein-coding only (vst) - transform after subset
+
+```{r sample-distance-pk-coding-vst-transform, warning=FALSE}
+heatmap_of_distances(vsd_pk_filtered_coding, str_wrap("Sample-to-sample Euclidian distance based on *P. knowlesi* protein-coding genes - vst after subset", 40))
+```
 
 ## Heatmap of count matrix {.tabset}
 
@@ -1691,7 +1692,7 @@ heatmap_of_counts(gse_filtered[rowData(gse_filtered)$species == "pk" & rowData(g
                   "mean", 20, TRUE)
 ```
 
-### Pk genes protein coding - rlog - top expressed
+### Pk genes protein coding - rlog - top expressed (mean)
 
 This plot cluster the top n=20 most highly expressed genes centred on the gene's mean expression level across all samples using the rlog transformed data.
 
@@ -1737,13 +1738,87 @@ heatmap_of_counts(gse_pk_filtered_coding,
                   "mean", 20, TRUE)
 ```
 
-### Pk genes protein coding - rlog - top expressed genes - transform after subsetting
+### Pk genes protein coding - rlog - top expressed genes (mean) - transform after subsetting
 
 This plot cluster the top n=20 most highly expressed Pk protein coding genes (centred on the gene's mean expression level) across all samples using the rlog transformed data, without clustering. The data was transformed after subsetting.
 
 ```{r heatmap-counts-pk-coding-rlog-top-mean-transform}
 heatmap_of_counts(gse_pk_filtered_coding,
                   rld_pk_filtered_coding, 
+                  "mean", 20, TRUE)
+```
+
+### Pk genes protein coding - vst - top variable - transform after subsetting
+
+This plot cluster the top n=20 most highly variable Pk protein coding genes across all samples using the vst transformed data, without clustering. The data was transformed after subsetting.
+
+```{r heatmap-counts-pk-coding-vst-top-var-transform}
+heatmap_of_counts(gse_pk_filtered_coding,
+                  vsd_pk_filtered_coding, 
+                  "var", 20, TRUE)
+```
+
+### Pk genes protein coding - rlog - top variable - transform after subsetting
+
+This plot cluster the top n=20 most highly variable Pk protein coding genes across all samples using the rlog transformed data, without clustering. The data was transformed after subsetting.
+
+```{r heatmap-counts-pk-coding-rlog-top-var-transform}
+heatmap_of_counts(gse_pk_filtered_coding,
+                  rld_pk_filtered_coding, 
+                  "var", 20, TRUE)
+```
+
+### Pk genes - vst - top expressed genes
+
+This plot cluster the top n=20 most highly expressed Pk genes (centred on the gene's mean expression level) across all samples using the rlog transformed data, without clustering.
+
+Several of the top expressed genes in the previous plot are rRNA genes, but not all of them.
+
+```{r heatmap-counts-pk-all-vst-top-mean}
+heatmap_of_counts(gse_filtered[rowData(gse_filtered)$species == "pk"],
+                  vsd_filtered[rowData(gse_filtered)$species == "pk"],
+                  "mean", 20, TRUE)
+```
+
+### Pk genes - rlog - top expressed genes
+
+This plot cluster the top n=20 most highly expressed Pk genes (centred on the gene's mean expression level) across all samples using the rlog transformed data, without clustering.
+
+```{r heatmap-counts-pk-all-rlog-top-mean}
+heatmap_of_counts(gse_filtered[rowData(gse_filtered)$species == "pk"],
+                  vsd_filtered[rowData(gse_filtered)$species == "pk"], 
+                  "mean", 20, TRUE)
+```
+
+### Pk genes - vst - top variable
+
+This plot cluster the top n=20 most highly variable Pk genes across all samples using the rlog transformed data, without clustering.
+
+```{r heatmap-counts-pk-all-vst-top-var}
+heatmap_of_counts(gse_filtered[rowData(gse_filtered)$species == "pk"],
+                  vsd_filtered[rowData(gse_filtered)$species == "pk"],
+                  "var", 20, TRUE)
+```
+
+### Pk genes - rlog - top variable
+
+This plot cluster the top n=20 most highly variable Pk genes across all samples using the rlog transformed data, without clustering.
+
+```{r heatmap-counts-pk-all-rlog-top-var}
+heatmap_of_counts(gse_filtered[rowData(gse_filtered)$species == "pk"],
+                  vsd_filtered[rowData(gse_filtered)$species == "pk"], 
+                  "var", 20, TRUE)
+```
+
+### Pk genes - vst - top expressed genes - transform after subsetting
+
+This plot cluster the top n=20 most highly expressed Pk genes (centred on the gene's mean expression level) across all samples using the rlog transformed data, without clustering. The data was transformed after subsetting.
+
+Several of the top expressed genes in the previous plot are rRNA genes, but not all of them.
+
+```{r heatmap-counts-pk-all-vst-top-mean-transform}
+heatmap_of_counts(gse_pk_filtered,
+                  vsd_pk_filtered,
                   "mean", 20, TRUE)
 ```
 
@@ -1757,6 +1832,26 @@ Several of the top expressed genes in the previous plot are rRNA genes, but not 
 heatmap_of_counts(gse_pk_filtered,
                   rld_pk_filtered, 
                   "mean", 20, TRUE)
+```
+
+### Pk genes - vst - top variable - transform after subsetting
+
+This plot cluster the top n=20 most highly variable Pk genes across all samples using the rlog transformed data, without clustering. The data was transformed after subsetting.
+
+```{r heatmap-counts-pk-all-vst-top-var-transform}
+heatmap_of_counts(gse_pk_filtered,
+                  vsd_pk_filtered,
+                  "var", 20, TRUE)
+```
+
+### Pk genes - rlog - top variable - transform after subsetting
+
+This plot cluster the top n=20 most highly variable Pk genes across all samples using the rlog transformed data, without clustering. The data was transformed after subsetting.
+
+```{r heatmap-counts-pk-all-rlog-top-var-transform}
+heatmap_of_counts(gse_pk_filtered,
+                  rld_pk_filtered, 
+                  "var", 20, TRUE)
 ```
 
 <!-- Protein-coding only + filtered on low counts: -->
@@ -1842,11 +1937,9 @@ heatmap_of_counts(gse_pk_filtered,
 <!-- ) -->
 <!-- ``` -->
 
-## Correlation plots
+## Expression count correlation plots
 
-### TPM {.tabset}
-
-#### Protein-coding Pk genes - TPM
+### Protein-coding Pk genes - TPM
 
 The following figure plots the (log-transformed) TPM of each protein-coding *P. knowlesi* gene (filtered on a minimum count of 10 for at least one sample) for all pairwise combinations of samples. 
 
@@ -1860,28 +1953,32 @@ The following figure plots the (log-transformed) TPM of each protein-coding *P. 
 <!-- ) + scale_fill_gradientn(colors = viridis(256, option = 'D')) -->
 <!-- ``` -->
 
-```{r}
+```{r, fig.width=10, fig.height=10}
 mat <- round(
           cor(
             gene_tpm_filtered %>%
               filter(species == "pk") %>%
               filter(gene_biotype == "protein_coding") %>% 
               select(`104974-001-001_S1_L001`:`104974-001-016_S1_L001`) %>% 
-              rename_with(~samples %>% pull(sample_short) %>% as.character(), everything())
+              rename_with(~samples %>% pull(sample_name) %>% as.character(), everything())
             ),
           1)
 corr <- mat
 
 ggcorrplot(corr,
            type = "lower",
-           hc.order = TRUE,
+           method = "circle",
+           hc.order = FALSE,
+           outline.color = "white",
            p.mat = cor_pmat(mat),
-           lab = FALSE) +
-  scale_fill_gradientn(colors = viridis(256, option = 'D'))
+           lab = TRUE,
+           legend.title	= "Pearson correlation of TPM values") +
+  scale_fill_gradientn(colors = viridis(256, option = 'D'), limits = c(-1,1),
+                       name = "Pearson correlation")
 ```
 
 ```{r correlation-plot, message=FALSE, cache=TRUE, fig.height=18, out.width="100%"}
-ggpairs(
+correlation_plot <- ggpairs(
   gene_tpm_filtered %>%
     filter(species == "pk") %>%
     filter(gene_biotype == "protein_coding"),
@@ -1891,9 +1988,15 @@ ggpairs(
 ) +
   theme(
     axis.text = element_text(size = 9),
-    axis.title = element_text(size = 9))
+    axis.title = element_text(size = 9),
+    strip.text.x = element_text(size = 11),
+    strip.text.y = element_text(size = 10),
+    axis.text.x = element_text(size = 6),
+    axis.text.y = element_text(size = 9)
+    )
+  # scale_y_discrete()
 
-ggsave(here("results-refseq/figures/correlation_protein_coding_genes.png"), height = 3000, width = 3000, units = "px")
+correlation_plot
 ```
 
 <!-- ```{r correlation-plot-tester, message=FALSE, cache=TRUE, fig.height=18, out.width="100%"} -->
@@ -1966,22 +2069,27 @@ ggsave(here("results-refseq/figures/correlation_protein_coding_genes.png"), heig
 <!-- ``` -->
 
 ```{r correlation-plot-log, message=FALSE, cache=TRUE, fig.height=18, out.width="100%"}
-co_genes <- ggpairs(
+correlation_plot_log <- ggpairs(
   gene_tpm_filtered %>%
     filter(species == "pk") %>%
     filter(gene_biotype == "protein_coding"),
   columns = 3:18, # `104974-001-001_S1_L001`:`104974-001-002_S1_L001`,
   lower = list(continuous = "smooth"),
-  upper = list(continuous = wrap("cor", size = 2)),
-  columnLabels = samples$sample_name
-)
-
-co_genes +
-  theme_bw() +
+  upper = list(continuous = wrap("cor", size = 5)),
+  columnLabels = samples$sample_short
+) +
+  theme(
+    axis.text = element_text(size = 9),
+    axis.title = element_text(size = 9),
+    strip.text.x = element_text(size = 11),
+    strip.text.y = element_text(size = 10),
+    axis.text.x = element_text(size = 6),
+    axis.text.y = element_text(size = 9)
+    ) +
   scale_x_continuous(trans = "log1p") +
   scale_y_continuous(trans = "log1p")
 
-ggsave(here("results-refseq/figures/correlation_protein_coding_genes-logscaled.png"), height = 3000, width = 3000, units = "px")
+correlation_plot_log
 ```
 
 <!-- #### Pk VST genes -->
@@ -2227,7 +2335,109 @@ ggplot(pcaData, aes(PC1, PC2, color = kit_name, shape = filter_name)) +
   theme_bw()
 ```
 
-## Figures for publication {.tabset}
+# Figures for publication
+
+## Sum of gene counts {.tabset}
+
+### Ordered by library/depletion and filter
+
+```{r combined-figure-ordered-alternative, message = FALSE, fig.width=10}
+samples_order <- samples %>% 
+  arrange(factor(samples$kit, levels = c("mRNA_illumina", "mRNA_qiagen_FSglobH", "mRNA_qiagen_FSglob", "tRNA_qiagen_FSglobH")),
+          factor(samples$WBC_depletion, levels = c("nofilter", "centpip", "plasmo", "pmacs", "cellulose"))) %>% 
+  select(sample_name)
+
+p2_a <- gene_counts_txi_filtered_long %>%
+  left_join(samples, by = "sample") %>%
+  group_by(sample_name, species) %>%
+  summarise(sum_reads = sum(counts, na.rm = TRUE)) %>%
+  mutate(per = 100 * sum_reads / sum(sum_reads)) %>% 
+  # arrange(factor(sample_name, levels = samples_order %>% pull())) %>% 
+  mutate(sample_name = factor(sample_name, levels = samples_order %>% pull())) %>% 
+  ggplot(aes(x = sum_reads, y = sample_name, fill = species)) +
+  geom_bar(position = "stack", stat = "identity") +
+  scale_fill_viridis(
+    option = "viridis", discrete = T,
+    # limits = rev,
+    # labels = c("human", "human globin", "human rRNA", expression(italic("P. knowlesi")), expression(italic("P. knowlesi rRNA")))
+  ) +
+  scale_y_discrete(limits = rev) +
+  scale_x_continuous(labels = scales::label_number(scale_cut = cut_short_scale())) +
+  labs(y = "Sample", x = "Sum of all gene counts", fill = "RNA type") +
+  theme_classic() +
+  ggtitle("A")
+
+# print p2a to show y labels
+p2_a
+p2_a <- p2_a + theme(axis.title.y = element_blank(), axis.text.y = element_blank())
+
+p2_b <- gene_tpm_filtered_long %>%
+  left_join(samples, by = "sample") %>%
+  group_by(sample_name, gene_type) %>%
+  summarise(sum_reads = sum(counts, na.rm = TRUE)) %>%
+  mutate(per = 100 * sum_reads / sum(sum_reads)) %>%
+  mutate(sample_name = factor(sample_name, levels = samples_order %>% pull())) %>% 
+  ggplot(aes(x = sum_reads, y = sample_name, fill = gene_type)) +
+  geom_bar(position = "stack", stat = "identity") +
+  scale_fill_manual(
+    values = c(`human` = "#440154FF", 
+               `human_globin` = "#3B528BFF", 
+               `human_rRNA` = "#21908CFF",
+               `pk_rRNA` = "#5DC863FF",
+               `pk` = "#FDE725FF"),
+      labels = c("human", "human globin", "human rRNA", expression(italic("P. knowlesi")),
+                 expression(italic("P. knowlesi rRNA")))
+    ) +
+  # scale_fill_viridis(
+  #   option = "viridis", discrete = T,
+  #   # limits = rev,
+  #   labels = c("human", "human globin", "human rRNA", expression(italic("P. knowlesi")),
+  #              expression(italic("P. knowlesi rRNA")))
+  # ) +
+  scale_y_discrete(limits = rev) +
+  scale_x_continuous(labels = scales::label_number(scale_cut = cut_short_scale())) +
+  labs(y = "Sample", x = "Sum of TPM counts", fill = "RNA type") +
+  theme_classic() +
+  theme(axis.title.y = element_blank(), axis.text.y = element_blank()) +
+  ggtitle("B")
+
+p2_c <- gene_counts_txi_filtered_long %>%
+  left_join(samples, by = "sample") %>%
+  filter(species == "pk" & gene_biotype == "protein_coding") %>%
+  group_by(sample_name,) %>%
+  summarise(sum_reads = sum(counts, na.rm = TRUE)) %>%
+  mutate(per = 100 * sum_reads / sum(sum_reads)) %>%
+  mutate(sample_name = factor(sample_name, levels = samples_order %>% pull())) %>% 
+  ggplot(aes(x = sum_reads, y = sample_name)) +
+  geom_bar(position = "stack", stat = "identity", fill = "#FDE725FF") +
+  # scale_fill_manual(viridis::viridis(5)[4:5]) +
+  # scale_fill_manual(
+  #   values = c(pk = "#5DC863FF", pk_rRNA = "#FDE725FF"),
+  #   # scale_fill_viridis(
+  #   #   option = "viridis", discrete = T,
+  #   #   # limits = rev,
+  #   labels = c(expression(italic("P. knowlesi")), expression(italic("P. knowlesi rRNA")))
+  # ) +
+  scale_y_discrete(limits = rev) +
+  scale_x_continuous(labels = scales::label_number(scale_cut = cut_short_scale())) +
+  labs(y = "Sample", x = str_wrap("Sum of *P. knowlesi* protein-coding gene counts", 10), fill = "RNA type") +
+  theme_classic() +
+  theme(axis.title.y = element_blank(), axis.text.y = element_blank(), axis.title.x = ggtext::element_markdown()) +
+  ggtitle("C")
+
+fig <- ggarrange(
+  p2_a, p2_b, p2_c,
+  ncol = 3,
+  legend = "bottom",
+  common.legend = TRUE,
+  legend.grob = get_legend(p2_b)
+  # widths = c(2,1,2)
+)
+fig
+
+ggsave(filename = here("results-refseq/figures/gene_counts.svg"), 
+      plot = fig, width=10, height=6)
+```
 
 ### Ordered by sample number
 
@@ -2392,182 +2602,323 @@ fig <- ggarrange(
 fig
 ```
 
-### Alternative ordered by library - depletion - filter 
-
-```{r combined-figure-ordered-alternative, message = FALSE}
-samples_order <- samples %>% 
-  arrange(factor(samples$kit, levels = c("mRNA_illumina", "mRNA_qiagen_FSglobH", "mRNA_qiagen_FSglob", "tRNA_qiagen_FSglobH")),
-          factor(samples$WBC_depletion, levels = c("nofilter", "centpip", "plasmo", "pmacs", "cellulose"))) %>% 
-  select(sample_name)
-
-p2_a <- gene_counts_txi_filtered_long %>%
-  left_join(samples, by = "sample") %>%
-  group_by(sample_name, species) %>%
-  summarise(sum_reads = sum(counts, na.rm = TRUE)) %>%
-  mutate(per = 100 * sum_reads / sum(sum_reads)) %>% 
-  # arrange(factor(sample_name, levels = samples_order %>% pull())) %>% 
-  mutate(sample_name = factor(sample_name, levels = samples_order %>% pull())) %>% 
-  ggplot(aes(x = sum_reads, y = sample_name, fill = species)) +
-  geom_bar(position = "stack", stat = "identity") +
-  scale_fill_viridis(
-    option = "viridis", discrete = T,
-    # limits = rev,
-    # labels = c("human", "human globin", "human rRNA", expression(italic("P. knowlesi")), expression(italic("P. knowlesi rRNA")))
-  ) +
-  scale_y_discrete(limits = rev) +
-  scale_x_continuous(labels = scales::label_number(scale_cut = cut_short_scale())) +
-  labs(y = "Sample", x = "Sum of gene counts", fill = "RNA type") +
-  theme_classic() +
-  ggtitle("A")
-
-# print p2a to show y labels
-p2_a
-p2_a <- p2_a + theme(axis.title.y = element_blank(), axis.text.y = element_blank())
-
-p2_b <- gene_tpm_filtered_long %>%
-  left_join(samples, by = "sample") %>%
-  group_by(sample_name, gene_type) %>%
-  summarise(sum_reads = sum(counts, na.rm = TRUE)) %>%
-  mutate(per = 100 * sum_reads / sum(sum_reads)) %>%
-  mutate(sample_name = factor(sample_name, levels = samples_order %>% pull())) %>% 
-  ggplot(aes(x = sum_reads, y = sample_name, fill = gene_type)) +
-  geom_bar(position = "stack", stat = "identity") +
-  scale_fill_manual(
-    values = c(`human` = "#440154FF", 
-               `human_globin` = "#3B528BFF", 
-               `human_rRNA` = "#21908CFF",
-               `pk_rRNA` = "#5DC863FF",
-               `pk` = "#FDE725FF"),
-      labels = c("human", "human globin", "human rRNA", expression(italic("P. knowlesi")),
-                 expression(italic("P. knowlesi rRNA")))
-    ) +
-  # scale_fill_viridis(
-  #   option = "viridis", discrete = T,
-  #   # limits = rev,
-  #   labels = c("human", "human globin", "human rRNA", expression(italic("P. knowlesi")),
-  #              expression(italic("P. knowlesi rRNA")))
-  # ) +
-  scale_y_discrete(limits = rev) +
-  scale_x_continuous(labels = scales::label_number(scale_cut = cut_short_scale())) +
-  labs(y = "Sample", x = "Sum of TPM counts", fill = "RNA type") +
-  theme_classic() +
-  theme(axis.title.y = element_blank(), axis.text.y = element_blank()) +
-  ggtitle("B")
-
-p2_c <- gene_counts_txi_filtered_long %>%
-  left_join(samples, by = "sample") %>%
-  filter(species == "pk") %>%
-  group_by(sample_name,) %>%
-  summarise(sum_reads = sum(counts, na.rm = TRUE)) %>%
-  mutate(per = 100 * sum_reads / sum(sum_reads)) %>%
-  mutate(sample_name = factor(sample_name, levels = samples_order %>% pull())) %>% 
-  ggplot(aes(x = sum_reads, y = sample_name)) +
-  geom_bar(position = "stack", stat = "identity", fill = "#FDE725FF") +
-  # scale_fill_manual(viridis::viridis(5)[4:5]) +
-  # scale_fill_manual(
-  #   values = c(pk = "#5DC863FF", pk_rRNA = "#FDE725FF"),
-  #   # scale_fill_viridis(
-  #   #   option = "viridis", discrete = T,
-  #   #   # limits = rev,
-  #   labels = c(expression(italic("P. knowlesi")), expression(italic("P. knowlesi rRNA")))
-  # ) +
-  scale_y_discrete(limits = rev) +
-  scale_x_continuous(labels = scales::label_number(scale_cut = cut_short_scale())) +
-  labs(y = "Sample", x = expression(paste("Sum of ", italic("P. knowlesi"), " protein-coding gene counts")), fill = "RNA type") +
-  theme_classic() +
-  theme(axis.title.y = element_blank(), axis.text.y = element_blank()) +
-  ggtitle("C")
-
-fig <- ggarrange(
-  p2_a, p2_b, p2_c,
-  ncol = 3,
-  legend = "bottom",
-  common.legend = TRUE,
-  legend.grob = get_legend(p2_b)
-)
-fig
-```
-
----
-
-Transform after filtering on protein coding
-
+## Heatmaps of distances
 
 ```{r}
-vsd_test <- varianceStabilizingTransformation(gse_pk_filtered[(rowData(gse_pk_filtered)$gene_biotype == "protein_coding")], blind = TRUE)
+heatmap_of_distances <- function(transformed_data, title) {
+  
+  sampleDists <- dist(t(assay(transformed_data)))
+  sampleDistMatrix <- as.matrix(sampleDists)
+  rownames(sampleDistMatrix) <- transformed_data$sample_short
+  colnames(sampleDistMatrix) <- NULL
+  
+    
+  # add grouping columns
+  anno <- as.data.frame(colData(transformed_data)[, c("kit_name", "filter_name")]) %>%
+    mutate(kit_name = as.factor(kit_name)) %>%
+    mutate(filter_name = as.factor(filter_name)) %>%
+    rename_with(~ str_to_title(str_replace(.x, "_", " ")))
+  
+  # set names of samples
+  colnames(sampleDistMatrix) <- (transformed_data)$sample_short
+  rownames(anno) <- (transformed_data)$sample_short
+  
+  # Adapted from: https://slowkow.com/notes/pheatmap-tutorial/
+  mat_colors <- list(
+    `Kit Name` = hcl.colors(length(unique(anno$`Kit Name`)), palette = "plasma", alpha = 1),
+    `Filter Name` = palette.colors(length(unique(anno$`Filter Name`)), palette = "Okabe-Ito", alpha = 1)
+  )
+  names(mat_colors$`Kit Name`) <- unique(anno$`Kit Name`)
+  names(mat_colors$`Filter Name`) <- unique(anno$`Filter Name`)
+  
+  # create heatmap
+  p <- pheatmap(sampleDistMatrix,
+    annotation_col = anno,
+    annotation_colors = mat_colors,
+    clustering_distance_rows = sampleDists,
+    clustering_distance_cols = sampleDists,
+    color = viridis(
+      n = 256, alpha = 1,
+      begin = 0, end = 1, option = "viridis"
+    ),
+    # main = "Sample-to-sample Euclidian distance based on all genes",
+    # main = title,
+    scale = "none",
+    show_rownames = TRUE,
+    show_colnames=FALSE
+  ) 
+  
+  return(p)
+}
 
-pcaData <- plotPCA(vsd_test, intgroup = c("kit", "WBC_depletion"), returnData = TRUE)
-percentVar <- round(100 * attr(pcaData, "percentVar"))
-ggplot(pcaData, aes(PC1, PC2, color = kit, shape = WBC_depletion)) +
-  geom_point(size = 4) +
-  xlab(paste0("PC1: ", percentVar[1], "% variance")) +
-  ylab(paste0("PC2: ", percentVar[2], "% variance")) +
-  labs(
-    title = expression(paste("PCA of VST counts of human and ", italic("P. knowlesi"), " genes")),
-    color = "Library preparation kit", shape = "Depletion method"
-  ) +
-  coord_fixed() +
-  scale_color_viridis(discrete = TRUE) +
-  theme_bw()
+p <- heatmap_of_distances(rld_filtered[rowData(rld_filtered)$species == "pk" & rowData(rld_filtered)$gene_biotype == "protein_coding", ], str_wrap("Sample-to-sample Euclidian distance based on *P. knowlesi** protein-coding genes", 40))
+ggsave(filename = here("results-refseq/figures/genes_pk_coding_sample_dist_rlog.svg"), 
+      plot = p)
+p
+
+p <- heatmap_of_distances(rld_pk_filtered_coding, str_wrap("Sample-to-sample Euclidian distance based on *P. knowlesi* protein-coding genes - rlog after subset", 40))
+ggsave(filename = here("results-refseq/figures/genes_pk_coding_sample_dist_rlog_transform_after_subset.svg"), 
+      plot = p)
+p
 ```
 
-Transform before filtering on protein coding
+## Heatmaps of count matrix
 
 ```{r}
-pcaData <- plotPCA(vsd_pk_filtered[rowData(vsd_pk_filtered)$gene_biotype == "protein_coding"], intgroup = c("kit", "WBC_depletion"), returnData = TRUE)
-percentVar <- round(100 * attr(pcaData, "percentVar"))
-ggplot(pcaData, aes(PC1, PC2, color = kit, shape = WBC_depletion)) +
-  geom_point(size = 4) +
-  xlab(paste0("PC1: ", percentVar[1], "% variance")) +
-  ylab(paste0("PC2: ", percentVar[2], "% variance")) +
-  labs(
-    title = expression(paste("PCA of VST counts of human and ", italic("P. knowlesi"), " genes")),
-    color = "Library preparation kit", shape = "Depletion method"
-  ) +
-  coord_fixed() +
-  scale_color_viridis(discrete = TRUE) +
-  theme_bw()
+heatmap_of_counts <- function(raw_data, transformed_data, top_type = "mean", top_n = 20, center = TRUE) {
+  # select n most highly expressed/variable genes
+  if (top_type == "mean") {
+    select <- order(rowMeans(counts(raw_data, normalized = FALSE)),
+                    decreasing = TRUE
+                    )[1:top_n]
+  } else if (top_type == "median") {
+    select <- order(rowMedians(counts(raw_data, normalized = FALSE)),
+                    decreasing = TRUE
+                    )[1:top_n]
+  } else if (top_type == "var") {
+    select <- head(order(rowVars(assay(transformed_data)), decreasing = TRUE), top_n)
+  }
+  
+  # select transformed data and center if requested
+  mat <- assay(transformed_data)[select, ]
+  
+  if (center == TRUE){
+    mat <- mat - rowMeans(mat)
+  }
+  
+  # add grouping columns
+  anno <- as.data.frame(colData(transformed_data)[, c("kit_name", "filter_name")]) %>%
+  mutate(kit_name = as.factor(kit_name)) %>%
+  mutate(filter_name = as.factor(filter_name)) %>%
+  rename_with(~ str_to_title(str_replace(.x, "_", " ")))
+  
+  # set names of samples
+  colnames(mat) <- (transformed_data)$sample_short
+  rownames(anno) <- (transformed_data)$sample_short
+  
+  # Adapted from: https://slowkow.com/notes/pheatmap-tutorial/
+  mat_colors <- list(
+    `Kit Name` = hcl.colors(length(unique(anno$`Kit Name`)), palette = "plasma", alpha = 1),
+    `Filter Name` = palette.colors(length(unique(anno$`Filter Name`)), palette = "Okabe-Ito", alpha = 1)
+  )
+  names(mat_colors$`Kit Name`) <- unique(anno$`Kit Name`)
+  names(mat_colors$`Filter Name`) <- unique(anno$`Filter Name`)
+
+  # create heatmap
+  pheatmap(mat,
+    annotation_col = anno,
+    annotation_colors = mat_colors,
+    color = viridis(n = 256, alpha = 1, begin = 0, end = 1, option = "viridis"),
+    # cluster_rows = FALSE,
+    # cluster_cols = FALSE,
+    show_rownames = FALSE,
+  )
+}
+
+# p <- heatmap_of_counts(gse_filtered[rowData(gse_filtered)$species == "pk" & rowData(gse_filtered)$gene_biotype == "protein_coding"],
+#                   rld_filtered[rowData(rld_filtered)$species == "pk" & rowData(rld_filtered)$gene_biotype == "protein_coding"], 
+#                   "mean", 20, TRUE)
+# ggsave(filename = here("results-refseq/figures/genes_pk_coding_top_exp_rlog.svg"), 
+#       plot = p, width=10, height=8)
+
+p <- heatmap_of_counts(gse_filtered[rowData(gse_filtered)$species == "pk" & rowData(gse_filtered)$gene_biotype == "protein_coding"],
+                  rld_filtered[rowData(rld_filtered)$species == "pk" & rowData(rld_filtered)$gene_biotype == "protein_coding"], 
+                  "var", 20, TRUE)
+ggsave(filename = here("results-refseq/figures/genes_pk_coding_top_var_rlog.svg"), 
+      plot = p)
+p
+
+# p <- heatmap_of_counts(gse_pk_filtered_coding,
+#                   rld_pk_filtered_coding, 
+#                   "mean", 20, TRUE)
+# ggsave(filename = here("results-refseq/figures/genes_pk_coding_top_exp_rlog_transform_after_subset.svg"), 
+#       plot = p, width=10, height=8)
+
+p <- heatmap_of_counts(gse_pk_filtered_coding,
+                  rld_pk_filtered_coding, 
+                  "var", 20, TRUE)
+ggsave(filename = here("results-refseq/figures/genes_pk_coding_top_var_rlog_transform_after_subset.svg"), 
+      plot = p)
+p
+
+# p <- heatmap_of_counts(gse_filtered[rowData(gse_filtered)$species == "pk"],
+#                   vsd_filtered[rowData(gse_filtered)$species == "pk"], 
+#                   "mean", 20, TRUE)
+# ggsave(filename = here("results-refseq/figures/genes_pk_all_top_exp_rlog.svg"), 
+#       plot = p, width=10, height=8)
+
+p <- heatmap_of_counts(gse_filtered[rowData(gse_filtered)$species == "pk"],
+                  vsd_filtered[rowData(gse_filtered)$species == "pk"], 
+                  "var", 20, TRUE)
+ggsave(filename = here("results-refseq/figures/genes_pk_all_top_var_rlog.svg"), 
+      plot = p)
+p
+
+# p <- heatmap_of_counts(gse_pk_filtered,
+#                   rld_pk_filtered, 
+#                   "mean", 20, TRUE)
+# ggsave(filename = here("results-refseq/figures/genes_pk_all_top_exp_rlog_transform_after_subset.svg"), 
+#       plot = p, width=10, height=8)
+
+p <- heatmap_of_counts(gse_pk_filtered,
+                  rld_pk_filtered, 
+                  "var", 20, TRUE)
+ggsave(filename = here("results-refseq/figures/genes_pk_all_top_var_rlog_transform_after_subset.svg"), 
+      plot = p)
+p
 ```
 
-Transform after filtering on non-protein coding
+## Gene expression count correlation
 
-```{r}
-# vsd_test <- vst(gse_pk_filtered[(rowData(gse_pk_filtered)$gene_biotype != "protein_coding")], blind = TRUE)
+```{r, fig.width=10, fig.height=10}
+mat <- round(
+          cor(
+            gene_tpm_filtered %>%
+              filter(species == "pk") %>%
+              filter(gene_biotype == "protein_coding") %>% 
+              select(`104974-001-001_S1_L001`:`104974-001-016_S1_L001`) %>% 
+              rename_with(~samples %>% pull(sample_name) %>% as.character(), everything())
+            ),
+          1)
+corr <- mat
 
-vsd_test <- varianceStabilizingTransformation(gse_pk_filtered[(rowData(gse_pk_filtered)$gene_biotype != "protein_coding")], blind = TRUE)
-
-pcaData <- plotPCA(vsd_test, intgroup = c("kit", "WBC_depletion"), returnData = TRUE)
-percentVar <- round(100 * attr(pcaData, "percentVar"))
-ggplot(pcaData, aes(PC1, PC2, color = kit, shape = WBC_depletion)) +
-  geom_point(size = 4) +
-  xlab(paste0("PC1: ", percentVar[1], "% variance")) +
-  ylab(paste0("PC2: ", percentVar[2], "% variance")) +
-  labs(
-    title = expression(paste("PCA of VST counts of human and ", italic("P. knowlesi"), " genes")),
-    color = "Library preparation kit", shape = "Depletion method"
-  ) +
-  coord_fixed() +
-  scale_color_viridis(discrete = TRUE) +
-  theme_bw()
+p <- ggcorrplot(corr,
+           type = "lower",
+           method = "circle",
+           hc.order = FALSE,
+           outline.color = "white",
+           p.mat = cor_pmat(mat),
+           lab = TRUE,
+           legend.title	= "Pearson correlation of TPM values") +
+  scale_fill_gradientn(colors = viridis(256, option = 'D'), limits = c(-1,1), name = "Pearson correlation")
+ggsave(filename = here("results-refseq/figures/pk_coding_tpm_correlation.svg"), 
+      plot = p,
+      width = 10, height = 10)
+p
 ```
 
-Transform before filtering on non-protein coding
+```{r correlation-plot-export, message=FALSE, cache=TRUE, fig.height=18, out.width="100%"}
+correlation_plot
 
-```{r}
-pcaData <- plotPCA(vsd_pk_filtered[rowData(vsd_pk_filtered)$gene_biotype != "protein_coding"], intgroup = c("kit", "WBC_depletion"), returnData = TRUE)
-percentVar <- round(100 * attr(pcaData, "percentVar"))
-ggplot(pcaData, aes(PC1, PC2, color = kit, shape = WBC_depletion)) +
-  geom_point(size = 4) +
-  xlab(paste0("PC1: ", percentVar[1], "% variance")) +
-  ylab(paste0("PC2: ", percentVar[2], "% variance")) +
-  labs(
-    title = expression(paste("PCA of VST counts of human and ", italic("P. knowlesi"), " genes")),
-    color = "Library preparation kit", shape = "Depletion method"
-  ) +
-  coord_fixed() +
-  scale_color_viridis(discrete = TRUE) +
-  theme_bw()
+ggsave(filename = here("results-refseq/figures/correlation_protein_coding_genes_pk.png"), 
+      plot = correlation_plot,
+      height = 4000, width = 6000, units = "px")
+ggsave(filename = here("results-refseq/figures/correlation_protein_coding_genes_pk.svg"),
+      plot = correlation_plot,
+      height = 4000, width = 6000, units = "px")
 ```
+
+```{r correlation-plot-log-export, message=FALSE, cache=TRUE, fig.height=18, out.width="100%"}
+correlation_plot_log
+
+ggsave(here("results-refseq/figures/correlation_protein_coding_genes_logscaled.png"), 
+       plot = correlation_plot_log,
+       height = 4000, width = 6000, units = "px")
+ggsave(here("results-refseq/figures/correlation_protein_coding_genes_logscaled.svg"), 
+       plot = correlation_plot_log,
+       height = 4000, width = 6000, units = "px")
+```
+
+<!-- ## Transformations and filtering considerations - TODO -->
+
+<!-- Quick check to see if applying VST to pre-filtered set of counts differs from filtering a pre-transformed list of counts. It appears not to for the Pk genes and subsetting on protein coding genes only, but it does for bigger filters.  -->
+
+<!-- ```{r} -->
+<!-- vsd_prefiltered <- vst(gse_pk_filtered[protein_gene_filter]) -->
+<!-- vsd_prefiltered -->
+<!-- vsd_pk_filtered[protein_gene_filter] -->
+<!-- vsd[protein_gene_filter] -->
+
+
+<!-- rowData(vsd_prefiltered) -->
+<!-- rowData(vsd_pk_filtered[protein_gene_filter]) -->
+<!-- rowData(vsd[protein_gene_filter]) -->
+
+<!-- all.equal(vsd_prefiltered, vsd_pk_filtered[protein_gene_filter]) -->
+
+<!-- all.equal(vsd_prefiltered, rowData(vsd[protein_gene_filter])) -->
+<!-- ``` -->
+
+<!-- --- -->
+
+<!-- Transform after filtering on protein coding -->
+
+
+<!-- ```{r} -->
+<!-- vsd_test <- varianceStabilizingTransformation(gse_pk_filtered[(rowData(gse_pk_filtered)$gene_biotype == "protein_coding")], blind = TRUE) -->
+
+<!-- pcaData <- plotPCA(vsd_test, intgroup = c("kit", "WBC_depletion"), returnData = TRUE) -->
+<!-- percentVar <- round(100 * attr(pcaData, "percentVar")) -->
+<!-- ggplot(pcaData, aes(PC1, PC2, color = kit, shape = WBC_depletion)) + -->
+<!--   geom_point(size = 4) + -->
+<!--   xlab(paste0("PC1: ", percentVar[1], "% variance")) + -->
+<!--   ylab(paste0("PC2: ", percentVar[2], "% variance")) + -->
+<!--   labs( -->
+<!--     title = expression(paste("PCA of VST counts of human and ", italic("P. knowlesi"), " genes")), -->
+<!--     color = "Library preparation kit", shape = "Depletion method" -->
+<!--   ) + -->
+<!--   coord_fixed() + -->
+<!--   scale_color_viridis(discrete = TRUE) + -->
+<!--   theme_bw() -->
+<!-- ``` -->
+
+<!-- Transform before filtering on protein coding -->
+
+<!-- ```{r} -->
+<!-- pcaData <- plotPCA(vsd_pk_filtered[rowData(vsd_pk_filtered)$gene_biotype == "protein_coding"], intgroup = c("kit", "WBC_depletion"), returnData = TRUE) -->
+<!-- percentVar <- round(100 * attr(pcaData, "percentVar")) -->
+<!-- ggplot(pcaData, aes(PC1, PC2, color = kit, shape = WBC_depletion)) + -->
+<!--   geom_point(size = 4) + -->
+<!--   xlab(paste0("PC1: ", percentVar[1], "% variance")) + -->
+<!--   ylab(paste0("PC2: ", percentVar[2], "% variance")) + -->
+<!--   labs( -->
+<!--     title = expression(paste("PCA of VST counts of human and ", italic("P. knowlesi"), " genes")), -->
+<!--     color = "Library preparation kit", shape = "Depletion method" -->
+<!--   ) + -->
+<!--   coord_fixed() + -->
+<!--   scale_color_viridis(discrete = TRUE) + -->
+<!--   theme_bw() -->
+<!-- ``` -->
+
+<!-- Transform after filtering on non-protein coding -->
+
+<!-- ```{r} -->
+<!-- # vsd_test <- vst(gse_pk_filtered[(rowData(gse_pk_filtered)$gene_biotype != "protein_coding")], blind = TRUE) -->
+
+<!-- vsd_test <- varianceStabilizingTransformation(gse_pk_filtered[(rowData(gse_pk_filtered)$gene_biotype != "protein_coding")], blind = TRUE) -->
+
+<!-- pcaData <- plotPCA(vsd_test, intgroup = c("kit", "WBC_depletion"), returnData = TRUE) -->
+<!-- percentVar <- round(100 * attr(pcaData, "percentVar")) -->
+<!-- ggplot(pcaData, aes(PC1, PC2, color = kit, shape = WBC_depletion)) + -->
+<!--   geom_point(size = 4) + -->
+<!--   xlab(paste0("PC1: ", percentVar[1], "% variance")) + -->
+<!--   ylab(paste0("PC2: ", percentVar[2], "% variance")) + -->
+<!--   labs( -->
+<!--     title = expression(paste("PCA of VST counts of human and ", italic("P. knowlesi"), " genes")), -->
+<!--     color = "Library preparation kit", shape = "Depletion method" -->
+<!--   ) + -->
+<!--   coord_fixed() + -->
+<!--   scale_color_viridis(discrete = TRUE) + -->
+<!--   theme_bw() -->
+<!-- ``` -->
+
+<!-- Transform before filtering on non-protein coding -->
+
+<!-- ```{r} -->
+<!-- pcaData <- plotPCA(vsd_pk_filtered[rowData(vsd_pk_filtered)$gene_biotype != "protein_coding"], intgroup = c("kit", "WBC_depletion"), returnData = TRUE) -->
+<!-- percentVar <- round(100 * attr(pcaData, "percentVar")) -->
+<!-- ggplot(pcaData, aes(PC1, PC2, color = kit, shape = WBC_depletion)) + -->
+<!--   geom_point(size = 4) + -->
+<!--   xlab(paste0("PC1: ", percentVar[1], "% variance")) + -->
+<!--   ylab(paste0("PC2: ", percentVar[2], "% variance")) + -->
+<!--   labs( -->
+<!--     title = expression(paste("PCA of VST counts of human and ", italic("P. knowlesi"), " genes")), -->
+<!--     color = "Library preparation kit", shape = "Depletion method" -->
+<!--   ) + -->
+<!--   coord_fixed() + -->
+<!--   scale_color_viridis(discrete = TRUE) + -->
+<!--   theme_bw() -->
+<!-- ``` -->
 
 ----
 
