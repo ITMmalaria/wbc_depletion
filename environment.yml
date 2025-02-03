@@ -10,4 +10,3 @@ dependencies:
   - ca-certificates
   - certifi
   - openssl
-prefix: /home/pmoris/mambaforge/envs/wbc_depletion
