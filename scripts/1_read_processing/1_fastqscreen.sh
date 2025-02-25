@@ -12,8 +12,8 @@ PROJECT_DIR=$(realpath "$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null 
 fastq_dir="${PROJECT_DIR}/data/fastq"
 output_dir="${PROJECT_DIR}/results/fastq-screen"
 fastq_screen_conf="${PROJECT_DIR}/config/fastq-screen.conf"
-ref_human="${PROJECT_DIR}/data/ref/GRCh38.primary_assembly.genome.fa.gz"
-ref_pk="${PROJECT_DIR}/data/ref/PlasmoDB-68_PknowlesiH_Genome.fasta"
+ref_human="${PROJECT_DIR}/data/ref/GCF_000001405.40_GRCh38.p14_genomic.fna.gz"
+ref_pk="${PROJECT_DIR}/data/ref/GCF_000006355.2_GCA_000006355.2_genomic.fna.gz"
 n_threads="${SLURM_CPUS_PER_TASK:-8}"
 
 # create output directories
