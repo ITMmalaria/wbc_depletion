@@ -1,0 +1,321 @@
+Module	Section	Sample Name	Source
+Picard	DuplicationMetrics	104974-001-003_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/picard/markduplicates/104974-001-003_S1_L001.markdup.sorted.MarkDuplicates.metrics.txt
+Picard	DuplicationMetrics	104974-001-004_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/picard/markduplicates/104974-001-004_S1_L001.markdup.sorted.MarkDuplicates.metrics.txt
+Picard	DuplicationMetrics	104974-001-010_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/picard/markduplicates/104974-001-010_S1_L001.markdup.sorted.MarkDuplicates.metrics.txt
+Picard	DuplicationMetrics	104974-001-002_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/picard/markduplicates/104974-001-002_S1_L001.markdup.sorted.MarkDuplicates.metrics.txt
+Picard	DuplicationMetrics	104974-001-011_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/picard/markduplicates/104974-001-011_S1_L001.markdup.sorted.MarkDuplicates.metrics.txt
+Picard	DuplicationMetrics	104974-001-005_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/picard/markduplicates/104974-001-005_S1_L001.markdup.sorted.MarkDuplicates.metrics.txt
+Picard	DuplicationMetrics	104974-001-001_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/picard/markduplicates/104974-001-001_S1_L001.markdup.sorted.MarkDuplicates.metrics.txt
+Picard	DuplicationMetrics	104974-001-012_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/picard/markduplicates/104974-001-012_S1_L001.markdup.sorted.MarkDuplicates.metrics.txt
+Picard	DuplicationMetrics	104974-001-007_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/picard/markduplicates/104974-001-007_S1_L001.markdup.sorted.MarkDuplicates.metrics.txt
+Picard	DuplicationMetrics	104974-001-008_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/picard/markduplicates/104974-001-008_S1_L001.markdup.sorted.MarkDuplicates.metrics.txt
+Picard	DuplicationMetrics	104974-001-015_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/picard/markduplicates/104974-001-015_S1_L001.markdup.sorted.MarkDuplicates.metrics.txt
+Picard	DuplicationMetrics	104974-001-009_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/picard/markduplicates/104974-001-009_S1_L001.markdup.sorted.MarkDuplicates.metrics.txt
+Picard	DuplicationMetrics	104974-001-014_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/picard/markduplicates/104974-001-014_S1_L001.markdup.sorted.MarkDuplicates.metrics.txt
+Picard	DuplicationMetrics	104974-001-013_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/picard/markduplicates/104974-001-013_S1_L001.markdup.sorted.MarkDuplicates.metrics.txt
+Picard	DuplicationMetrics	104974-001-006_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/picard/markduplicates/104974-001-006_S1_L001.markdup.sorted.MarkDuplicates.metrics.txt
+Picard	DuplicationMetrics	104974-001-016_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/picard/markduplicates/104974-001-016_S1_L001.markdup.sorted.MarkDuplicates.metrics.txt
+QualiMap	rna_genome_results	104974-001-009_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/qualimap/104974-001-009_S1_L001/rnaseq_qc_results.txt
+QualiMap	rna_genome_results	104974-001-001_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/qualimap/104974-001-001_S1_L001/rnaseq_qc_results.txt
+QualiMap	rna_genome_results	104974-001-015_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/qualimap/104974-001-015_S1_L001/rnaseq_qc_results.txt
+QualiMap	rna_genome_results	104974-001-010_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/qualimap/104974-001-010_S1_L001/rnaseq_qc_results.txt
+QualiMap	rna_genome_results	104974-001-006_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/qualimap/104974-001-006_S1_L001/rnaseq_qc_results.txt
+QualiMap	rna_genome_results	104974-001-007_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/qualimap/104974-001-007_S1_L001/rnaseq_qc_results.txt
+QualiMap	rna_genome_results	104974-001-013_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/qualimap/104974-001-013_S1_L001/rnaseq_qc_results.txt
+QualiMap	rna_genome_results	104974-001-016_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/qualimap/104974-001-016_S1_L001/rnaseq_qc_results.txt
+QualiMap	rna_genome_results	104974-001-004_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/qualimap/104974-001-004_S1_L001/rnaseq_qc_results.txt
+QualiMap	rna_genome_results	104974-001-014_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/qualimap/104974-001-014_S1_L001/rnaseq_qc_results.txt
+QualiMap	rna_genome_results	104974-001-005_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/qualimap/104974-001-005_S1_L001/rnaseq_qc_results.txt
+QualiMap	rna_genome_results	104974-001-002_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/qualimap/104974-001-002_S1_L001/rnaseq_qc_results.txt
+QualiMap	rna_genome_results	104974-001-011_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/qualimap/104974-001-011_S1_L001/rnaseq_qc_results.txt
+QualiMap	rna_genome_results	104974-001-003_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/qualimap/104974-001-003_S1_L001/rnaseq_qc_results.txt
+QualiMap	rna_genome_results	104974-001-012_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/qualimap/104974-001-012_S1_L001/rnaseq_qc_results.txt
+QualiMap	rna_genome_results	104974-001-008_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/qualimap/104974-001-008_S1_L001/rnaseq_qc_results.txt
+QualiMap	rna_coverage_histogram	104974-001-009_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/qualimap/104974-001-009_S1_L001/raw_data_qualimapReport/coverage_profile_along_genes_(total).txt
+QualiMap	rna_coverage_histogram	104974-001-001_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/qualimap/104974-001-001_S1_L001/raw_data_qualimapReport/coverage_profile_along_genes_(total).txt
+QualiMap	rna_coverage_histogram	104974-001-015_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/qualimap/104974-001-015_S1_L001/raw_data_qualimapReport/coverage_profile_along_genes_(total).txt
+QualiMap	rna_coverage_histogram	104974-001-010_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/qualimap/104974-001-010_S1_L001/raw_data_qualimapReport/coverage_profile_along_genes_(total).txt
+QualiMap	rna_coverage_histogram	104974-001-006_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/qualimap/104974-001-006_S1_L001/raw_data_qualimapReport/coverage_profile_along_genes_(total).txt
+QualiMap	rna_coverage_histogram	104974-001-007_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/qualimap/104974-001-007_S1_L001/raw_data_qualimapReport/coverage_profile_along_genes_(total).txt
+QualiMap	rna_coverage_histogram	104974-001-013_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/qualimap/104974-001-013_S1_L001/raw_data_qualimapReport/coverage_profile_along_genes_(total).txt
+QualiMap	rna_coverage_histogram	104974-001-016_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/qualimap/104974-001-016_S1_L001/raw_data_qualimapReport/coverage_profile_along_genes_(total).txt
+QualiMap	rna_coverage_histogram	104974-001-004_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/qualimap/104974-001-004_S1_L001/raw_data_qualimapReport/coverage_profile_along_genes_(total).txt
+QualiMap	rna_coverage_histogram	104974-001-014_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/qualimap/104974-001-014_S1_L001/raw_data_qualimapReport/coverage_profile_along_genes_(total).txt
+QualiMap	rna_coverage_histogram	104974-001-005_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/qualimap/104974-001-005_S1_L001/raw_data_qualimapReport/coverage_profile_along_genes_(total).txt
+QualiMap	rna_coverage_histogram	104974-001-002_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/qualimap/104974-001-002_S1_L001/raw_data_qualimapReport/coverage_profile_along_genes_(total).txt
+QualiMap	rna_coverage_histogram	104974-001-011_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/qualimap/104974-001-011_S1_L001/raw_data_qualimapReport/coverage_profile_along_genes_(total).txt
+QualiMap	rna_coverage_histogram	104974-001-003_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/qualimap/104974-001-003_S1_L001/raw_data_qualimapReport/coverage_profile_along_genes_(total).txt
+QualiMap	rna_coverage_histogram	104974-001-012_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/qualimap/104974-001-012_S1_L001/raw_data_qualimapReport/coverage_profile_along_genes_(total).txt
+QualiMap	rna_coverage_histogram	104974-001-008_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/qualimap/104974-001-008_S1_L001/raw_data_qualimapReport/coverage_profile_along_genes_(total).txt
+RSeQC	read_distribution	104974-001-011_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/read_distribution/104974-001-011_S1_L001.read_distribution.txt
+RSeQC	read_distribution	104974-001-008_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/read_distribution/104974-001-008_S1_L001.read_distribution.txt
+RSeQC	read_distribution	104974-001-005_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/read_distribution/104974-001-005_S1_L001.read_distribution.txt
+RSeQC	read_distribution	104974-001-014_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/read_distribution/104974-001-014_S1_L001.read_distribution.txt
+RSeQC	read_distribution	104974-001-002_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/read_distribution/104974-001-002_S1_L001.read_distribution.txt
+RSeQC	read_distribution	104974-001-015_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/read_distribution/104974-001-015_S1_L001.read_distribution.txt
+RSeQC	read_distribution	104974-001-012_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/read_distribution/104974-001-012_S1_L001.read_distribution.txt
+RSeQC	read_distribution	104974-001-007_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/read_distribution/104974-001-007_S1_L001.read_distribution.txt
+RSeQC	read_distribution	104974-001-010_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/read_distribution/104974-001-010_S1_L001.read_distribution.txt
+RSeQC	read_distribution	104974-001-009_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/read_distribution/104974-001-009_S1_L001.read_distribution.txt
+RSeQC	read_distribution	104974-001-003_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/read_distribution/104974-001-003_S1_L001.read_distribution.txt
+RSeQC	read_distribution	104974-001-013_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/read_distribution/104974-001-013_S1_L001.read_distribution.txt
+RSeQC	read_distribution	104974-001-001_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/read_distribution/104974-001-001_S1_L001.read_distribution.txt
+RSeQC	read_distribution	104974-001-004_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/read_distribution/104974-001-004_S1_L001.read_distribution.txt
+RSeQC	read_distribution	104974-001-016_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/read_distribution/104974-001-016_S1_L001.read_distribution.txt
+RSeQC	read_distribution	104974-001-006_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/read_distribution/104974-001-006_S1_L001.read_distribution.txt
+RSeQC	inner_distance	104974-001-003_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/inner_distance/104974-001-003_S1_L001.inner_distance_freq.txt
+RSeQC	inner_distance	104974-001-004_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/inner_distance/104974-001-004_S1_L001.inner_distance_freq.txt
+RSeQC	inner_distance	104974-001-005_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/inner_distance/104974-001-005_S1_L001.inner_distance_freq.txt
+RSeQC	inner_distance	104974-001-016_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/inner_distance/104974-001-016_S1_L001.inner_distance_freq.txt
+RSeQC	inner_distance	104974-001-006_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/inner_distance/104974-001-006_S1_L001.inner_distance_freq.txt
+RSeQC	inner_distance	104974-001-007_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/inner_distance/104974-001-007_S1_L001.inner_distance_freq.txt
+RSeQC	inner_distance	104974-001-008_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/inner_distance/104974-001-008_S1_L001.inner_distance_freq.txt
+RSeQC	inner_distance	104974-001-015_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/inner_distance/104974-001-015_S1_L001.inner_distance_freq.txt
+RSeQC	inner_distance	104974-001-009_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/inner_distance/104974-001-009_S1_L001.inner_distance_freq.txt
+RSeQC	inner_distance	104974-001-014_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/inner_distance/104974-001-014_S1_L001.inner_distance_freq.txt
+RSeQC	inner_distance	104974-001-013_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/inner_distance/104974-001-013_S1_L001.inner_distance_freq.txt
+RSeQC	inner_distance	104974-001-012_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/inner_distance/104974-001-012_S1_L001.inner_distance_freq.txt
+RSeQC	inner_distance	104974-001-011_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/inner_distance/104974-001-011_S1_L001.inner_distance_freq.txt
+RSeQC	inner_distance	104974-001-010_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/inner_distance/104974-001-010_S1_L001.inner_distance_freq.txt
+RSeQC	inner_distance	104974-001-001_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/inner_distance/104974-001-001_S1_L001.inner_distance_freq.txt
+RSeQC	inner_distance	104974-001-002_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/inner_distance/104974-001-002_S1_L001.inner_distance_freq.txt
+RSeQC	read_duplication	104974-001-011_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/read_duplication/104974-001-011_S1_L001.pos.DupRate.xls
+RSeQC	read_duplication	104974-001-005_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/read_duplication/104974-001-005_S1_L001.pos.DupRate.xls
+RSeQC	read_duplication	104974-001-016_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/read_duplication/104974-001-016_S1_L001.pos.DupRate.xls
+RSeQC	read_duplication	104974-001-007_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/read_duplication/104974-001-007_S1_L001.pos.DupRate.xls
+RSeQC	read_duplication	104974-001-002_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/read_duplication/104974-001-002_S1_L001.pos.DupRate.xls
+RSeQC	read_duplication	104974-001-013_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/read_duplication/104974-001-013_S1_L001.pos.DupRate.xls
+RSeQC	read_duplication	104974-001-015_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/read_duplication/104974-001-015_S1_L001.pos.DupRate.xls
+RSeQC	read_duplication	104974-001-009_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/read_duplication/104974-001-009_S1_L001.pos.DupRate.xls
+RSeQC	read_duplication	104974-001-010_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/read_duplication/104974-001-010_S1_L001.pos.DupRate.xls
+RSeQC	read_duplication	104974-001-004_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/read_duplication/104974-001-004_S1_L001.pos.DupRate.xls
+RSeQC	read_duplication	104974-001-006_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/read_duplication/104974-001-006_S1_L001.pos.DupRate.xls
+RSeQC	read_duplication	104974-001-001_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/read_duplication/104974-001-001_S1_L001.pos.DupRate.xls
+RSeQC	read_duplication	104974-001-012_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/read_duplication/104974-001-012_S1_L001.pos.DupRate.xls
+RSeQC	read_duplication	104974-001-014_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/read_duplication/104974-001-014_S1_L001.pos.DupRate.xls
+RSeQC	read_duplication	104974-001-008_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/read_duplication/104974-001-008_S1_L001.pos.DupRate.xls
+RSeQC	read_duplication	104974-001-003_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/read_duplication/104974-001-003_S1_L001.pos.DupRate.xls
+RSeQC	junction_annotation	104974-001-007_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/junction_annotation/104974-001-007_S1_L001.junction_annotation.log
+RSeQC	junction_annotation	104974-001-012_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/junction_annotation/104974-001-012_S1_L001.junction_annotation.log
+RSeQC	junction_annotation	104974-001-011_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/junction_annotation/104974-001-011_S1_L001.junction_annotation.log
+RSeQC	junction_annotation	104974-001-006_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/junction_annotation/104974-001-006_S1_L001.junction_annotation.log
+RSeQC	junction_annotation	104974-001-010_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/junction_annotation/104974-001-010_S1_L001.junction_annotation.log
+RSeQC	junction_annotation	104974-001-005_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/junction_annotation/104974-001-005_S1_L001.junction_annotation.log
+RSeQC	junction_annotation	104974-001-014_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/junction_annotation/104974-001-014_S1_L001.junction_annotation.log
+RSeQC	junction_annotation	104974-001-015_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/junction_annotation/104974-001-015_S1_L001.junction_annotation.log
+RSeQC	junction_annotation	104974-001-009_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/junction_annotation/104974-001-009_S1_L001.junction_annotation.log
+RSeQC	junction_annotation	104974-001-008_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/junction_annotation/104974-001-008_S1_L001.junction_annotation.log
+RSeQC	junction_annotation	104974-001-013_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/junction_annotation/104974-001-013_S1_L001.junction_annotation.log
+RSeQC	junction_annotation	104974-001-001_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/junction_annotation/104974-001-001_S1_L001.junction_annotation.log
+RSeQC	junction_annotation	104974-001-016_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/junction_annotation/104974-001-016_S1_L001.junction_annotation.log
+RSeQC	junction_annotation	104974-001-004_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/junction_annotation/104974-001-004_S1_L001.junction_annotation.log
+RSeQC	junction_annotation	104974-001-003_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/junction_annotation/104974-001-003_S1_L001.junction_annotation.log
+RSeQC	junction_annotation	104974-001-002_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/junction_annotation/104974-001-002_S1_L001.junction_annotation.log
+RSeQC	junction_saturation	104974-001-002_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/junction_saturation/104974-001-002_S1_L001.junctionSaturation_plot.r
+RSeQC	junction_saturation	104974-001-014_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/junction_saturation/104974-001-014_S1_L001.junctionSaturation_plot.r
+RSeQC	junction_saturation	104974-001-012_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/junction_saturation/104974-001-012_S1_L001.junctionSaturation_plot.r
+RSeQC	junction_saturation	104974-001-006_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/junction_saturation/104974-001-006_S1_L001.junctionSaturation_plot.r
+RSeQC	junction_saturation	104974-001-011_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/junction_saturation/104974-001-011_S1_L001.junctionSaturation_plot.r
+RSeQC	junction_saturation	104974-001-009_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/junction_saturation/104974-001-009_S1_L001.junctionSaturation_plot.r
+RSeQC	junction_saturation	104974-001-013_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/junction_saturation/104974-001-013_S1_L001.junctionSaturation_plot.r
+RSeQC	junction_saturation	104974-001-001_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/junction_saturation/104974-001-001_S1_L001.junctionSaturation_plot.r
+RSeQC	junction_saturation	104974-001-015_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/junction_saturation/104974-001-015_S1_L001.junctionSaturation_plot.r
+RSeQC	junction_saturation	104974-001-005_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/junction_saturation/104974-001-005_S1_L001.junctionSaturation_plot.r
+RSeQC	junction_saturation	104974-001-003_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/junction_saturation/104974-001-003_S1_L001.junctionSaturation_plot.r
+RSeQC	junction_saturation	104974-001-008_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/junction_saturation/104974-001-008_S1_L001.junctionSaturation_plot.r
+RSeQC	junction_saturation	104974-001-007_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/junction_saturation/104974-001-007_S1_L001.junctionSaturation_plot.r
+RSeQC	junction_saturation	104974-001-010_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/junction_saturation/104974-001-010_S1_L001.junctionSaturation_plot.r
+RSeQC	junction_saturation	104974-001-016_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/junction_saturation/104974-001-016_S1_L001.junctionSaturation_plot.r
+RSeQC	junction_saturation	104974-001-004_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/junction_saturation/104974-001-004_S1_L001.junctionSaturation_plot.r
+RSeQC	infer_experiment	104974-001-001_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/infer_experiment/104974-001-001_S1_L001.infer_experiment.txt
+RSeQC	infer_experiment	104974-001-014_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/infer_experiment/104974-001-014_S1_L001.infer_experiment.txt
+RSeQC	infer_experiment	104974-001-003_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/infer_experiment/104974-001-003_S1_L001.infer_experiment.txt
+RSeQC	infer_experiment	104974-001-016_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/infer_experiment/104974-001-016_S1_L001.infer_experiment.txt
+RSeQC	infer_experiment	104974-001-007_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/infer_experiment/104974-001-007_S1_L001.infer_experiment.txt
+RSeQC	infer_experiment	104974-001-010_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/infer_experiment/104974-001-010_S1_L001.infer_experiment.txt
+RSeQC	infer_experiment	104974-001-009_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/infer_experiment/104974-001-009_S1_L001.infer_experiment.txt
+RSeQC	infer_experiment	104974-001-008_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/infer_experiment/104974-001-008_S1_L001.infer_experiment.txt
+RSeQC	infer_experiment	104974-001-002_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/infer_experiment/104974-001-002_S1_L001.infer_experiment.txt
+RSeQC	infer_experiment	104974-001-015_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/infer_experiment/104974-001-015_S1_L001.infer_experiment.txt
+RSeQC	infer_experiment	104974-001-013_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/infer_experiment/104974-001-013_S1_L001.infer_experiment.txt
+RSeQC	infer_experiment	104974-001-004_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/infer_experiment/104974-001-004_S1_L001.infer_experiment.txt
+RSeQC	infer_experiment	104974-001-011_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/infer_experiment/104974-001-011_S1_L001.infer_experiment.txt
+RSeQC	infer_experiment	104974-001-005_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/infer_experiment/104974-001-005_S1_L001.infer_experiment.txt
+RSeQC	infer_experiment	104974-001-012_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/infer_experiment/104974-001-012_S1_L001.infer_experiment.txt
+RSeQC	infer_experiment	104974-001-006_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/infer_experiment/104974-001-006_S1_L001.infer_experiment.txt
+RSeQC	bam_stat	104974-001-003_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/bam_stat/104974-001-003_S1_L001.bam_stat.txt
+RSeQC	bam_stat	104974-001-002_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/bam_stat/104974-001-002_S1_L001.bam_stat.txt
+RSeQC	bam_stat	104974-001-005_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/bam_stat/104974-001-005_S1_L001.bam_stat.txt
+RSeQC	bam_stat	104974-001-004_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/bam_stat/104974-001-004_S1_L001.bam_stat.txt
+RSeQC	bam_stat	104974-001-016_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/bam_stat/104974-001-016_S1_L001.bam_stat.txt
+RSeQC	bam_stat	104974-001-009_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/bam_stat/104974-001-009_S1_L001.bam_stat.txt
+RSeQC	bam_stat	104974-001-007_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/bam_stat/104974-001-007_S1_L001.bam_stat.txt
+RSeQC	bam_stat	104974-001-014_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/bam_stat/104974-001-014_S1_L001.bam_stat.txt
+RSeQC	bam_stat	104974-001-012_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/bam_stat/104974-001-012_S1_L001.bam_stat.txt
+RSeQC	bam_stat	104974-001-013_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/bam_stat/104974-001-013_S1_L001.bam_stat.txt
+RSeQC	bam_stat	104974-001-010_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/bam_stat/104974-001-010_S1_L001.bam_stat.txt
+RSeQC	bam_stat	104974-001-011_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/bam_stat/104974-001-011_S1_L001.bam_stat.txt
+RSeQC	bam_stat	104974-001-008_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/bam_stat/104974-001-008_S1_L001.bam_stat.txt
+RSeQC	bam_stat	104974-001-006_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/bam_stat/104974-001-006_S1_L001.bam_stat.txt
+RSeQC	bam_stat	104974-001-001_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/bam_stat/104974-001-001_S1_L001.bam_stat.txt
+RSeQC	bam_stat	104974-001-015_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/rseqc/bam_stat/104974-001-015_S1_L001.bam_stat.txt
+Samtools	stats	104974-001-015_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/samtools/stats/104974-001-015_S1_L001.markdup.sorted.bam.stats
+Samtools	stats	104974-001-011_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/samtools/stats/104974-001-011_S1_L001.markdup.sorted.bam.stats
+Samtools	stats	104974-001-013_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/samtools/stats/104974-001-013_S1_L001.markdup.sorted.bam.stats
+Samtools	stats	104974-001-008_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/samtools/stats/104974-001-008_S1_L001.markdup.sorted.bam.stats
+Samtools	stats	104974-001-004_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/samtools/stats/104974-001-004_S1_L001.markdup.sorted.bam.stats
+Samtools	stats	104974-001-002_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/samtools/stats/104974-001-002_S1_L001.markdup.sorted.bam.stats
+Samtools	stats	104974-001-010_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/samtools/stats/104974-001-010_S1_L001.markdup.sorted.bam.stats
+Samtools	stats	104974-001-007_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/samtools/stats/104974-001-007_S1_L001.markdup.sorted.bam.stats
+Samtools	stats	104974-001-005_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/samtools/stats/104974-001-005_S1_L001.markdup.sorted.bam.stats
+Samtools	stats	104974-001-001_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/samtools/stats/104974-001-001_S1_L001.markdup.sorted.bam.stats
+Samtools	stats	104974-001-016_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/samtools/stats/104974-001-016_S1_L001.markdup.sorted.bam.stats
+Samtools	stats	104974-001-009_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/samtools/stats/104974-001-009_S1_L001.markdup.sorted.bam.stats
+Samtools	stats	104974-001-012_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/samtools/stats/104974-001-012_S1_L001.markdup.sorted.bam.stats
+Samtools	stats	104974-001-003_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/samtools/stats/104974-001-003_S1_L001.markdup.sorted.bam.stats
+Samtools	stats	104974-001-006_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/samtools/stats/104974-001-006_S1_L001.markdup.sorted.bam.stats
+Samtools	stats	104974-001-014_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/samtools/stats/104974-001-014_S1_L001.markdup.sorted.bam.stats
+Samtools	flagstat	104974-001-009_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/samtools/flagstat/104974-001-009_S1_L001.markdup.sorted.bam.flagstat
+Samtools	flagstat	104974-001-013_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/samtools/flagstat/104974-001-013_S1_L001.markdup.sorted.bam.flagstat
+Samtools	flagstat	104974-001-007_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/samtools/flagstat/104974-001-007_S1_L001.markdup.sorted.bam.flagstat
+Samtools	flagstat	104974-001-015_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/samtools/flagstat/104974-001-015_S1_L001.markdup.sorted.bam.flagstat
+Samtools	flagstat	104974-001-005_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/samtools/flagstat/104974-001-005_S1_L001.markdup.sorted.bam.flagstat
+Samtools	flagstat	104974-001-010_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/samtools/flagstat/104974-001-010_S1_L001.markdup.sorted.bam.flagstat
+Samtools	flagstat	104974-001-011_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/samtools/flagstat/104974-001-011_S1_L001.markdup.sorted.bam.flagstat
+Samtools	flagstat	104974-001-004_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/samtools/flagstat/104974-001-004_S1_L001.markdup.sorted.bam.flagstat
+Samtools	flagstat	104974-001-003_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/samtools/flagstat/104974-001-003_S1_L001.markdup.sorted.bam.flagstat
+Samtools	flagstat	104974-001-012_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/samtools/flagstat/104974-001-012_S1_L001.markdup.sorted.bam.flagstat
+Samtools	flagstat	104974-001-002_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/samtools/flagstat/104974-001-002_S1_L001.markdup.sorted.bam.flagstat
+Samtools	flagstat	104974-001-008_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/samtools/flagstat/104974-001-008_S1_L001.markdup.sorted.bam.flagstat
+Samtools	flagstat	104974-001-001_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/samtools/flagstat/104974-001-001_S1_L001.markdup.sorted.bam.flagstat
+Samtools	flagstat	104974-001-014_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/samtools/flagstat/104974-001-014_S1_L001.markdup.sorted.bam.flagstat
+Samtools	flagstat	104974-001-006_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/samtools/flagstat/104974-001-006_S1_L001.markdup.sorted.bam.flagstat
+Samtools	flagstat	104974-001-016_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/samtools/flagstat/104974-001-016_S1_L001.markdup.sorted.bam.flagstat
+Samtools	idxstats	104974-001-015_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/samtools/idxstats/104974-001-015_S1_L001.markdup.sorted.bam.idxstats
+Samtools	idxstats	104974-001-016_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/samtools/idxstats/104974-001-016_S1_L001.markdup.sorted.bam.idxstats
+Samtools	idxstats	104974-001-007_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/samtools/idxstats/104974-001-007_S1_L001.markdup.sorted.bam.idxstats
+Samtools	idxstats	104974-001-014_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/samtools/idxstats/104974-001-014_S1_L001.markdup.sorted.bam.idxstats
+Samtools	idxstats	104974-001-012_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/samtools/idxstats/104974-001-012_S1_L001.markdup.sorted.bam.idxstats
+Samtools	idxstats	104974-001-009_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/samtools/idxstats/104974-001-009_S1_L001.markdup.sorted.bam.idxstats
+Samtools	idxstats	104974-001-002_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/samtools/idxstats/104974-001-002_S1_L001.markdup.sorted.bam.idxstats
+Samtools	idxstats	104974-001-005_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/samtools/idxstats/104974-001-005_S1_L001.markdup.sorted.bam.idxstats
+Samtools	idxstats	104974-001-010_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/samtools/idxstats/104974-001-010_S1_L001.markdup.sorted.bam.idxstats
+Samtools	idxstats	104974-001-004_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/samtools/idxstats/104974-001-004_S1_L001.markdup.sorted.bam.idxstats
+Samtools	idxstats	104974-001-011_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/samtools/idxstats/104974-001-011_S1_L001.markdup.sorted.bam.idxstats
+Samtools	idxstats	104974-001-006_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/samtools/idxstats/104974-001-006_S1_L001.markdup.sorted.bam.idxstats
+Samtools	idxstats	104974-001-008_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/samtools/idxstats/104974-001-008_S1_L001.markdup.sorted.bam.idxstats
+Samtools	idxstats	104974-001-001_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/samtools/idxstats/104974-001-001_S1_L001.markdup.sorted.bam.idxstats
+Samtools	idxstats	104974-001-003_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/samtools/idxstats/104974-001-003_S1_L001.markdup.sorted.bam.idxstats
+Samtools	idxstats	104974-001-013_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/samtools/idxstats/104974-001-013_S1_L001.markdup.sorted.bam.idxstats
+STAR	SummaryLog	104974-001-004_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/star/104974-001-004_S1_L001.Log.final.out
+STAR	SummaryLog	104974-001-003_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/star/104974-001-003_S1_L001.Log.final.out
+STAR	SummaryLog	104974-001-011_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/star/104974-001-011_S1_L001.Log.final.out
+STAR	SummaryLog	104974-001-015_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/star/104974-001-015_S1_L001.Log.final.out
+STAR	SummaryLog	104974-001-007_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/star/104974-001-007_S1_L001.Log.final.out
+STAR	SummaryLog	104974-001-010_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/star/104974-001-010_S1_L001.Log.final.out
+STAR	SummaryLog	104974-001-008_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/star/104974-001-008_S1_L001.Log.final.out
+STAR	SummaryLog	104974-001-012_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/star/104974-001-012_S1_L001.Log.final.out
+STAR	SummaryLog	104974-001-006_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/star/104974-001-006_S1_L001.Log.final.out
+STAR	SummaryLog	104974-001-014_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/star/104974-001-014_S1_L001.Log.final.out
+STAR	SummaryLog	104974-001-016_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/star/104974-001-016_S1_L001.Log.final.out
+STAR	SummaryLog	104974-001-002_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/star/104974-001-002_S1_L001.Log.final.out
+STAR	SummaryLog	104974-001-001_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/star/104974-001-001_S1_L001.Log.final.out
+STAR	SummaryLog	104974-001-009_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/star/104974-001-009_S1_L001.Log.final.out
+STAR	SummaryLog	104974-001-005_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/star/104974-001-005_S1_L001.Log.final.out
+STAR	SummaryLog	104974-001-013_S1_L001	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/star/104974-001-013_S1_L001.Log.final.out
+FastQC (raw)	all_sections	104974-001-014_S1_L001_1	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/fastqc/raw/104974-001-014_S1_L001_1_fastqc.zip
+FastQC (raw)	all_sections	104974-001-015_S1_L001_1	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/fastqc/raw/104974-001-015_S1_L001_1_fastqc.zip
+FastQC (raw)	all_sections	104974-001-014_S1_L001_2	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/fastqc/raw/104974-001-014_S1_L001_2_fastqc.zip
+FastQC (raw)	all_sections	104974-001-012_S1_L001_1	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/fastqc/raw/104974-001-012_S1_L001_1_fastqc.zip
+FastQC (raw)	all_sections	104974-001-013_S1_L001_2	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/fastqc/raw/104974-001-013_S1_L001_2_fastqc.zip
+FastQC (raw)	all_sections	104974-001-013_S1_L001_1	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/fastqc/raw/104974-001-013_S1_L001_1_fastqc.zip
+FastQC (raw)	all_sections	104974-001-012_S1_L001_2	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/fastqc/raw/104974-001-012_S1_L001_2_fastqc.zip
+FastQC (raw)	all_sections	104974-001-009_S1_L001_1	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/fastqc/raw/104974-001-009_S1_L001_1_fastqc.zip
+FastQC (raw)	all_sections	104974-001-003_S1_L001_2	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/fastqc/raw/104974-001-003_S1_L001_2_fastqc.zip
+FastQC (raw)	all_sections	104974-001-001_S1_L001_2	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/fastqc/raw/104974-001-001_S1_L001_2_fastqc.zip
+FastQC (raw)	all_sections	104974-001-002_S1_L001_1	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/fastqc/raw/104974-001-002_S1_L001_1_fastqc.zip
+FastQC (raw)	all_sections	104974-001-011_S1_L001_1	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/fastqc/raw/104974-001-011_S1_L001_1_fastqc.zip
+FastQC (raw)	all_sections	104974-001-016_S1_L001_1	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/fastqc/raw/104974-001-016_S1_L001_1_fastqc.zip
+FastQC (raw)	all_sections	104974-001-015_S1_L001_2	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/fastqc/raw/104974-001-015_S1_L001_2_fastqc.zip
+FastQC (raw)	all_sections	104974-001-010_S1_L001_2	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/fastqc/raw/104974-001-010_S1_L001_2_fastqc.zip
+FastQC (raw)	all_sections	104974-001-008_S1_L001_2	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/fastqc/raw/104974-001-008_S1_L001_2_fastqc.zip
+FastQC (raw)	all_sections	104974-001-004_S1_L001_1	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/fastqc/raw/104974-001-004_S1_L001_1_fastqc.zip
+FastQC (raw)	all_sections	104974-001-005_S1_L001_1	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/fastqc/raw/104974-001-005_S1_L001_1_fastqc.zip
+FastQC (raw)	all_sections	104974-001-007_S1_L001_2	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/fastqc/raw/104974-001-007_S1_L001_2_fastqc.zip
+FastQC (raw)	all_sections	104974-001-005_S1_L001_2	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/fastqc/raw/104974-001-005_S1_L001_2_fastqc.zip
+FastQC (raw)	all_sections	104974-001-007_S1_L001_1	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/fastqc/raw/104974-001-007_S1_L001_1_fastqc.zip
+FastQC (raw)	all_sections	104974-001-006_S1_L001_2	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/fastqc/raw/104974-001-006_S1_L001_2_fastqc.zip
+FastQC (raw)	all_sections	104974-001-006_S1_L001_1	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/fastqc/raw/104974-001-006_S1_L001_1_fastqc.zip
+FastQC (raw)	all_sections	104974-001-011_S1_L001_2	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/fastqc/raw/104974-001-011_S1_L001_2_fastqc.zip
+FastQC (raw)	all_sections	104974-001-004_S1_L001_2	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/fastqc/raw/104974-001-004_S1_L001_2_fastqc.zip
+FastQC (raw)	all_sections	104974-001-008_S1_L001_1	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/fastqc/raw/104974-001-008_S1_L001_1_fastqc.zip
+FastQC (raw)	all_sections	104974-001-001_S1_L001_1	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/fastqc/raw/104974-001-001_S1_L001_1_fastqc.zip
+FastQC (raw)	all_sections	104974-001-003_S1_L001_1	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/fastqc/raw/104974-001-003_S1_L001_1_fastqc.zip
+FastQC (raw)	all_sections	104974-001-009_S1_L001_2	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/fastqc/raw/104974-001-009_S1_L001_2_fastqc.zip
+FastQC (raw)	all_sections	104974-001-010_S1_L001_1	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/fastqc/raw/104974-001-010_S1_L001_1_fastqc.zip
+FastQC (raw)	all_sections	104974-001-002_S1_L001_2	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/fastqc/raw/104974-001-002_S1_L001_2_fastqc.zip
+FastQC (raw)	all_sections	104974-001-016_S1_L001_2	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/fastqc/raw/104974-001-016_S1_L001_2_fastqc.zip
+Cutadapt	all_sections	104974-001-004_S1_L001_2	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/trim_log/104974-001-004_S1_L001_2.fastq.gz_trimming_report.txt
+Cutadapt	all_sections	104974-001-012_S1_L001_1	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/trim_log/104974-001-012_S1_L001_1.fastq.gz_trimming_report.txt
+Cutadapt	all_sections	104974-001-011_S1_L001_1	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/trim_log/104974-001-011_S1_L001_1.fastq.gz_trimming_report.txt
+Cutadapt	all_sections	104974-001-003_S1_L001_2	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/trim_log/104974-001-003_S1_L001_2.fastq.gz_trimming_report.txt
+Cutadapt	all_sections	104974-001-005_S1_L001_2	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/trim_log/104974-001-005_S1_L001_2.fastq.gz_trimming_report.txt
+Cutadapt	all_sections	104974-001-013_S1_L001_1	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/trim_log/104974-001-013_S1_L001_1.fastq.gz_trimming_report.txt
+Cutadapt	all_sections	104974-001-008_S1_L001_2	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/trim_log/104974-001-008_S1_L001_2.fastq.gz_trimming_report.txt
+Cutadapt	all_sections	104974-001-016_S1_L001_1	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/trim_log/104974-001-016_S1_L001_1.fastq.gz_trimming_report.txt
+Cutadapt	all_sections	104974-001-009_S1_L001_2	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/trim_log/104974-001-009_S1_L001_2.fastq.gz_trimming_report.txt
+Cutadapt	all_sections	104974-001-001_S1_L001_2	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/trim_log/104974-001-001_S1_L001_2.fastq.gz_trimming_report.txt
+Cutadapt	all_sections	104974-001-007_S1_L001_2	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/trim_log/104974-001-007_S1_L001_2.fastq.gz_trimming_report.txt
+Cutadapt	all_sections	104974-001-015_S1_L001_1	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/trim_log/104974-001-015_S1_L001_1.fastq.gz_trimming_report.txt
+Cutadapt	all_sections	104974-001-002_S1_L001_2	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/trim_log/104974-001-002_S1_L001_2.fastq.gz_trimming_report.txt
+Cutadapt	all_sections	104974-001-006_S1_L001_2	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/trim_log/104974-001-006_S1_L001_2.fastq.gz_trimming_report.txt
+Cutadapt	all_sections	104974-001-002_S1_L001_1	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/trim_log/104974-001-002_S1_L001_1.fastq.gz_trimming_report.txt
+Cutadapt	all_sections	104974-001-014_S1_L001_1	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/trim_log/104974-001-014_S1_L001_1.fastq.gz_trimming_report.txt
+Cutadapt	all_sections	104974-001-010_S1_L001_1	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/trim_log/104974-001-010_S1_L001_1.fastq.gz_trimming_report.txt
+Cutadapt	all_sections	104974-001-001_S1_L001_1	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/trim_log/104974-001-001_S1_L001_1.fastq.gz_trimming_report.txt
+Cutadapt	all_sections	104974-001-011_S1_L001_2	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/trim_log/104974-001-011_S1_L001_2.fastq.gz_trimming_report.txt
+Cutadapt	all_sections	104974-001-010_S1_L001_2	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/trim_log/104974-001-010_S1_L001_2.fastq.gz_trimming_report.txt
+Cutadapt	all_sections	104974-001-012_S1_L001_2	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/trim_log/104974-001-012_S1_L001_2.fastq.gz_trimming_report.txt
+Cutadapt	all_sections	104974-001-014_S1_L001_2	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/trim_log/104974-001-014_S1_L001_2.fastq.gz_trimming_report.txt
+Cutadapt	all_sections	104974-001-013_S1_L001_2	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/trim_log/104974-001-013_S1_L001_2.fastq.gz_trimming_report.txt
+Cutadapt	all_sections	104974-001-015_S1_L001_2	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/trim_log/104974-001-015_S1_L001_2.fastq.gz_trimming_report.txt
+Cutadapt	all_sections	104974-001-016_S1_L001_2	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/trim_log/104974-001-016_S1_L001_2.fastq.gz_trimming_report.txt
+Cutadapt	all_sections	104974-001-004_S1_L001_1	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/trim_log/104974-001-004_S1_L001_1.fastq.gz_trimming_report.txt
+Cutadapt	all_sections	104974-001-005_S1_L001_1	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/trim_log/104974-001-005_S1_L001_1.fastq.gz_trimming_report.txt
+Cutadapt	all_sections	104974-001-006_S1_L001_1	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/trim_log/104974-001-006_S1_L001_1.fastq.gz_trimming_report.txt
+Cutadapt	all_sections	104974-001-003_S1_L001_1	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/trim_log/104974-001-003_S1_L001_1.fastq.gz_trimming_report.txt
+Cutadapt	all_sections	104974-001-009_S1_L001_1	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/trim_log/104974-001-009_S1_L001_1.fastq.gz_trimming_report.txt
+Cutadapt	all_sections	104974-001-008_S1_L001_1	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/trim_log/104974-001-008_S1_L001_1.fastq.gz_trimming_report.txt
+Cutadapt	all_sections	104974-001-007_S1_L001_1	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/trim_log/104974-001-007_S1_L001_1.fastq.gz_trimming_report.txt
+FastQC (trimmed)	all_sections	104974-001-003_S1_L001_1	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/fastqc/trim/104974-001-003_S1_L001_1_val_1_fastqc.zip
+FastQC (trimmed)	all_sections	104974-001-008_S1_L001_2	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/fastqc/trim/104974-001-008_S1_L001_2_val_2_fastqc.zip
+FastQC (trimmed)	all_sections	104974-001-004_S1_L001_2	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/fastqc/trim/104974-001-004_S1_L001_2_val_2_fastqc.zip
+FastQC (trimmed)	all_sections	104974-001-011_S1_L001_1	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/fastqc/trim/104974-001-011_S1_L001_1_val_1_fastqc.zip
+FastQC (trimmed)	all_sections	104974-001-001_S1_L001_2	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/fastqc/trim/104974-001-001_S1_L001_2_val_2_fastqc.zip
+FastQC (trimmed)	all_sections	104974-001-012_S1_L001_2	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/fastqc/trim/104974-001-012_S1_L001_2_val_2_fastqc.zip
+FastQC (trimmed)	all_sections	104974-001-006_S1_L001_1	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/fastqc/trim/104974-001-006_S1_L001_1_val_1_fastqc.zip
+FastQC (trimmed)	all_sections	104974-001-007_S1_L001_1	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/fastqc/trim/104974-001-007_S1_L001_1_val_1_fastqc.zip
+FastQC (trimmed)	all_sections	104974-001-002_S1_L001_1	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/fastqc/trim/104974-001-002_S1_L001_1_val_1_fastqc.zip
+FastQC (trimmed)	all_sections	104974-001-007_S1_L001_2	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/fastqc/trim/104974-001-007_S1_L001_2_val_2_fastqc.zip
+FastQC (trimmed)	all_sections	104974-001-015_S1_L001_2	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/fastqc/trim/104974-001-015_S1_L001_2_val_2_fastqc.zip
+FastQC (trimmed)	all_sections	104974-001-014_S1_L001_1	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/fastqc/trim/104974-001-014_S1_L001_1_val_1_fastqc.zip
+FastQC (trimmed)	all_sections	104974-001-015_S1_L001_1	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/fastqc/trim/104974-001-015_S1_L001_1_val_1_fastqc.zip
+FastQC (trimmed)	all_sections	104974-001-004_S1_L001_1	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/fastqc/trim/104974-001-004_S1_L001_1_val_1_fastqc.zip
+FastQC (trimmed)	all_sections	104974-001-005_S1_L001_2	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/fastqc/trim/104974-001-005_S1_L001_2_val_2_fastqc.zip
+FastQC (trimmed)	all_sections	104974-001-016_S1_L001_2	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/fastqc/trim/104974-001-016_S1_L001_2_val_2_fastqc.zip
+FastQC (trimmed)	all_sections	104974-001-014_S1_L001_2	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/fastqc/trim/104974-001-014_S1_L001_2_val_2_fastqc.zip
+FastQC (trimmed)	all_sections	104974-001-008_S1_L001_1	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/fastqc/trim/104974-001-008_S1_L001_1_val_1_fastqc.zip
+FastQC (trimmed)	all_sections	104974-001-005_S1_L001_1	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/fastqc/trim/104974-001-005_S1_L001_1_val_1_fastqc.zip
+FastQC (trimmed)	all_sections	104974-001-016_S1_L001_1	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/fastqc/trim/104974-001-016_S1_L001_1_val_1_fastqc.zip
+FastQC (trimmed)	all_sections	104974-001-006_S1_L001_2	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/fastqc/trim/104974-001-006_S1_L001_2_val_2_fastqc.zip
+FastQC (trimmed)	all_sections	104974-001-002_S1_L001_2	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/fastqc/trim/104974-001-002_S1_L001_2_val_2_fastqc.zip
+FastQC (trimmed)	all_sections	104974-001-013_S1_L001_1	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/fastqc/trim/104974-001-013_S1_L001_1_val_1_fastqc.zip
+FastQC (trimmed)	all_sections	104974-001-003_S1_L001_2	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/fastqc/trim/104974-001-003_S1_L001_2_val_2_fastqc.zip
+FastQC (trimmed)	all_sections	104974-001-012_S1_L001_1	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/fastqc/trim/104974-001-012_S1_L001_1_val_1_fastqc.zip
+FastQC (trimmed)	all_sections	104974-001-001_S1_L001_1	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/fastqc/trim/104974-001-001_S1_L001_1_val_1_fastqc.zip
+FastQC (trimmed)	all_sections	104974-001-013_S1_L001_2	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/fastqc/trim/104974-001-013_S1_L001_2_val_2_fastqc.zip
+FastQC (trimmed)	all_sections	104974-001-010_S1_L001_1	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/fastqc/trim/104974-001-010_S1_L001_1_val_1_fastqc.zip
+FastQC (trimmed)	all_sections	104974-001-009_S1_L001_2	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/fastqc/trim/104974-001-009_S1_L001_2_val_2_fastqc.zip
+FastQC (trimmed)	all_sections	104974-001-010_S1_L001_2	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/fastqc/trim/104974-001-010_S1_L001_2_val_2_fastqc.zip
+FastQC (trimmed)	all_sections	104974-001-011_S1_L001_2	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/fastqc/trim/104974-001-011_S1_L001_2_val_2_fastqc.zip
+FastQC (trimmed)	all_sections	104974-001-009_S1_L001_1	/scratch/antwerpen/203/vsc20380/work/ae/7b8e940804b8fe32592c273f723604/fastqc/trim/104974-001-009_S1_L001_1_val_1_fastqc.zip
