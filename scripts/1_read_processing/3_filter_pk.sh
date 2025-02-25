@@ -11,8 +11,9 @@ PROJECT_ROOT=$(realpath "$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null
 # parameter settings
 star_bam_dir="${PROJECT_ROOT}/results/star_salmon"
 output_dir="${PROJECT_ROOT}/results/star_salmon/samtools_stats_pk"
-ref_pk="${PROJECT_ROOT}/data/ref/PlasmoDB-68_PknowlesiH_Genome.fasta"
-gff_pk="${PROJECT_ROOT}/data/ref/PlasmoDB-68_PknowlesiH.gff"
+ref_pk="${PROJECT_ROOT}/data/ref/GCF_000006355.2_GCA_000006355.2_genomic.fna.gz"
+gff_pk="${PROJECT_ROOT}/data/ref/GCF_000006355.2_GCA_000006355.2_genomic.gff.gz"
+
 n_threads=$(("${SLURM_CPUS_PER_TASK:-8}" - 1))
 
 # create output directories
@@ -32,9 +33,13 @@ P. knowlesi annotation gff:    ${gff_pk}
 threads:                       ${n_threads}
 "
 
+# samtools requires reference file to be bgzipped or uncompressed
+gunzip --keep "${ref_pk}"
+ref_pk="${ref_pk%.gz}"
+
 # Create bed file with chromsomes/regions based on Pk annotation gff file.
 samtools faidx "${ref_pk}"
-bed_pk="${ref_pk%.fasta}.bed"
+bed_pk="${ref_pk%.fna}.bed"
 awk 'BEGIN {FS="\t"}; {print $1 FS "0" FS $2}' "${ref_pk}.fai" >"${bed_pk}"
 
 # Filter on Pk
