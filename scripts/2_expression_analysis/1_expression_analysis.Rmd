@@ -2748,22 +2748,22 @@ draw_venn <- function(set_list, names, title, output) {
     fill = hcl.colors(3, palette = "viridis", alpha = 0.4),
 
     # Numbers
-    cex = .9,
+    cex = 1.4,
     fontface = "bold",
     fontfamily = "sans",
 
     # Set names
-    cat.cex = 0.9,
+    cat.cex = 1.1,
     cat.fontface = "bold",
     cat.default.pos = "outer",
-    cat.pos = c(-20, 20, 135),
-    cat.dist = c(0.055, 0.055, 0.11),
+    cat.pos = c(-15, 15, 125),
+    cat.dist = c(0.055, 0.055, 0.09),
     cat.fontfamily = "sans",
     rotation = 1,
 
     # title
     main = title,
-    main.cex = 1.1,
+    main.cex = 1.4,
     main.fontface = "bold",
     main.fontfamily = "sans",
 
@@ -2782,70 +2782,71 @@ draw_venn <- function(set_list, names, title, output) {
 
 p <- draw_venn(
   gene_tpm_filtered_binary_list[comparison_centpip$sample],
-  c("mRNA Qiagen FS globin", "tRNA Qiagen FS globin/rRNA", "mRNA Illumina"),
-  "Centpip",
+  # c("mRNA Qiagen FS globin", "total RNA Qiagen FS globin/rRNA", "mRNA Illumina"),
+  c("Qiagen mRNA FSglob", "Qiagen total RNA FSglobH", "Illumina mRNA"),
+  "Cent/pip",
   here("results/figures/venn-centpip.png")
 )
 
 draw_venn(
   gene_tpm_filtered_binary_list[comparison_plasmo$sample],
-  c("mRNA Qiagen FS globin", "tRNA Qiagen FS globin/rRNA", "mRNA Illumina"),
+  c("Qiagen mRNA FSglob", "Qiagen total RNA FSglobH", "Illumina mRNA"),
   "Plasmo",
   here("results/figures/venn-plasmo.png")
 )
 
 draw_venn(
   gene_tpm_filtered_binary_list[comparison_pmacs$sample],
-  c("mRNA Qiagen FS globin", "tRNA Qiagen FS globin/rRNA", "mRNA Illumina"),
+  c("Qiagen mRNA FSglob", "Qiagen total RNA FSglobH", "Illumina mRNA"),
   "PMACS",
   here("results/figures/venn-pmacs.png")
 )
 
 draw_venn(
   gene_tpm_filtered_binary_list[comparison_cellulose$sample],
-  c("mRNA Qiagen FS globin", "tRNA Qiagen FS globin/rRNA", "mRNA Illumina"),
+  c("Qiagen mRNA FSglob", "Qiagen total RNA FSglobH", "Illumina mRNA"),
   "Cellulose",
   here("results/figures/venn-cellulose.png")
 )
 
 draw_venn(
   gene_tpm_filtered_binary_list[comparison_nofilter$sample],
-  c("mRNA Qiagen FS globin", "tRNA Qiagen FS globin/rRNA", "mRNA Illumina"),
+  c("Qiagen mRNA FSglob", "Qiagen total RNA FSglobH", "Illumina mRNA"),
   "Cellulose",
   here("results/figures/venn-nofilter.png")
 )
 
 draw_venn(
   gene_tpm_pk_filtered_binary_list[comparison_centpip$sample],
-  c("mRNA Qiagen FS globin", "tRNA Qiagen FS globin/rRNA", "mRNA Illumina"),
-  "Centpip",
+  c("Qiagen mRNA FSglob", "Qiagen total RNA FSglobH", "Illumina mRNA"),
+  "Cent/pip",
   here("results/figures/venn-centpip_pk.png")
 )
 
 draw_venn(
   gene_tpm_pk_filtered_binary_list[comparison_plasmo$sample],
-  c("mRNA Qiagen FS globin", "tRNA Qiagen FS globin/rRNA", "mRNA Illumina"),
+  c("Qiagen mRNA FSglob", "Qiagen total RNA FSglobH", "Illumina mRNA"),
   "Plasmo",
   here("results/figures/venn-plasmo_pk.png")
 )
 
 draw_venn(
   gene_tpm_pk_filtered_binary_list[comparison_pmacs$sample],
-  c("mRNA Qiagen FS globin", "tRNA Qiagen FS globin/rRNA", "mRNA Illumina"),
+  c("Qiagen mRNA FSglob", "Qiagen total RNA FSglobH", "Illumina mRNA"),
   "PMACS",
   here("results/figures/venn-pmacs_pk.png")
 )
 
 draw_venn(
   gene_tpm_pk_filtered_binary_list[comparison_cellulose$sample],
-  c("mRNA Qiagen FS globin", "tRNA Qiagen FS globin/rRNA", "mRNA Illumina"),
+  c("Qiagen mRNA FSglob", "Qiagen total RNA FSglobH", "Illumina mRNA"),
   "Cellulose",
   here("results/figures/venn-cellulose_pk.png")
 )
 
 draw_venn(
   gene_tpm_pk_filtered_binary_list[comparison_nofilter$sample],
-  c("mRNA Qiagen FS globin", "tRNA Qiagen FS globin/rRNA", "mRNA Illumina"),
+  c("Qiagen mRNA FSglob", "Qiagen total RNA FSglobH", "Illumina mRNA"),
   "No filter",
   here("results/figures/venn-nofilter_pk.png")
 )
