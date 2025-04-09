@@ -1,0 +1,6 @@
+#Fastq_screen version: 0.15.3	#Aligner: bwa	#Reads in subset: 100000
+Genome	#Reads_processed	#Unmapped	%Unmapped	#One_hit_one_genome	%One_hit_one_genome	#Multiple_hits_one_genome	%Multiple_hits_one_genome	#One_hit_multiple_genomes	%One_hit_multiple_genomes	Multiple_hits_multiple_genomes	%Multiple_hits_multiple_genomes
+Human	100034	3117	3.11	11766	11.76	79727	79.70	86	0.09	5338	5.34
+PknowlesiH	100034	91827	91.80	2370	2.37	413	0.41	472	0.47	4952	4.95
+
+%Hit_no_genomes: 0.33
