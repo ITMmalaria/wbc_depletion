@@ -1,0 +1,465 @@
+---
+title: "WBC depletion methods - prepare data"
+output:
+  html_document:
+    df_print: paged
+    toc: true
+    toc_float: true
+    code_folding: hide
+---
+
+  
+```{r setup, include=FALSE}
+knitr::opts_knit$set(root.dir = here::here())
+```
+
+```{r load-libraries, include=FALSE}
+# Since some of the required packages are only available in Bioconductor,
+# renv needs to be initialised as follows:
+# renv::init(bioconductor = "3.19")
+
+library(BiocManager)
+library(here)
+library(ggplot2)
+library(viridis)
+library(DESeq2)
+library(tximport)
+library(txdbmaker)
+library(vsn)
+library(hexbin)
+library(pheatmap)
+library(dplyr)
+library(tidyr)
+library(readr)
+library(purrr)
+library(stringr)
+library(GGally)
+library(VennDiagram)
+library(UpSetR)
+library(scales)
+library(ggpubr)
+library(ggcorrplot)
+library(ggtext)
+library(svglite)
+
+ggplot2::theme_set(theme_bw())
+```
+
+# Data import
+
+The following code chunks will parse the results from the nf-core rnaseq pipeline and other scripts in this repository, and generate RDS objects containing (gene-level) read counts, annotations, etc. 
+
+## Read in fastq-screen and mapping statistics
+
+```{r file-import-fastqscreen-mapping, message=FALSE}
+# read in fastq screen files
+fastq_screen <- list.files(
+  path = here("results/fastq-screen"), pattern = "_screen.txt",
+  recursive = TRUE, full.names = TRUE
+) %>%
+  read_delim(skip = 1, delim = "\t", n_max = 2, id = "read", show_col_types = FALSE) %>%
+  rename("#Multiple_hits_multiple_genomes" = Multiple_hits_multiple_genomes) %>%
+  mutate(read = str_remove(basename(read), "_screen.txt")) %>%
+  mutate(sample = as.factor(str_remove(read, "_R[1,2].*"))) %>%
+  mutate(Genome = as.factor(Genome))
+
+# combine R1 and R2 stats per species and recalculate percentages
+fastq_screen <- fastq_screen %>%
+  select(!starts_with("%")) %>%
+  group_by(sample, Genome) %>%
+  summarise(across(.cols = `#Reads_processed`:`#Multiple_hits_multiple_genomes`, .fns = ~ sum(.x)), .groups = "drop_last") %>%
+  mutate(across(.cols = `#Unmapped`:`#Multiple_hits_multiple_genomes`, .fns = ~ .x / `#Reads_processed`, .names = "%_{.col}")) %>%
+  rename_with(~ str_replace(.x, "#", ""), .cols = starts_with("%"))
+
+# read in samtools flagstat and metadata files
+mapping_stats_df <- read_delim((here("results/mapping_stats.csv")), col_types = list(sample = "factor")) %>%
+  mutate(flagstat_primary_human = flagstat_primary_all - flagstat_primary_pk)
+
+# merge dataframes
+fastq_screen_mapping_stats_df <- mapping_stats_df %>%
+  left_join(fastq_screen, by = "sample")
+
+# Picard PCR duplicates
+pcr_dups <- read_delim(here("results/multiqc/star_salmon/multiqc_report_data/multiqc_picard_dups.txt"), delim = "\t", col_types = list(Sample = "factor"))
+
+# STAR mapping statistics
+star_stats <- read_delim(here("results/multiqc/star_salmon/multiqc_report_data/mqc_star_alignment_plot_1.txt"), delim = "\t", col_types = list(Sample = "factor"))
+```
+
+## Read in `salmon` gene counts and tximport gene counts/TPM abundances
+
+Import the following sets of count files:
+
+- Gene-level counts (created in `nf-core/rnaseq` pipeline through `tximport` of Salmon transcript-level counts )
+- Gene-level TPM (created in `nf-core/rnaseq` pipeline through `tximport` of Salmon transcript-level counts )
+- Gene-level counts inside DESeq/SummarizedExperiment object (created by manually importing Salmon `quant.sf` files via `tximport`. Values should correspond exactly to the other gene-level counts). Used for visualisation.
+
+Background info on the different types of counts and how to import them:
+
+> `salmon` outputs two types of counts: transcript-level (`quant.sf`) and gene-level (`quant.genes.sf`). Both offer feature length, effective length, TPM, and number of reads. However, when importing counts with `tximport` for downstream differential expression analysis, transcript-level is preferred, because `tximport` can perform gene-level aggregation across all samples, instead of the per-sample aggregation that is done for the `quant.genes.sf` files. See: https://github.com/COMBINE-lab/salmon/issues/437.
+
+> For `tximport`, there are several different ways of creating count matrices (i.e., using raw counts with length offset or by scaling the TPM abundances), but this should only be relevant for downstream differential expression testing) See the description of different options provided by the nf-core/rnaseq pipeline: https://nf-co.re/rnaseq/3.14.0/docs/output/#pseudoalignment and the `tximport` docs here: https://bioconductor.org/packages/release/bioc/vignettes/tximport/inst/doc/tximport.html.
+
+> The Salmon transcript-level quant files can be imported using tximport and then converted into a DESeq object (~SummarizedExperiment). This approach provides the same count matrix as the tximport gene counts csv file, but it enables the DESeq2 approach for visualisation, namely transforming the counts using `vst` (variance stabilizing transformation) or `rlog` in order to remove the dependence of the variance on the mean. See [DESeq2 vignette](https://bioconductor.org/packages/devel/bioc/vignettes/DESeq2/inst/doc/DESeq2.html#data-transformations-and-visualization).
+
+```{r file-import-counts, message=FALSE, cache=TRUE}
+# read in sample metadata
+samples <- read_csv(here("./data/samplesheet.csv"),
+  col_select = c("sample", "condition", "RNA_type", "library_kit", "removal", "WBC_depletion", "kit"),
+  col_types = cols(.default = "f")
+) %>%
+  mutate(RNA_type = str_to_title(RNA_type)) %>%
+  mutate(filter_name = factor(WBC_depletion,
+    levels = c("nofilter", "centpip", "plasmo", "pmacs", "cellulose"),
+    labels = c("no filter", "cent/pip", "plasmodipur", "PMACS", "cellulose")
+  )) %>%
+  # mutate(kit = as.factor(str_replace_all(kit, "_", " "))) %>%
+  mutate(kit_name = factor(kit,
+    levels = c("mRNA_qiagen_FSglob", "mRNA_qiagen_FSglobH", "tRNA_qiagen_FSglobH", "mRNA_illumina"),
+    labels = c("mRNA Qiagen FS globin", "mRNA Qiagen FS globin/rRNA", "tRNA Qiagen FS globin/rRNA", "mRNA Illumina")
+  )) %>%
+  mutate(sample_name = as.factor(str_replace(str_replace(sample, "104974-001-0", "Sample "), "_S1_L001", paste(" -", kit_name, "-", filter_name)))) %>%
+  mutate(sample_short = as.factor(str_replace(str_replace(sample, "104974-001-0", "Sample "), "_S1_L001", "")))
+
+# read in transcript info - transcript id, gene id and genes names
+transcript_info <- read.csv(here("results/star_salmon/tx2gene.tsv"),
+  sep = "\t", header = FALSE,
+  col.names = c("tx", "gene_id", "gene_name")
+)
+transcript_info <- list(
+  transcript = transcript_info,
+  gene = unique(transcript_info[, 2:3]),
+  tx2gene = transcript_info[, 1:2]
+)
+
+# txi gene-level counts - same as using tximport and DESeqDataSetFromTximport except rounding needs to be done manually
+# gene-level aggregation across all samples
+gene_counts_txi <- read_delim(here("results/star_salmon/salmon.merged.gene_counts.tsv")) %>%
+  mutate(across(starts_with("X"), \(x) as.integer(round(x)))) %>%
+  rename_with(~ str_replace_all(.x, pattern = "\\.", replacement = "-"), .cols = `X104974.001.001_S1_L001`:`X104974.001.016_S1_L001`) %>%
+  rename_with(~ str_sub(.x, 2, -1), .cols = `X104974-001-001_S1_L001`:`X104974-001-016_S1_L001`)
+
+# txi gene-level TPM abundances
+gene_tpm <- read_delim(here("results/star_salmon/salmon.merged.gene_tpm.tsv")) %>%
+  rename_with(~ str_replace_all(.x, pattern = "\\.", replacement = "-"), .cols = `X104974.001.001_S1_L001`:`X104974.001.016_S1_L001`) %>%
+  rename_with(~ str_sub(.x, 2, -1), .cols = `X104974-001-001_S1_L001`:`X104974-001-016_S1_L001`)
+
+# DESeqDataSetFromTximport - original counts + offset tximport
+# to be used with DESeq2's vst/rlog transform for visualisations
+salmon_quant_files <- paste0("./results/star_salmon/", list.files(path = "./results/star_salmon/", pattern = "quant.sf", recursive = TRUE))
+txi <- tximport(salmon_quant_files, type = "salmon", tx2gene = transcript_info$tx2gene, txOut = FALSE)
+gse <- DESeqDataSetFromTximport(txi, colData = samples, design = ~1)
+
+# clean up
+rm(txi)
+```
+
+## Collect gene annotation
+
+- Add species information to genes by gathering list of *P. knowlesi* genes from `gff` file.
+- Add `gene_biotype` info for *P. knowlesi* genes (protein coding and r/t/nc/sn/snoRNA).
+- Add globin and rRNA gene annotation for both species.
+
+```{r gene-annotation, message=FALSE}
+# Note: not all Pk genes start with the prefix PKNH, so it is safer to read genes from GFF instead
+gff <- read_delim(here("data/ref/GCF_000006355.2_GCA_000006355.2_genomic.gff.gz"), comment = "#", col_names = c("seqname", "source", "feature", "start", "end", "score", "strand", "frame", "attribute")) %>%
+  # only keep genes, since we use aggregated gene counts
+  filter(feature == "gene") %>%
+  mutate(id = row_number()) %>%
+  separate_rows(attribute, sep = ";") %>%
+  separate(attribute, c("attribute", "attribute_value"), sep = "=") %>%
+  pivot_wider(names_from = attribute, values_from = attribute_value) %>%
+  select(c(gene_biotype, ID)) %>%
+  rename(gene_id = ID) %>%
+  mutate(species = "pk")
+
+# check to make sure there are no genes in gff that do not appear in transcript info file
+stopifnot(all(gff$gene_id %in% transcript_info$gene$gene_id))
+
+# create gene annotation df (based on one of the count matrices, not tx2gene
+# because the latter contains more features, namely pseudogenes)
+gene_annotation <- gene_counts_txi %>%
+  select(c(gene_id, gene_name)) %>%
+  left_join(gff, by = "gene_id") %>%
+  mutate(species = case_when(is.na(species) ~ "human", .default = species))
+
+# check to make sure all genes were assigned a species
+stopifnot(!any(is.na(gene_annotation$species)))
+
+# naive check to make sure "most" Pk genes are assigned the correct species
+stopifnot((gene_annotation %>% filter(str_detect(gene_id, "PKNH")) %>% select(species) %>% unique()) == "pk")
+```
+
+#### Annotate rRNA and globin genes
+
+##### rRNA {.tabset}
+
+The RefSeq `gff` files contains info on `rRNA` in the `gene_biotype` attribute of gene entries (including mitochondrial rRNA) for both species (i.e., we collected featured labelled as `gene` in the 3rd column of the gff, not rRNA directly, since counts were aggregated on the gene level).
+
+```
+NC_011902.2	RefSeq	gene	825471	825594	.	+	.	ID=gene-PKNH_0117700;Dbxref=GeneID:7318405;Name=PKNH_0117700;end_range=825594,.;gbkey=Gene;gene_biotype=rRNA;locus_tag=PKNH_0117700;old_locus_tag=PKH_011712;partial=true;start_range=.,825471
+
+NC_011902.2	RefSeq	rRNA	825471	825594	.	+	.	ID=rna-XR_002461722.1;Parent=gene-PKNH_0117700;Dbxref=GeneID:7318405,GenBank:XR_002461722.1;Name=XR_002461722.1;end_range=825594,.;gbkey=rRNA;locus_tag=PKNH_0117700;orig_transcript_id=gnl|WGS:CADCXE|mrna.PKNH_0117700-RA;partial=true;product=5.8S ribosomal RNA;start_range=.,825471;transcript_id=XR_002461722.1
+
+NC_011902.2	RefSeq	exon	825471	825594	.	+	.	ID=exon-XR_002461722.1-1;Parent=rna-XR_002461722.1;Dbxref=GeneID:7318405,GenBank:XR_002461722.1;end_range=825594,.;gbkey=rRNA;locus_tag=PKNH_0117700;orig_transcript_id=gnl|WGS:CADCXE|mrna.PKNH_0117700-RA;partial=true;product=5.8S ribosomal RNA;start_range=.,825471;transcript_id=XR_002461722.1
+```
+
+The bash script in [`scripts/2_expression_analysis/0_gene_annotations.sh`](./scripts/2_expression_analysis/0_gene_annotations.sh) was used to retrieve the rRNA genes from both annotation files.
+
+```
+# zcat "${ref_human}" | awk '$3 ~ /gene/' | cut -f9 | grep -E "gene_biotype=rRNA" | grep -v "rRNA_pseudo" | grep -o "ID=[^;]*" | sed 's/ID=/human_rRNA;/' >> "${output_file}"
+# zcat "${ref_pk}" | cut -f9 | grep -E "gene_biotype=rRNA" | grep -o "ID=[^;]*" | sed 's/ID=/pk_rRNA;/' >> "${output_file}"
+```
+
+```{r message=FALSE}
+# read in gene type table
+gene_types_df <- read_csv2(here("data/ref/gene_types.csv")) %>% left_join(transcript_info$gene, by = "gene_id")
+```
+
+```{r message=FALSE, fig.height=18, out.width="100%"}
+gene_types_df %>%
+  left_join(gene_tpm, by = c("gene_id", "gene_name")) %>%
+  filter(rowSums(across(.cols = `104974-001-001_S1_L001`:`104974-001-016_S1_L001`)) != 0) %>%
+  pivot_longer(
+    cols = `104974-001-001_S1_L001`:`104974-001-016_S1_L001`,
+    names_to = "sample",
+    values_to = "counts"
+  ) %>%
+  left_join(samples, by = "sample") %>%
+  group_by(gene_id) %>%
+  mutate(total = sum(counts)) %>%
+  ungroup() %>%
+  arrange(gene_type, desc(total)) %>%
+  mutate(gene_name = factor(gene_name, levels = unique(gene_name))) %>%
+  ggplot(aes(x = gene_name, y = counts, fill = sample_short)) +
+  geom_bar(position = "stack", stat = "identity") +
+  scale_fill_viridis(option = "viridis", discrete = T) +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) +
+  coord_flip() +
+  scale_x_discrete(limits = rev) +
+  labs(fill = "Sample", title = "RefSeq annotated rRNA - TPM") +
+  ylab(label = "TPM") +
+  xlab(label = "Gene name") +
+  facet_wrap(~kit_name) +
+  scale_y_continuous(labels = scales::label_number(scale_cut = cut_short_scale()))
+```
+
+##### Globins
+
+For human globins, the following genes were included: "HBB","HBD","HBBP1","HBG1","HBG2","HBE1","HBZ","HBM","HBA2","HBA1","HBQ1".
+
+```{r globins, message=FALSE}
+globin_names <- c("HBB", "HBD", "HBBP1", "HBG1", "HBG2", "HBE1", "HBZ", "HBM", "HBA2", "HBA1", "HBQ1")
+globin_df <- tibble(gene_name = globin_names, gene_type = "human_globin") %>% left_join(transcript_info$gene, by = "gene_name")
+
+gene_types_df <- gene_types_df %>% bind_rows(globin_df)
+
+# export full gene type file
+write_csv2(gene_types_df, here("data/ref/gene_types_R.csv"))
+
+# some gene id share the same gene name
+# gene_types_df %>%
+#     group_by(gene_name) %>%
+#     filter(n()>1)
+```
+
+Merge globin and rRNA annotations with gene annotation dataframe:
+
+```{r combine-annotations-1}
+gene_annotation <- gene_annotation %>%
+  left_join(gene_types_df, by = c("gene_id", "gene_name")) %>%
+  mutate("gene_type" = coalesce(gene_type, species))
+```
+
+### Add annotations to counts
+
+```{r combine-annotations-2}
+# merge gene_type annotation and fill in missing types using species name
+annotate_gene_type <- function(data, gene_annotation) {
+  data %>%
+    left_join(gene_annotation, by = c("gene_id", "gene_name"))
+}
+
+gene_counts_txi <- annotate_gene_type(gene_counts_txi, gene_annotation)
+gene_tpm <- annotate_gene_type(gene_tpm, gene_annotation)
+
+# for SummarizedExperiment DESeq2 object, add annotations to rowData
+rowData(gse) <- gene_annotation
+
+# ensure genes are in the same order in annotation data and count files
+# stopifnot(all(rownames(txi$abundance) == gene_annotation$gene_id))
+stopifnot(all(rownames(gse) == gene_annotation$gene_id))
+```
+
+### Subset DESeq object on Pk genes
+
+```{r}
+gse_pk <- gse[rowData(gse)$species == "pk", ]
+# or
+# pk_genes <- gene_annotation %>% filter(species == "pk") %>% select(gene_id) %>% pull()
+# gse_pk <- gse[pk_genes]
+```
+
+## Filtering out low count genes
+
+The raw counts can optionally be pre-filtered to remove rows that carry little to no information on gene expression levels. The [RNA-seq tutorial by Love et. al 2019](https://bioconductor.org/packages/release/workflows/vignettes/rnaseqGene/inst/doc/rnaseqGene.html#pre-filtering-the-dataset) and the [DESeq2 vignette](https://bioconductor.org/packages/devel/bioc/vignettes/DESeq2/inst/doc/DESeq2.html#pre-filtering) recommended a minimum count of 10 reads for a minimal number of samples (e.g., the size of the smallest group). Since we do not have replicates for the different treatment groups, we instead opt for a minimum of 10 reads for at least a single sample, as a conservative filtering approach (e.g., only genes for which none of the samples have a higher read count than 10 are removed).
+
+```{r message=FALSE}
+# create filter for all genes on the level of the DESeq/tximport gene counts
+filter_all_genes <- rowSums(counts(gse) >= 10) >= 1
+# should be the same as filtering on tximport raw gene counts from nf-core pipeline
+stopifnot(all(filter_all_genes == (rowSums(gene_counts_txi[, 3:18] >= 10) >= 1)))
+
+# create filtered versions of deseq2 objects: all genes, pk genes, pk protein-coding
+gse_filtered <- gse[filter_all_genes, ]
+gse_pk_filtered <- gse_filtered[rowData(gse_filtered)$species == "pk", ]
+gse_pk_filtered_coding <- gse_filtered[rowData(gse_filtered)$species == "pk" & rowData(gse_filtered)$gene_biotype == "protein_coding", ]
+
+# create filtered versions of other count matrices
+gene_tpm_filtered <- gene_tpm[filter_all_genes, ]
+gene_counts_txi_filtered <- gene_counts_txi[filter_all_genes, ]
+
+# check if filter was applied correctly, i.e. order of genes is the same in gse and tpm matrix
+stopifnot(all.equal(gene_tpm_filtered, gene_tpm[(rowSums(gene_counts_txi[, 3:18] >= 10) >= 1), ]))
+stopifnot(gene_tpm$gene_id == rownames(gse))
+stopifnot(gene_tpm_filtered$gene_id == rownames(gse_filtered))
+stopifnot(all.equal(gene_counts_txi_filtered, gene_counts_txi[(rowSums(gene_counts_txi[, 3:18] >= 10) >= 1), ]))
+stopifnot(gene_counts_txi$gene_id == rownames(gse))
+stopifnot(gene_counts_txi$gene_id == gene_tpm$gene_id)
+stopifnot(gene_counts_txi_filtered$gene_id == rownames(gse_filtered))
+```
+
+The number of genes were filtered down from `r dim(gse)[1]`  to `r dim(gse_filtered)[1]` and from `r dim(gse_pk)[1]` to `r dim(gse_pk_filtered)[1]`, for all genes and *P. knowlesi* genes respectively. So in conclusion, the effect is relatively minor for *P. knowlesi*, but a substantial number of human genes were removed.
+
+It is difficult to determine an appropriate threshold for filtering on the TPM level, so instead we filter the same genes as on the raw count level (>=10 for at least 1 sample).
+
+```{r}
+dim(gene_tpm)
+mean.tpm <- apply(gene_tpm[, 3:18], 1, mean)
+hist(log10(mean.tpm), main = "TPM before filtering")
+# hist(log10(mean.tpm+1e-5))
+
+dim(gene_tpm_filtered)
+mean.tpm <- apply(gene_tpm_filtered[, 3:18], 1, mean)
+hist(log10(mean.tpm), main = "TPM after filtering")
+```
+
+## Transform dataframes to long format
+
+```{r}
+# cast to long format
+to_long <- function(data) {
+  data %>%
+    pivot_longer(cols = `104974-001-001_S1_L001`:`104974-001-016_S1_L001`, names_to = "sample", values_to = "counts")
+}
+
+gene_counts_txi_long <- to_long(gene_counts_txi)
+gene_counts_txi_filtered_long <- to_long(gene_counts_txi_filtered)
+
+gene_tpm_long <- to_long(gene_tpm)
+gene_tpm_filtered_long <- to_long(gene_tpm_filtered)
+```
+
+## Transform counts for visualisation
+
+For visualisation purposes (e.g., PCA or heatmaps), gene counts should be transformed so that they all have the same range of variances, i.e. homoskedastic, instead of the variance depending on the mean. DESeq2 offers two transform options to stabilize the variance, `vst` and `rlog`. According to [Love et al., 2019](https://bioconductor.org/packages/release/workflows/vignettes/rnaseqGene/inst/doc/rnaseqGene.html#exploratory-analysis-and-visualization), rlog, while slower, works better for small datasets (n < 30) and when there are large differences in sequencing depth across samples. 
+
+We use `blind=TRUE` to obtain a fully unsupervised transformation (independent of the design, although we are using an intercept-only model anyway), generally intended to observe batch effects. However, since we can have large differences in counts between samples due to our experimental design (e.g., zero counts for rRNA or globins in some samples), the transformation might not work as well as intended and shrink values too much ([DESeq2 vignette](https://bioconductor.org/packages/devel/bioc/vignettes/DESeq2/inst/doc/DESeq2.html#blind-dispersion-estimation)).
+
+Also note that attempting to transform unfiltered counts can lead to strange outcomes.
+
+Lastly, the transformation should ideally be performed once on the entire set of gene counts (after filtering out low counts), and only then subset on different gene groups of interest (e.g., species, protein-coding genes only, etc.), rather than re-applying the transformation to a subset of counts. However, in actual experiments focused on *P. knowlesi*, researchers will also throw out human gene counts (e.g., by not even mapping to the human reference or simply discarding those reads). In that sense, evaluating the results by transforming only the genes of interest can be considered the better approach.
+
+```{r, message=FALSE}
+# # variance stabilizing transformation without filtering
+# vsd <- vst(gse, blind = TRUE)
+# p <- meanSdPlot(assay(vsd))
+# p$gg + labs(title = "VST on unfiltered counts")
+
+# extract transformed gene counts
+# gene_counts_vst <- data.frame(assays(vsd)[[1]])
+# colnames(gene_counts_vst) <- colData(gse)$sample
+# gene_counts_vst <- gene_counts_vst %>%
+#   mutate(gene_id = rownames(gene_counts_vst)) %>%
+#   left_join(transcript_info$gene, by = "gene_id")
+
+# variance stabilizing transform on filtered object
+vsd_filtered <- vst(gse_filtered, blind = TRUE)
+p <- meanSdPlot(assay(vsd_filtered))
+p$gg + labs(title = "VST on filtered counts")
+
+# compare with rlog transform on filtered object
+rld_filtered <- rlog(gse_filtered, blind = TRUE)
+p <- meanSdPlot(assay(rld_filtered))
+p$gg + labs(title = "Rlog on filtered counts")
+
+# transform after subsetting on species/protein-coding genes
+# vsd_pk <- vst(gse_pk, blind = TRUE)
+# p <- meanSdPlot(assay(vsd_pk))
+# p$gg + labs(title = "VST on unfiltered counts after subsetting Pk genes")
+
+vsd_pk_filtered <- vst(gse_pk_filtered, blind = TRUE)
+p <- meanSdPlot(assay(vsd_pk_filtered))
+p$gg + labs(title = "VST on filtered counts after subsetting Pk genes")
+
+rld_pk_filtered <- rlog(gse_pk_filtered, blind = TRUE)
+p <- meanSdPlot(assay(rld_pk_filtered))
+p$gg + labs(title = "Rlog on filtered counts after subsetting Pk genes")
+
+vsd_pk_filtered_coding <- vst(gse_pk_filtered_coding, blind = TRUE)
+p <- meanSdPlot(assay(vsd_pk_filtered))
+p$gg + labs(title = "VST on filtered counts after subsetting Pk protein-coding genes")
+
+rld_pk_filtered_coding <- rlog(gse_pk_filtered_coding, blind = TRUE)
+p <- meanSdPlot(assay(rld_pk_filtered))
+p$gg + labs(title = "Rlog on filtered counts after subsetting Pk protein-coding genes")
+
+# extract transformed gene counts
+# gene_counts_vst_pk <- data.frame(assays(vsd_pk)[[1]])
+# colnames(gene_counts_vst_pk) <- colData(vsd_pk)$sample
+# gene_counts_vst_pk <- gene_counts_vst_pk %>%
+#   mutate(gene_id = rownames(gene_counts_vst_pk)) %>%
+#   left_join(transcript_info$gene, by = "gene_id")
+```
+
+## Export RDS objects {#rds-objects}
+
+Save all output to rds object for easier loading.
+
+```{r export-rds, message = FALSE}
+dir.create(here("results/r_objects/"), showWarnings = FALSE)
+
+purrr::iwalk(
+  tibble:::lst(
+    fastq_screen,
+    fastq_screen_mapping_stats_df,
+    gene_annotation,
+    gene_counts_txi,
+    gene_counts_txi_long,
+    gene_counts_txi_filtered,
+    gene_counts_txi_filtered_long,
+    gene_tpm,
+    gene_tpm_long,
+    gene_tpm_filtered,
+    gene_tpm_filtered_long,
+    gse,
+    gse_filtered,
+    gse_pk,
+    gse_pk_filtered,
+    gse_pk_filtered_coding,
+    mapping_stats_df,
+    pcr_dups,
+    samples,
+    star_stats,
+    # transcript_info,
+    rld_filtered,
+    rld_pk_filtered,
+    rld_pk_filtered_coding,
+    vsd_filtered,
+    vsd_pk_filtered,
+    vsd_pk_filtered_coding,
+    to_long,
+  ),
+  ~ saveRDS(.x, file = here(paste0("results/r_objects/", .y, ".RDS")))
+)
+```
