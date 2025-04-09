@@ -35,6 +35,101 @@ Additionally, if scripts are moved around, the automatic resolving of the paths 
 
 All analyses scripts are numbered in the order in which they should be run. For some steps there are both shell (bash) and slurm scripts; in this case the slurm script is just a wrapper for the associated shell script. For steps that only consist of slurm scripts, these can simply be run as if they were regular shell scripts.
 
-# Output report
+# Output and results
 
-An Rmarkdown report is available as a rendered HTML file in `./results/1_expression_analysis.html`.
+An Rmarkdown report is available as a rendered HTML file in `./results/2_expression_analysis.html`. The results directory contains several other result files and logs, including gene count files (`r_objects` and `star_salmon/salmon.merged.tsv.tar.gz`).
+
+# Acknowledgements
+
+The analyses in this repository make heavy use of the [nf-core rna-seq pipeline](https://nf-co.re/rnaseq/3.14.0/) and several others downstream tools and packages.
+
+General software:
+
+|        Process Name         |              Software             |      Version       |
+|:---------------------------:|:---------------------------------:|:------------------:|
+| /                           | fastq-screen                      | 0.15.3
+| BEDTOOLS_GENOMECOV          | bedtools                          | 2.30.0             |
+| CUSTOM_DUMPSOFTWAREVERSIONS | python                            | 3.11.7             |
+|                             | yaml                              | 5.4.1              |
+| CUSTOM_GETCHROMSIZES        | getchromsizes                     | 1.16.1             |
+| DESEQ2_QC_STAR_SALMON       | bioconductor-deseq2               | 1.28.0             |
+|                             | r-base                            | 4.0.3              |
+| DUPRADAR                    | bioconductor-dupradar             | 1.28.0             |
+|                             | r-base                            | 4.2.1              |
+| FASTQC                      | fastqc                            | 0.12.1             |
+| FQ_SUBSAMPLE                | fq                                | 0.9.1 (2022-02-22) |
+| GFFREAD                     | gffread                           | 0.12.1             |
+| GTF2BED                     | perl                              | 5.26.2             |
+| GTF_FILTER                  | python                            | 3.9.5              |
+| GUNZIP_FASTA                | gunzip                            | 1.10               |
+| GUNZIP_GFF                  | gunzip                            | 1.10               |
+| MAKE_TRANSCRIPTS_FASTA      | rsem                              | 1.3.1              |
+|                             | star                              | 2.7.10a            |
+| PICARD_MARKDUPLICATES       | picard                            | 3.0.0              |
+| QUALIMAP_RNASEQ             | qualimap                          | 2.3                |
+| RSEQC_BAMSTAT               | rseqc                             | 5.0.2              |
+| RSEQC_INFEREXPERIMENT       | rseqc                             | 5.0.2              |
+| RSEQC_INNERDISTANCE         | rseqc                             | 5.0.2              |
+| RSEQC_JUNCTIONANNOTATION    | rseqc                             | 5.0.2              |
+| RSEQC_JUNCTIONSATURATION    | rseqc                             | 5.0.2              |
+| RSEQC_READDISTRIBUTION      | rseqc                             | 5.0.2              |
+| RSEQC_READDUPLICATION       | rseqc                             | 5.0.2              |
+| SALMON_INDEX                | salmon                            | 1.10.1             |
+| SALMON_QUANT                | salmon                            | 1.10.1             |
+| SAMTOOLS_FLAGSTAT           | samtools                          | 1.17               |
+| SAMTOOLS_IDXSTATS           | samtools                          | 1.17               |
+| SAMTOOLS_INDEX              | samtools                          | 1.17               |
+| SAMTOOLS_SORT               | samtools                          | 1.17               |
+| SAMTOOLS_STATS              | samtools                          | 1.17               |
+| SE_GENE                     | bioconductor-summarizedexperiment | 1.24.0             |
+|                             | r-base                            | 4.1.1              |
+| STAR_ALIGN                  | gawk                              | 5.1.0              |
+|                             | samtools                          | 1.16.1             |
+|                             | star                              | 2.7.9a             |
+| STAR_GENOMEGENERATE         | gawk                              | 5.1.0              |
+|                             | samtools                          | 1.16.1             |
+|                             | star                              | 2.7.9a             |
+| STRINGTIE_STRINGTIE         | stringtie                         | 2.2.1              |
+| TRIMGALORE                  | cutadapt                          | 3.4                |
+|                             | trimgalore                        | 0.6.7              |
+| TX2GENE                     | python                            | 3.9.5              |
+| TXIMPORT                    | bioconductor-tximeta              | 1.12.0             |
+|                             | r-base                            | 4.1.1              |
+| UCSC_BEDCLIP                | ucsc                              | 377                |
+| UCSC_BEDGRAPHTOBIGWIG       | ucsc                              | 445                |
+| Workflow                    | Nextflow                          | 24.04.4            |
+|                             | nf-core/rnaseq                    | 3.14.0             |
+
+R packages:
+
+| Package       | Version | Citation                                       |
+|---------------|---------|------------------------------------------------|
+| AnnotationDbi | 1.66.0  | @AnnotationDbi                                 |
+| base          | 4.4.3   | @base                                          |
+| BiocManager   | 1.30.23 | @BiocManager                                   |
+| DESeq2        | 1.44.0  | @DESeq2                                        |
+| dplyr         | 1.1.4   | @dplyr                                         |
+| GGally        | 2.2.1   | @GGally                                        |
+| ggcorrplot    | 0.1.4.1 | @ggcorrplot                                    |
+| ggplot2       | 3.5.1   | @ggplot2                                       |
+| ggpubr        | 0.6.0   | @ggpubr                                        |
+| ggtext        | 0.1.2   | @ggtext                                        |
+| here          | 1.0.1   | @here                                          |
+| hexbin        | 1.28.3  | @hexbin                                        |
+| knitr         | 1.48    | @knitr2014; @knitr2015; @knitr2024             |
+| pheatmap      | 1.0.12  | @pheatmap                                      |
+| purrr         | 1.0.2   | @purrr                                         |
+| readr         | 2.1.5   | @readr                                         |
+| renv          | 1.0.7   | @renv                                          |
+| rmarkdown     | 2.27    | @rmarkdown2018; @rmarkdown2020; @rmarkdown2024 |
+| scales        | 1.3.0   | @scales                                        |
+| stringr       | 1.5.1   | @stringr                                       |
+| svglite       | 2.1.3   | @svglite                                       |
+| tibble        | 3.2.1   | @tibble                                        |
+| tidyr         | 1.3.1   | @tidyr                                         |
+| txdbmaker     | 1.0.1   | @txdbmaker                                     |
+| tximport      | 1.32.0  | @tximport                                      |
+| UpSetR        | 1.4.0   | @UpSetR                                        |
+| VennDiagram   | 1.7.3   | @VennDiagram                                   |
+| viridis       | 0.6.5   | @viridis                                       |
+| vsn           | 3.72.0  | @vsn                                           |
