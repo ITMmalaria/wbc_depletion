@@ -1,0 +1,81 @@
+sample_name,gene_type,sum_reads,per
+Sample 01 - mRNA Qiagen FS globin - no filter,human,918750.105206,91.93247809192181
+Sample 01 - mRNA Qiagen FS globin - no filter,human_globin,9897.903263,0.9904094374799386
+Sample 01 - mRNA Qiagen FS globin - no filter,human_rRNA,43049.781168,4.307670869002847
+Sample 01 - mRNA Qiagen FS globin - no filter,pk,27503.004353,2.7520207408055604
+Sample 01 - mRNA Qiagen FS globin - no filter,pk_rRNA,174.099709,0.01742086078984858
+Sample 02 - mRNA Qiagen FS globin - cent/pip,human,894013.829104,89.44443437514121
+Sample 02 - mRNA Qiagen FS globin - cent/pip,human_globin,13232.486849,1.323885898690741
+Sample 02 - mRNA Qiagen FS globin - cent/pip,human_rRNA,47238.114484000005,4.726086211892403
+Sample 02 - mRNA Qiagen FS globin - cent/pip,pk,44504.743522,4.452617489514188
+Sample 02 - mRNA Qiagen FS globin - cent/pip,pk_rRNA,529.505263,0.05297602476145352
+Sample 03 - mRNA Qiagen FS globin - plasmodipur,human,637529.944664,63.82054937304291
+Sample 03 - mRNA Qiagen FS globin - plasmodipur,human_globin,92438.283371,9.253623421480938
+Sample 03 - mRNA Qiagen FS globin - plasmodipur,human_rRNA,28067.451535,2.8097192790042547
+Sample 03 - mRNA Qiagen FS globin - plasmodipur,pk,238893.259495,23.91463991628365
+Sample 03 - mRNA Qiagen FS globin - plasmodipur,pk_rRNA,2012.547536,0.20146801018825414
+Sample 04 - mRNA Qiagen FS globin - PMACS,human,539469.344237,54.02307042730228
+Sample 04 - mRNA Qiagen FS globin - PMACS,human_globin,97544.299752,9.768196527899681
+Sample 04 - mRNA Qiagen FS globin - PMACS,human_rRNA,14832.043066999999,1.4852975720475896
+Sample 04 - mRNA Qiagen FS globin - PMACS,pk,345147.118405,34.56342289800665
+Sample 04 - mRNA Qiagen FS globin - PMACS,pk_rRNA,1597.8706519999998,0.1600125747438068
+Sample 05 - mRNA Qiagen FS globin - cellulose,human,508686.258585,50.87226639422805
+Sample 05 - mRNA Qiagen FS globin - cellulose,human_globin,99146.016061,9.91531116844353
+Sample 05 - mRNA Qiagen FS globin - cellulose,human_rRNA,36830.942831,3.683357872613204
+Sample 05 - mRNA Qiagen FS globin - cellulose,pk,353118.176902,35.31434486548248
+Sample 05 - mRNA Qiagen FS globin - cellulose,pk_rRNA,2147.043334,0.21471969923274106
+Sample 06 - mRNA Qiagen FS globin/rRNA - no filter,human,953535.072694,95.68471279172776
+Sample 06 - mRNA Qiagen FS globin/rRNA - no filter,human_globin,4977.904313,0.49951948086020836
+Sample 06 - mRNA Qiagen FS globin/rRNA - no filter,human_rRNA,91.81760200000001,0.009213652573652682
+Sample 06 - mRNA Qiagen FS globin/rRNA - no filter,pk,37765.409464,3.7896585678967187
+Sample 06 - mRNA Qiagen FS globin/rRNA - no filter,pk_rRNA,168.370244,0.01689550694165515
+Sample 07 - tRNA Qiagen FS globin/rRNA - no filter,human,740932.466387,74.19193892426486
+Sample 07 - tRNA Qiagen FS globin/rRNA - no filter,human_globin,2466.78271,0.24700684672678508
+Sample 07 - tRNA Qiagen FS globin/rRNA - no filter,human_rRNA,8149.925117,0.8160780826170112
+Sample 07 - tRNA Qiagen FS globin/rRNA - no filter,pk,36250.475388,3.629876106086705
+Sample 07 - tRNA Qiagen FS globin/rRNA - no filter,pk_rRNA,210870.121171,21.11510004030464
+Sample 08 - tRNA Qiagen FS globin/rRNA - cent/pip,human,692791.828206,69.35626274768649
+Sample 08 - tRNA Qiagen FS globin/rRNA - cent/pip,human_globin,2505.7057649999997,0.25084936099167987
+Sample 08 - tRNA Qiagen FS globin/rRNA - cent/pip,human_rRNA,7537.674199,0.7546060605334571
+Sample 08 - tRNA Qiagen FS globin/rRNA - cent/pip,pk,44203.554398,4.425273521410149
+Sample 08 - tRNA Qiagen FS globin/rRNA - cent/pip,pk_rRNA,251849.875256,25.213008309378214
+Sample 09 - tRNA Qiagen FS globin/rRNA - plasmodipur,human,443673.355973,44.392038841785364
+Sample 09 - tRNA Qiagen FS globin/rRNA - plasmodipur,human_globin,10512.535634,1.0518388898218634
+Sample 09 - tRNA Qiagen FS globin/rRNA - plasmodipur,human_rRNA,8624.516442,0.8629318477897953
+Sample 09 - tRNA Qiagen FS globin/rRNA - plasmodipur,pk,85559.201152,8.560683957417648
+Sample 09 - tRNA Qiagen FS globin/rRNA - plasmodipur,pk_rRNA,451073.911639,45.13250646318533
+Sample 10 - tRNA Qiagen FS globin/rRNA - PMACS,human,327273.702913,32.73868872700509
+Sample 10 - tRNA Qiagen FS globin/rRNA - PMACS,human_globin,11096.026476,1.1099863926462188
+Sample 10 - tRNA Qiagen FS globin/rRNA - PMACS,human_rRNA,10359.794912,1.0363377744093922
+Sample 10 - tRNA Qiagen FS globin/rRNA - PMACS,pk,112263.901308,11.230272666236386
+Sample 10 - tRNA Qiagen FS globin/rRNA - PMACS,pk_rRNA,538660.853895,53.884714439702904
+Sample 11 - tRNA Qiagen FS globin/rRNA - cellulose,human,451998.130173,45.20923459620142
+Sample 11 - tRNA Qiagen FS globin/rRNA - cellulose,human_globin,10315.086739,1.0317236845319009
+Sample 11 - tRNA Qiagen FS globin/rRNA - cellulose,human_rRNA,10437.295464,1.04394710438568
+Sample 11 - tRNA Qiagen FS globin/rRNA - cellulose,pk,84203.116973,8.422066851264914
+Sample 11 - tRNA Qiagen FS globin/rRNA - cellulose,pk_rRNA,442837.971217,44.29302776361608
+Sample 12 - mRNA Illumina - no filter,human,238094.255296,23.814100552718116
+Sample 12 - mRNA Illumina - no filter,human_globin,728618.1692860001,72.87612347615386
+Sample 12 - mRNA Illumina - no filter,human_rRNA,22978.482755,2.298299462102404
+Sample 12 - mRNA Illumina - no filter,pk,9697.792838,0.9699697016899906
+Sample 12 - mRNA Illumina - no filter,pk_rRNA,414.98659000000004,0.04150680733562258
+Sample 13 - mRNA Illumina - cent/pip,human,188221.270206,18.82557622607198
+Sample 13 - mRNA Illumina - cent/pip,human_globin,782411.199306,78.25545782656167
+Sample 13 - mRNA Illumina - cent/pip,human_rRNA,16949.641025,1.6952747092369942
+Sample 13 - mRNA Illumina - cent/pip,pk,11833.66426,1.18358328108484
+Sample 13 - mRNA Illumina - cent/pip,pk_rRNA,401.006085,0.04010795704451448
+Sample 14 - mRNA Illumina - plasmodipur,human,42802.10263,4.2804224879606725
+Sample 14 - mRNA Illumina - plasmodipur,human_globin,923424.851571,92.34706375933602
+Sample 14 - mRNA Illumina - plasmodipur,human_rRNA,12328.475231,1.232908651175732
+Sample 14 - mRNA Illumina - plasmodipur,pk,20478.036735,2.047905209412343
+Sample 14 - mRNA Illumina - plasmodipur,pk_rRNA,916.953456,0.09169989211522193
+Sample 15 - mRNA Illumina - PMACS,human,51439.95178,5.1442912925379165
+Sample 15 - mRNA Illumina - PMACS,human_globin,893670.9348299999,89.37223790764969
+Sample 15 - mRNA Illumina - PMACS,human_rRNA,13713.775275,1.3714564709688044
+Sample 15 - mRNA Illumina - PMACS,pk,39596.052894,3.9598332244291026
+Sample 15 - mRNA Illumina - PMACS,pk_rRNA,1521.723446,0.1521811044144916
+Sample 16 - mRNA Illumina - cellulose,human,24288.005251,2.4289140814701056
+Sample 16 - mRNA Illumina - cellulose,human_globin,939184.030323,93.9227941022229
+Sample 16 - mRNA Illumina - cellulose,human_rRNA,15048.623217999999,1.5049326802757192
+Sample 16 - mRNA Illumina - cellulose,pk,20252.056803,2.0253003669584535
+Sample 16 - mRNA Illumina - cellulose,pk_rRNA,1180.532496,0.11805876907282835
