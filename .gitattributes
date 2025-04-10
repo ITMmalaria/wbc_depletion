@@ -1,0 +1,10 @@
+# ignore html files and results directory for linguist detection
+*.html linguist-detectable=false
+results/* linguist-detectable=false
+
+# set desired languages
+*.sh linguist-detectable=true
+*.slurm linguist-language=Shell
+*.R linguist-detectable=true
+*.Rmd linguist-detectable=true
+*.py linguist-detectable=true
