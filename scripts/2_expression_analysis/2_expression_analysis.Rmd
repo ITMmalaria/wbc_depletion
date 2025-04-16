@@ -54,9 +54,7 @@ We used R version 4.4.2 [@base] and the following R packages: AnnotationDbi v. 1
 
 # Data import
 
-The RDS objects required for this report can be generated using the data import script.
-
-If the RDS objects have already been created in a previous run, the following cell can be uncommented and run, and the remaining cells in the data import section can be skipped. See [RDS object section](#rds-objects)).
+The RDS objects required for this report can be generated using the data import script (`1_prepare_expression_data.Rmd`).
 
 ```{r data-import, include=FALSE, message = FALSE}
 data_list <- list.files(path = here("results/r_objects"),
@@ -587,11 +585,11 @@ gene_tpm_filtered_long %>%
   mutate(per = 100 * sum_reads / sum(sum_reads)) %>%
   ggplot(aes(y = sum_reads, x = sample_name, fill = gene_type)) +
   geom_bar(position = "stack", stat = "identity") +
-  # scale_fill_viridis(
-    # option = "viridis", discrete = T,
-    # limits = rev,
-    # labels = c("human", "human globin", "human rRNA", expression(italic("P. knowlesi")), expression(italic("P. knowlesi rRNA")))
-  # ) +
+  scale_fill_viridis(
+  option = "viridis", discrete = T,
+  # limits = rev,
+  # labels = c("human", "human globin", "human rRNA", expression(italic("P. knowlesi")), expression(italic("P. knowlesi rRNA")))
+  ) +
   coord_flip() +
   scale_x_discrete(limits = rev) +
   scale_y_continuous(labels = scales::label_number(scale_cut = cut_short_scale())) +
@@ -2320,7 +2318,7 @@ draw_venn(
 
 ### Simple correlation matrix
 
-```{r, fig.width=10, fig.height=10}
+```{r, message=FALSE, fig.width=10, fig.height=10}
 mat <- round(
           cor(
             gene_tpm_filtered %>%
@@ -2349,7 +2347,7 @@ p
 
 Ordered by mRNA - total RNA library preparation kit:
 
-```{r}
+```{r, message=FALSE, fig.width=10, fig.height=10}
 mat <- round(
           cor(
             gene_tpm_filtered %>%
@@ -2377,9 +2375,9 @@ ggsave(filename = here("results/figures/pk_coding_tpm_correlation_ordered.svg"),
 p
 ```
 
-### Correlation pairs plots
+### Correlation pairs plots {.tabset}
 
-Pk protein coding genes only:
+#### Pk protein coding genes only
 
 ```{r correlation-plot-export, message=FALSE, cache=TRUE, fig.height=18, out.width="100%"}
 correlation_plot
@@ -2432,7 +2430,7 @@ ggsave(filename = here("results/figures/correlation_protein_coding_genes_pk_orde
 
 ```
 
-All Pk genes:
+#### All Pk genes
 
 ```{r correlation-plot-log-export, message=FALSE, cache=TRUE, fig.height=18, out.width="100%"}
 correlation_plot_log
