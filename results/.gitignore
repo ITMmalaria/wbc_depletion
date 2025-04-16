@@ -1,0 +1,17 @@
+*
+!.gitignore
+
+!*.html
+!*.gz
+!*.ods
+!*.csv
+
+!r_objects/
+!r_objects/*.RDS
+
+!star_salmon/
+!star_salmon/*.gz
+
+!figures/
+!figures/*.png
+!figures/*.svg.gz
