@@ -15,3 +15,6 @@
 !figures/
 !figures/*.png
 !figures/*.svg.gz
+
+!fastq_pk_filter/
+!fastq_pk_filter/filter.log

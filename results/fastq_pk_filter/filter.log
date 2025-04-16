@@ -1,0 +1,57 @@
+└─▶ bash scripts/1_read_processing/5_pk_bam_to_fastq.sh
+/scratch/antwerpen/203/vsc20380/wbc_depletion/results/fastq_pk_filter
+
+Samtools filter and flagstat script script | 5_pk_bam_to_fastq.sh
+==============================================
+
+Output directory:              /scratch/antwerpen/203/vsc20380/wbc_depletion/results/fastq_pk_filter
+STAR .bam directory:           /scratch/antwerpen/203/vsc20380/wbc_depletion/results/star_salmon
+threads:                       7
+Extracting paired fastq files from /scratch/antwerpen/203/vsc20380/wbc_depletion/results/star_salmon/104974-001-001_S1_L001.markdup.sorted.pk.bam...
+[M::bam2fq_mainloop] discarded 12075 singletons
+[M::bam2fq_mainloop] processed 2967775 reads
+Extracting paired fastq files from /scratch/antwerpen/203/vsc20380/wbc_depletion/results/star_salmon/104974-001-002_S1_L001.markdup.sorted.pk.bam...
+[M::bam2fq_mainloop] discarded 20986 singletons
+[M::bam2fq_mainloop] processed 6615182 reads
+Extracting paired fastq files from /scratch/antwerpen/203/vsc20380/wbc_depletion/results/star_salmon/104974-001-003_S1_L001.markdup.sorted.pk.bam...
+[M::bam2fq_mainloop] discarded 40767 singletons
+[M::bam2fq_mainloop] processed 14220341 reads
+Extracting paired fastq files from /scratch/antwerpen/203/vsc20380/wbc_depletion/results/star_salmon/104974-001-004_S1_L001.markdup.sorted.pk.bam...
+[M::bam2fq_mainloop] discarded 34512 singletons
+[M::bam2fq_mainloop] processed 11426566 reads
+Extracting paired fastq files from /scratch/antwerpen/203/vsc20380/wbc_depletion/results/star_salmon/104974-001-005_S1_L001.markdup.sorted.pk.bam...
+[M::bam2fq_mainloop] discarded 47550 singletons
+[M::bam2fq_mainloop] processed 19794750 reads
+Extracting paired fastq files from /scratch/antwerpen/203/vsc20380/wbc_depletion/results/star_salmon/104974-001-006_S1_L001.markdup.sorted.pk.bam...
+[M::bam2fq_mainloop] discarded 4912 singletons
+[M::bam2fq_mainloop] processed 1319144 reads
+Extracting paired fastq files from /scratch/antwerpen/203/vsc20380/wbc_depletion/results/star_salmon/104974-001-007_S1_L001.markdup.sorted.pk.bam...
+[M::bam2fq_mainloop] discarded 77559 singletons
+[M::bam2fq_mainloop] processed 30685857 reads
+Extracting paired fastq files from /scratch/antwerpen/203/vsc20380/wbc_depletion/results/star_salmon/104974-001-008_S1_L001.markdup.sorted.pk.bam...
+[M::bam2fq_mainloop] discarded 44769 singletons
+[M::bam2fq_mainloop] processed 29093283 reads
+Extracting paired fastq files from /scratch/antwerpen/203/vsc20380/wbc_depletion/results/star_salmon/104974-001-009_S1_L001.markdup.sorted.pk.bam...
+[M::bam2fq_mainloop] discarded 167052 singletons
+[M::bam2fq_mainloop] processed 73444822 reads
+Extracting paired fastq files from /scratch/antwerpen/203/vsc20380/wbc_depletion/results/star_salmon/104974-001-010_S1_L001.markdup.sorted.pk.bam...
+[M::bam2fq_mainloop] discarded 214963 singletons
+[M::bam2fq_mainloop] processed 82266329 reads
+Extracting paired fastq files from /scratch/antwerpen/203/vsc20380/wbc_depletion/results/star_salmon/104974-001-011_S1_L001.markdup.sorted.pk.bam...
+[M::bam2fq_mainloop] discarded 150526 singletons
+[M::bam2fq_mainloop] processed 67411902 reads
+Extracting paired fastq files from /scratch/antwerpen/203/vsc20380/wbc_depletion/results/star_salmon/104974-001-012_S1_L001.markdup.sorted.pk.bam...
+[M::bam2fq_mainloop] discarded 285 singletons
+[M::bam2fq_mainloop] processed 1407849 reads
+Extracting paired fastq files from /scratch/antwerpen/203/vsc20380/wbc_depletion/results/star_salmon/104974-001-013_S1_L001.markdup.sorted.pk.bam...
+[M::bam2fq_mainloop] discarded 447 singletons
+[M::bam2fq_mainloop] processed 2569157 reads
+Extracting paired fastq files from /scratch/antwerpen/203/vsc20380/wbc_depletion/results/star_salmon/104974-001-014_S1_L001.markdup.sorted.pk.bam...
+[M::bam2fq_mainloop] discarded 384 singletons
+[M::bam2fq_mainloop] processed 2817262 reads
+Extracting paired fastq files from /scratch/antwerpen/203/vsc20380/wbc_depletion/results/star_salmon/104974-001-015_S1_L001.markdup.sorted.pk.bam...
+[M::bam2fq_mainloop] discarded 1529 singletons
+[M::bam2fq_mainloop] processed 11110019 reads
+Extracting paired fastq files from /scratch/antwerpen/203/vsc20380/wbc_depletion/results/star_salmon/104974-001-016_S1_L001.markdup.sorted.pk.bam...
+[M::bam2fq_mainloop] discarded 683 singletons
+[M::bam2fq_mainloop] processed 5578557 reads
