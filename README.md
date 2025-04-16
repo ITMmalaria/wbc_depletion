@@ -1,6 +1,6 @@
 # RNA-seq of low-volume _Plasmodium_ blood samples
 
-This repository stores the code and several results (rmarkdown report, figures, transcriptomic count tables) associated with the manuscript "Optimized low-volume _Plasmodium_ blood sample processing protocols for untargeted transcriptomics" by Erin Sauve, Johanna Helena Kattenberg, Pieter Moris, Pieter Guetens, Pieter Monsieurs and Anna Rosanas-Urgell.
+This repository stores the code and several results (rmarkdown report, figures, transcriptomic count tables) associated with the manuscript "Optimized low-volume _Plasmodium_ blood sample processing protocols for untargeted transcriptomics" by Erin Sauve, Johanna Helena Kattenberg, Pieter Moris, Pieter Guetens, Pieter Monsieurs and Anna Rosanas-Urgell. The associated data for this study (excluding human reads) are available on GEO under: [https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE294674](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE294674).
 
 # Requirements
 
@@ -14,11 +14,11 @@ conda env create -f environment.yml
 
 The Nextflow pipeline ([nf-core/rnaseq v3.14.0](https://nf-co.re/rnaseq/3.14.0/)) was run using Nextflow version 24.04.4 that was manually installed (`curl -s https://get.nextflow.io | bash `), but it could also be added to the conda environment instead (`conda install -c bioconda -n wbc_depletion nextflow`).
 
-For the downstream expression analyses in R, an `renv` environment was created. You can re-use it in R by opening the R project file in the root directory (`wbc_depletion_repo.Rproj`) and then running `renv::restore()` (after installing the `renv` package). For more info, check the [renv documentation](https://rstudio.github.io/renv/articles/renv.html).
+For the downstream expression analyses in R, an `renv` environment was created. You can re-use it in R by opening the R project file in the root directory (`wbc_depletion_repo.Rproj`) and then running `renv::restore()` (after installing the `renv` package). For more info on how to recreate an renv environment, check the [renv documentation](https://rstudio.github.io/renv/articles/renv.html).
 
 ## Input data and data availability
 
-The raw fastq files should be placed inside the `./data/fastq` folder. Due to the sensitive nature of human genetic data, only the _Plasmodium knowlesi_ reads - obtained by mapping against a concatenated human-_P. knowlesi_ reference genome and filtering the bam file on the parasite chromosomes/regions - were made available.
+The raw fastq files should be placed inside the `./data/fastq` folder. Due to the sensitive nature of human genetic data, only the _Plasmodium knowlesi_ reads - obtained by mapping against a concatenated human-_P. knowlesi_ reference genome and filtering the bam file on the parasite chromosomes/regions - were made available. These FASTQ files can be found on NCBI's Gene Expression Omnibus under accession [GSE294674](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE294674), alongside count tables (also available in this repository, see [Output and results](#output-and-results)).
 
 Reference files can be downloaded by running (`./scripts/0_download_refs.sh`).
 
@@ -31,7 +31,7 @@ The majority of scripts used in this project are configured to automatically use
 - `./data/samplesheet.csv` already mentioned above requires absolute file paths to the input files.
 - `./config/fastq-screen.conf` requires paths to the reference genome fasta files (line 80-81).
 
-Additionally, if scripts are moved around, the automatic resolving of the paths (based on the script's location relative to the project root) might fail. As a workaround, simply  simply replace the `SCRIPT_DIR` and `PROJECT_ROOT` variables with an absolute path to the script/repository root directories on your machine.
+Additionally, if scripts are moved around, the automatic resolving of the paths (based on the script's location relative to the project root) might fail. As a workaround, simply simply replace the `SCRIPT_DIR` and `PROJECT_ROOT` variables with an absolute path to the script/repository root directories on your machine.
 
 # Running the analyses
 
@@ -43,69 +43,69 @@ An Rmarkdown report is available as a rendered HTML file in `./results/2_express
 
 # Acknowledgements
 
-The analyses in this repository make heavy use of the [nf-core rna-seq pipeline](https://nf-co.re/rnaseq/3.14.0/) and several others downstream tools and packages.
+The analyses in this repository make heavy use of the [nf-core rna-seq pipeline](https://nf-co.re/rnaseq/3.14.0/) and several other downstream tools and packages.
 
 General software:
 
-|        Process Name         |              Software             |      Version       |
-|:---------------------------:|:---------------------------------:|:------------------:|
-| /                           | fastq-screen                      | 0.15.3
-| BEDTOOLS_GENOMECOV          | bedtools                          | 2.30.0             |
-| CUSTOM_DUMPSOFTWAREVERSIONS | python                            | 3.11.7             |
-|                             | yaml                              | 5.4.1              |
-| CUSTOM_GETCHROMSIZES        | getchromsizes                     | 1.16.1             |
-| DESEQ2_QC_STAR_SALMON       | bioconductor-deseq2               | 1.28.0             |
-|                             | r-base                            | 4.0.3              |
-| DUPRADAR                    | bioconductor-dupradar             | 1.28.0             |
-|                             | r-base                            | 4.2.1              |
-| FASTQC                      | fastqc                            | 0.12.1             |
-| FQ_SUBSAMPLE                | fq                                | 0.9.1 (2022-02-22) |
-| GFFREAD                     | gffread                           | 0.12.1             |
-| GTF2BED                     | perl                              | 5.26.2             |
-| GTF_FILTER                  | python                            | 3.9.5              |
-| GUNZIP_FASTA                | gunzip                            | 1.10               |
-| GUNZIP_GFF                  | gunzip                            | 1.10               |
-| MAKE_TRANSCRIPTS_FASTA      | rsem                              | 1.3.1              |
-|                             | star                              | 2.7.10a            |
-| PICARD_MARKDUPLICATES       | picard                            | 3.0.0              |
-| QUALIMAP_RNASEQ             | qualimap                          | 2.3                |
-| RSEQC_BAMSTAT               | rseqc                             | 5.0.2              |
-| RSEQC_INFEREXPERIMENT       | rseqc                             | 5.0.2              |
-| RSEQC_INNERDISTANCE         | rseqc                             | 5.0.2              |
-| RSEQC_JUNCTIONANNOTATION    | rseqc                             | 5.0.2              |
-| RSEQC_JUNCTIONSATURATION    | rseqc                             | 5.0.2              |
-| RSEQC_READDISTRIBUTION      | rseqc                             | 5.0.2              |
-| RSEQC_READDUPLICATION       | rseqc                             | 5.0.2              |
-| SALMON_INDEX                | salmon                            | 1.10.1             |
-| SALMON_QUANT                | salmon                            | 1.10.1             |
-| SAMTOOLS_FLAGSTAT           | samtools                          | 1.17               |
-| SAMTOOLS_IDXSTATS           | samtools                          | 1.17               |
-| SAMTOOLS_INDEX              | samtools                          | 1.17               |
-| SAMTOOLS_SORT               | samtools                          | 1.17               |
-| SAMTOOLS_STATS              | samtools                          | 1.17               |
-| SE_GENE                     | bioconductor-summarizedexperiment | 1.24.0             |
-|                             | r-base                            | 4.1.1              |
-| STAR_ALIGN                  | gawk                              | 5.1.0              |
-|                             | samtools                          | 1.16.1             |
-|                             | star                              | 2.7.9a             |
-| STAR_GENOMEGENERATE         | gawk                              | 5.1.0              |
-|                             | samtools                          | 1.16.1             |
-|                             | star                              | 2.7.9a             |
-| STRINGTIE_STRINGTIE         | stringtie                         | 2.2.1              |
-| TRIMGALORE                  | cutadapt                          | 3.4                |
-|                             | trimgalore                        | 0.6.7              |
-| TX2GENE                     | python                            | 3.9.5              |
-| TXIMPORT                    | bioconductor-tximeta              | 1.12.0             |
-|                             | r-base                            | 4.1.1              |
-| UCSC_BEDCLIP                | ucsc                              | 377                |
-| UCSC_BEDGRAPHTOBIGWIG       | ucsc                              | 445                |
-| Workflow                    | Nextflow                          | 24.04.4            |
-|                             | nf-core/rnaseq                    | 3.14.0             |
+|        Process Name         |             Software              |      Version       |
+| :-------------------------: | :-------------------------------: | :----------------: |
+|              /              |           fastq-screen            |       0.15.3       |
+|     BEDTOOLS_GENOMECOV      |             bedtools              |       2.30.0       |
+| CUSTOM_DUMPSOFTWAREVERSIONS |              python               |       3.11.7       |
+|                             |               yaml                |       5.4.1        |
+|    CUSTOM_GETCHROMSIZES     |           getchromsizes           |       1.16.1       |
+|    DESEQ2_QC_STAR_SALMON    |        bioconductor-deseq2        |       1.28.0       |
+|                             |              r-base               |       4.0.3        |
+|          DUPRADAR           |       bioconductor-dupradar       |       1.28.0       |
+|                             |              r-base               |       4.2.1        |
+|           FASTQC            |              fastqc               |       0.12.1       |
+|        FQ_SUBSAMPLE         |                fq                 | 0.9.1 (2022-02-22) |
+|           GFFREAD           |              gffread              |       0.12.1       |
+|           GTF2BED           |               perl                |       5.26.2       |
+|         GTF_FILTER          |              python               |       3.9.5        |
+|        GUNZIP_FASTA         |              gunzip               |        1.10        |
+|         GUNZIP_GFF          |              gunzip               |        1.10        |
+|   MAKE_TRANSCRIPTS_FASTA    |               rsem                |       1.3.1        |
+|                             |               star                |      2.7.10a       |
+|    PICARD_MARKDUPLICATES    |              picard               |       3.0.0        |
+|       QUALIMAP_RNASEQ       |             qualimap              |        2.3         |
+|        RSEQC_BAMSTAT        |               rseqc               |       5.0.2        |
+|    RSEQC_INFEREXPERIMENT    |               rseqc               |       5.0.2        |
+|     RSEQC_INNERDISTANCE     |               rseqc               |       5.0.2        |
+|  RSEQC_JUNCTIONANNOTATION   |               rseqc               |       5.0.2        |
+|  RSEQC_JUNCTIONSATURATION   |               rseqc               |       5.0.2        |
+|   RSEQC_READDISTRIBUTION    |               rseqc               |       5.0.2        |
+|    RSEQC_READDUPLICATION    |               rseqc               |       5.0.2        |
+|        SALMON_INDEX         |              salmon               |       1.10.1       |
+|        SALMON_QUANT         |              salmon               |       1.10.1       |
+|      SAMTOOLS_FLAGSTAT      |             samtools              |        1.17        |
+|      SAMTOOLS_IDXSTATS      |             samtools              |        1.17        |
+|       SAMTOOLS_INDEX        |             samtools              |        1.17        |
+|        SAMTOOLS_SORT        |             samtools              |        1.17        |
+|       SAMTOOLS_STATS        |             samtools              |        1.17        |
+|           SE_GENE           | bioconductor-summarizedexperiment |       1.24.0       |
+|                             |              r-base               |       4.1.1        |
+|         STAR_ALIGN          |               gawk                |       5.1.0        |
+|                             |             samtools              |       1.16.1       |
+|                             |               star                |       2.7.9a       |
+|     STAR_GENOMEGENERATE     |               gawk                |       5.1.0        |
+|                             |             samtools              |       1.16.1       |
+|                             |               star                |       2.7.9a       |
+|     STRINGTIE_STRINGTIE     |             stringtie             |       2.2.1        |
+|         TRIMGALORE          |             cutadapt              |        3.4         |
+|                             |            trimgalore             |       0.6.7        |
+|           TX2GENE           |              python               |       3.9.5        |
+|          TXIMPORT           |       bioconductor-tximeta        |       1.12.0       |
+|                             |              r-base               |       4.1.1        |
+|        UCSC_BEDCLIP         |               ucsc                |        377         |
+|    UCSC_BEDGRAPHTOBIGWIG    |               ucsc                |        445         |
+|          Workflow           |             Nextflow              |      24.04.4       |
+|                             |          nf-core/rnaseq           |       3.14.0       |
 
 R packages:
 
 | Package       | Version | Citation                                       |
-|---------------|---------|------------------------------------------------|
+| ------------- | ------- | ---------------------------------------------- |
 | AnnotationDbi | 1.66.0  | @AnnotationDbi                                 |
 | base          | 4.4.3   | @base                                          |
 | BiocManager   | 1.30.23 | @BiocManager                                   |
